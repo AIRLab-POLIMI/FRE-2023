@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="grasslammer">
+    <xacro:include filename="$(find grasslammer2_description)/urdf/model.gazebo"/>
+    <xacro:include filename="$(find grasslammer2_description)/urdf/inertials.xacro" />
+    <xacro:include filename="$(find grasslammer2_description)/urdf/ros2_control.xacro"/>
+
+
+    <xacro:property name="ground_clearance" value="0.14"/>
+
+    <xacro:property name="wheel_radius" value="0.06985"/>
+    <xacro:property name="wheel_length" value="0.02"/>
+    <xacro:property name="wheel_mass" value="2"/>
+
+    <xacro:property name="chassis_mass" value="5"/>
+    <xacro:property name="box_x" value="0.54"/>
+    <xacro:property name="box_y" value="0.236"/>
+    <xacro:property name="box_z" value="0.1"/>
+
+    <xacro:property name="bar_mass" value="1"/>
+
+    <xacro:property name="wheelbase" value="0.32"/> <!-- 0.32 -->
+    <xacro:property name="axle" value="0.258"/> <!-- 0.258 --> 
+    <xacro:property name="wheel_separation" value="${axle+0.047*2}"/> <!--0.352-->
+    <!-- wheel_separation is an unused variable ~0.3 in original model  
+        MUST be >= 0.411 ==>> axle MUST be ~0.411-0.045-0.016 -> 0.38
+    
+    
+    -->
+
+    
+    
+    
+
+    
+    
+    <link name="base_footprint">        
+    </link>
+
+    <joint name="robot_footprint_joint" type="fixed">
+        <origin xyz="0 0 ${ground_clearance + box_z/2}" rpy="0 0 0" />
+        <parent link="base_footprint" />
+        <child link="base_link" />
+    </joint>
+
+    <link name="base_link">
+        <visual>
+            <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
+            
+            <geometry>
+                <mesh filename="$(find grasslammer2_description)/meshes/rocker_body.stl"/>
+                <!-- <box size="${box_x} ${box_y} ${box_z}"/> -->
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
+            <geometry>
+                <mesh filename="$(find grasslammer2_description)/meshes/rocker_body.stl"/>
+                <!-- <box size="${box_x} ${box_y} ${box_z}"/> -->
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="5" x="${box_x}" y="${box_y}" z="${box_z}">
+            <origin xyz="0.0 0 0.0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+
+    <!-- #######################|| RIGHT BAR ||####################### -->
+
+    <link name="right_bar">
+        <visual>
+            <geometry>
+                <mesh filename="$(find grasslammer2_description)/meshes/rocker_R_leg_short.stl"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="$(find grasslammer2_description)/meshes/rocker_R_leg_short.stl"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="${bar_mass}" x="0.320" y="0.015" z="0.08">
+            <origin xyz="0.0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+        
+    </link>
+
+    <joint name="right_bar_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="right_bar"/>
+        <axis xyz="0.0 1.0 0.0"/>
+        
+        <origin xyz="0.0 ${-axle/2} 0.0" rpy="0.0 0.0 0.0"/>
+        <limit effort="100.0" lower="-1" upper="1" velocity="100.0"/>
+        <dynamics friction="1.0" damping="0.5"/>
+        
+    </joint>
+    
+
+     
+
+    <!-- #######################|| LEFT BAR ||####################### -->
+
+    <link name="left_bar">
+        <visual>
+            <geometry>
+                <mesh filename="$(find grasslammer2_description)/meshes/rocker_L_leg_short.stl"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="$(find grasslammer2_description)/meshes/rocker_L_leg_short.stl"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="${bar_mass}" x="0.320" y="0.015" z="0.08">
+            <origin xyz="0.0 0 -0.05" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+    <joint name="left_bar_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="left_bar"/>
+        <axis xyz="0.0 -1.0 0.0"/>
+        
+        <origin xyz="0.0 ${axle/2} 0.0" rpy="0.0 0.0 0.0"/>
+        <limit effort="100.0" lower="-1" upper="1" velocity="100.0"/>
+        <dynamics friction="1.0" damping="0.5"/>
+    </joint>
+
+
+
+    <!-- #######################|| WHEELS || #######################-->
+    <xacro:include filename="$(find grasslammer2_description)/urdf/wheels.xacro"/>
+
+    <xacro:grasslammer_wheel wheel_prefix="RF">
+        <origin xyz="${wheelbase/2} ${-(0.016*2)} ${-0.05-wheel_radius}" rpy="0.0 0 3.14"/>
+    </xacro:grasslammer_wheel>
+    <xacro:grasslammer_wheel wheel_prefix="RR">
+        <origin xyz="${-wheelbase/2} ${-(0.016*2)} ${-0.05-wheel_radius}" rpy="0.0 0 3.14"/>
+    </xacro:grasslammer_wheel>
+    <xacro:grasslammer_wheel wheel_prefix="LF">
+        <origin xyz="${wheelbase/2} ${+(0.016*2)} ${-0.05-wheel_radius}" rpy="0.0 0 0"/>
+    </xacro:grasslammer_wheel>
+    <xacro:grasslammer_wheel wheel_prefix="LR">
+        <origin xyz="${-wheelbase/2} ${+(0.016*2)} ${-0.05-wheel_radius}" rpy="0.0 0 0"/>
+    </xacro:grasslammer_wheel>
+
+
+</robot>

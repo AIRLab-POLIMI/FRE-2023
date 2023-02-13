@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="grasslammer_control">
+
+    <ros2_control name="GazeboSystem" type="system"> <!-- Which HW I want to load -->
+        <hardware>
+            <plugin>gazebo_ros2_control/GazeboSystem</plugin> <!-- Our HW interface-->
+        </hardware>
+        <joint name="LF_hinge">
+            <command_interface name="velocity">
+                <param name="min">-10</param>
+                <param name="min">10</param>
+            </command_interface>
+            <state_interface name="velocity"/>
+            <state_interface name="position"/>
+        </joint>
+        <joint name="LR_hinge">
+            <command_interface name="velocity">
+                <param name="min">-10</param>
+                <param name="min">10</param>
+            </command_interface>
+            <state_interface name="velocity"/>
+            <state_interface name="position"/>
+        </joint>
+        <joint name="RF_hinge">
+            <command_interface name="velocity">
+                <param name="min">-10</param>
+                <param name="min">10</param>
+            </command_interface>
+            <state_interface name="velocity"/>
+            <state_interface name="position"/>
+        </joint>
+        <joint name="RR_hinge">
+            <command_interface name="velocity">
+                <param name="min">-10</param>
+                <param name="min">10</param>
+            </command_interface>
+            <state_interface name="velocity"/>
+            <state_interface name="position"/>
+        </joint>
+        <joint name="right_bar_joint">
+            <state_interface name="velocity"/>
+            <state_interface name="position"/>
+        </joint>
+        <joint name="left_bar_joint">
+            <state_interface name="velocity"/>
+            <state_interface name="position"/>
+        </joint>
+
+    </ros2_control> 
+
+</robot>

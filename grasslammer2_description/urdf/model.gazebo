@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<robot>
+    
+
+    
+
+    <!-- <gazebo>
+        <static>1</static>
+    </gazebo> -->
+    <gazebo>
+        <!-- Gazebo plugin to control the robot -->
+        <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
+            <parameters>$(find grasslammer2_description)/config/controller.yaml</parameters>
+        </plugin>
+
+
+        <!-- Gazebo plugin to model the central differential -->
+        <plugin name="rocker_differential" filename="libgrasslammer2_gazebo_differential_plugin.so">
+            <jointA>right_bar_joint</jointA>
+            <jointB>left_bar_joint</jointB>
+            <forceConstant>100.0</forceConstant>
+        </plugin>
+
+    
+        
+    </gazebo>
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+    <!-- Setting colors for gazebo and Rviz -->
+    <gazebo reference="base_link">
+        <material>Gazebo/Orange</material>
+        <selfCollide>true</selfCollide>
+
+    </gazebo>
+    <gazebo reference="right_bar">
+        <material>Gazebo/Black</material>
+        <selfCollide>true</selfCollide>
+  
+    </gazebo>
+    <gazebo reference="left_bar">
+        <material>Gazebo/Black</material>
+        <selfCollide>true</selfCollide>
+
+    </gazebo>
+
+    <material name="alluminum">
+        <color rgba="0.2 0.3 0.3 1"/>
+    </material>
+    <material name="rubber">
+        <color rgba="0.01 0.02 0.03 1"/>
+    </material>
+    <material name="black">
+        <color rgba="0 0 0 1"/>
+    </material>
+    <material name="pin">
+        <color rgba="0.24 0.9 1 1"/>
+    </material>
+    <material name="body">
+        <color rgba="1 .549 0 1"/>
+    </material>
+
+
+</robot>
