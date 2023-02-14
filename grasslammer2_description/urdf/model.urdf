@@ -4,6 +4,7 @@
     <xacro:include filename="$(find grasslammer2_description)/urdf/model.gazebo"/>
     <xacro:include filename="$(find grasslammer2_description)/urdf/inertials.xacro" />
     <xacro:include filename="$(find grasslammer2_description)/urdf/ros2_control.xacro"/>
+    <xacro:include filename="$(find grasslammer2_description)/urdf/lidar.xacro" />
 
 
     <xacro:property name="ground_clearance" value="0.14"/>

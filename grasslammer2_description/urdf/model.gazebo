@@ -63,6 +63,7 @@
 
     </gazebo>
 
+
     <material name="alluminum">
         <color rgba="0.2 0.3 0.3 1"/>
     </material>
@@ -75,8 +76,8 @@
     <material name="pin">
         <color rgba="0.24 0.9 1 1"/>
     </material>
-    <material name="body">
-        <color rgba="1 .549 0 1"/>
+    <material name="red">
+        <color rgba="1 0 0 1"/>
     </material>
 
 
