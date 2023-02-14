@@ -50,8 +50,15 @@ def generate_launch_description():
                                     spawn_yaw_val,
                                     "map", "odom"])
 
+    odom_base_footprint_tf = Node(
+                                    package = 'grasslammer2_description',
+                                    executable = 'tf_builder',
+                                    name = 'tf_builder',
+                                )          
+
     return LaunchDescription([
         node_robot_state_publisher,
         spawn_entity,
-        map_odom_static_tf
+        map_odom_static_tf,
+        odom_base_footprint_tf,
     ])
