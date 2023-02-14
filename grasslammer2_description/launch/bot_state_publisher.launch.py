@@ -40,7 +40,19 @@ def generate_launch_description():
                                     '-Y', spawn_yaw_val],
                         output='screen')
 
+    map_odom_static_tf = Node(package = "tf2_ros", 
+                       executable = "static_transform_publisher",
+                       arguments = [spawn_x_val,
+                                    spawn_y_val,
+                                    spawn_z_val,
+                                    '0',
+                                    '0',
+                                    spawn_yaw_val,
+                                    "map", "odom"])
+
+
     return LaunchDescription([
         node_robot_state_publisher,
-        spawn_entity 
+        spawn_entity, 
+        map_odom_static_tf,
     ])
