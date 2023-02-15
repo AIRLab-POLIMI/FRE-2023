@@ -4,6 +4,8 @@
     <xacro:include filename="$(find grasslammer2_description)/urdf/model.gazebo"/>
     <xacro:include filename="$(find grasslammer2_description)/urdf/inertials.xacro" />
     <xacro:include filename="$(find grasslammer2_description)/urdf/ros2_control.xacro"/>
+    <xacro:include filename="$(find grasslammer2_description)/urdf/lidar.xacro" />
+    <xacro:include filename="$(find grasslammer2_description)/urdf/oakd-pro-W.xacro"/>
 
 
     <xacro:property name="ground_clearance" value="0.14"/>
@@ -48,14 +50,14 @@
             <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
             
             <geometry>
-                <mesh filename="$(find grasslammer2_description)/meshes/rocker_body.stl"/>
+                <mesh filename="$(find grasslammer2_description)/meshes/rocker_body.dae"/>
                 <!-- <box size="${box_x} ${box_y} ${box_z}"/> -->
             </geometry>
         </visual>
         <collision>
             <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
             <geometry>
-                <mesh filename="$(find grasslammer2_description)/meshes/rocker_body.stl"/>
+                <mesh filename="$(find grasslammer2_description)/meshes/rocker_body.dae"/>
                 <!-- <box size="${box_x} ${box_y} ${box_z}"/> -->
             </geometry>
         </collision>
@@ -142,6 +144,24 @@
     <xacro:grasslammer_wheel wheel_prefix="LR">
         <origin xyz="${-wheelbase/2} ${+(0.016*2)} ${-0.05-wheel_radius}" rpy="0.0 0 0"/>
     </xacro:grasslammer_wheel>
+
+
+    <!--############################### -->
+    <!--############################### -->
+    <!--#####   OUR SENSORS        #### -->
+    <!--############################### -->
+    <!--############################### -->
+
+
+
+    <!-- oakd pro W -->
+    <joint name="base_link_to_oakd" type="fixed">
+        <parent link="base_link"/>
+        <child link="oakd_base"/>
+        <origin xyz="0.26 0 0.004" rpy="0 0 0"/>
+    </joint>
+    
+    <xacro:oakd_link mount_point='base'/> 
 
 
 </robot>

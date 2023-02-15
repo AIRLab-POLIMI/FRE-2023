@@ -18,10 +18,10 @@ def generate_launch_description():
     urdf_file = os.path.join(pkg_path, 'urdf', 'model.urdf')
     robot_description_config = xacro.process_file(urdf_file)
 
-    spawn_x_val = '-3.0'
-    spawn_y_val = '1.4'
-    spawn_z_val = '0.0'
-    spawn_yaw_val = '0.0'
+    spawn_x_val = '2'
+    spawn_y_val = '-3'
+    spawn_z_val = '0.4'
+    spawn_yaw_val = '1.57'
 
     #Create robot state publisher node 
     params = {'robot_description' : robot_description_config.toxml()}
@@ -50,15 +50,26 @@ def generate_launch_description():
                                     spawn_yaw_val,
                                     "map", "odom"])
 
-    odom_base_footprint_tf = Node(
-                                    package = 'grasslammer2_description',
+    odom_base_footprint_tf = Node(package = 'grasslammer2_description',
                                     executable = 'tf_builder',
                                     name = 'tf_builder',
                                 )          
+    rplidar_node = Node(package='rplidar_ros',
+                        executable='rplidar_composition',
+                        output='screen',
+                        parameters=[{
+                            'serial_port': '/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.3:1.0-port0',
+                            'frame_id': 'laser_frame',
+                            'angle_compensate': True,
+                            'scan_mode': 'Standard'
+                        }]
+                    )
+
 
     return LaunchDescription([
         node_robot_state_publisher,
-        spawn_entity,
+        spawn_entity, 
         map_odom_static_tf,
         odom_base_footprint_tf,
+        rplidar_node,
     ])
