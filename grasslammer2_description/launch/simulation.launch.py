@@ -40,6 +40,12 @@ def generate_launch_description():
                                     os.path.join(pkg_path, 'launch', 'controller.launch.py')
                                 ),
                     )
+
+    teleop_node = Node(package='teleop_twist_keyboard',
+                        executable='teleop_twist_keyboard',
+                        output='screen',
+                        remappings=[('/cmd_vel', '/grasslammer_velocity_controller/cmd_vel_unstamped')],
+                    )
     
 
     
@@ -49,5 +55,6 @@ def generate_launch_description():
         #start_gazebo_fre,
         start_urdf,
         start_control,
+        teleop_node,
          
     ])

@@ -68,7 +68,7 @@
 
 
     <!-- #######################|| RIGHT BAR ||####################### -->
-
+    
     <link name="right_bar">
         <visual>
             <geometry>

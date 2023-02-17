@@ -19,7 +19,7 @@ def generate_launch_description():
     robot_description_config = xacro.process_file(urdf_file)
 
     spawn_x_val = '2'
-    spawn_y_val = '-3'
+    spawn_y_val = '-6.5'
     spawn_z_val = '0.4'
     spawn_yaw_val = '1.57'
 
@@ -45,9 +45,9 @@ def generate_launch_description():
                        arguments = [spawn_x_val,
                                     spawn_y_val,
                                     spawn_z_val,
-                                    '0',
-                                    '0',
-                                    spawn_yaw_val,
+                                    "0",
+                                    "0",
+                                    "0",
                                     "map", "odom"])
 
     odom_base_footprint_tf = Node(package = 'grasslammer2_description',
@@ -64,6 +64,12 @@ def generate_launch_description():
                             'scan_mode': 'Standard'
                         }]
                     )
+
+    # teleop_node = Node(package='teleop_twist_keyboard',
+    #                     executable='teleop_twist_keyboard',
+    #                     output='screen',
+    #                     remappings=[('/cmd_vel', '/grasslammer_velocity_controller/cmd_vel_unstamped')],
+    #                 )
 
 
     return LaunchDescription([
