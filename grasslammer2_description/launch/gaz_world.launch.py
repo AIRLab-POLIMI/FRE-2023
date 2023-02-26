@@ -20,11 +20,13 @@ def generate_launch_description():
     path_gz = os.path.join(get_package_share_directory('gazebo_ros'))
 
     #set path to world file 
-    world_file = 'field3.world'
+    world_file = 'test_bot.world'
 
     # roboPark.world
     # farm.world
     # office.world 
+    # bump_test.world
+    # field3.world
 
 
 

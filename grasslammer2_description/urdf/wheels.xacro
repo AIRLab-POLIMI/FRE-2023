@@ -43,8 +43,8 @@
         <gazebo reference="${wheel_prefix}_wheel">
             <kp>1e6</kp>
             <kd>1.0</kd>
-            <mu1>0.6</mu1>
-            <mu2>0.5</mu2>
+            <mu1>0.8</mu1>
+            <mu2>0.3</mu2>
             <fdir1 value="1 0 0"/>
 
             <material>Gazebo/Gray</material>

@@ -22,6 +22,19 @@
         </plugin>
 
     
+        <plugin name="libgazebo_ros_p3d" filename="libgazebo_ros_p3d.so">
+            <ros>
+                <namespace></namespace>
+                <remapping>odom:=/ground_truth</remapping>
+            </ros>
+                <frame_name>map</frame_name>
+                <body_name>base_footprint</body_name>
+                <update_rate>100.0</update_rate>
+                <gaussian_noise>0.01</gaussian_noise>
+        </plugin>
+          
+
+    
         
     </gazebo>
     

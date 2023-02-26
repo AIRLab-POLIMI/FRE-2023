@@ -1,0 +1,14 @@
+material rampa/rampa
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture rampa.png
+			
+			}
+		}
+	}
+}

@@ -89,92 +89,69 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
-    <model name='apollo15_landing_site_1000x1000'>
+    <model name='rampa'>
       <static>1</static>
       <link name='link'>
         <collision name='collision'>
+          <geometry>
+            <mesh>
+              <uri>model://rampa/mesh/rampa.dae</uri>
+            </mesh>
+          </geometry>
+          <max_contacts>10</max_contacts>
           <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
             <friction>
-              <ode>
-                <mu>0.2</mu>
-              </ode>
               <torsional>
                 <ode/>
               </torsional>
+              <ode/>
             </friction>
-            <contact>
-              <ode>
-                <soft_cfm>1</soft_cfm>
-                <kp>100000</kp>
-                <kd>1</kd>
-                <max_vel>1e-06</max_vel>
-                <min_depth>0.02</min_depth>
-              </ode>
-            </contact>
-            <bounce/>
           </surface>
-          <geometry>
-            <heightmap>
-              <uri>model://apollo15_landing_site_1000x1000/materials/textures/NAC_DTM_APOLLO15_E261N0036_257x257+7472+2152.png</uri>
-              <size>100 100 10</size>
-              <pos>0 0 -45</pos>
-              <texture>
-                <size>10</size>
-                <diffuse>__default__</diffuse>
-                <normal>__default__</normal>
-              </texture>
-              <blend>
-                <min_height>0</min_height>
-                <fade_dist>0</fade_dist>
-              </blend>
-            </heightmap>
-          </geometry>
-          <max_contacts>10</max_contacts>
         </collision>
         <visual name='visual'>
           <geometry>
-            <heightmap>
-              <texture>
-                <diffuse>model://apollo15_landing_site_1000x1000/materials/textures/AS16-110-18026HR-512x512.jpg</diffuse>
-                <normal>file://media/materials/textures/flat_normal.png</normal>
-                <size>2</size>
-              </texture>
-              <uri>model://apollo15_landing_site_1000x1000/materials/textures/NAC_DTM_APOLLO15_E261N0036_257x257+7472+2152.png</uri>
-              <size>100 100 10</size>
-              <pos>0 0 -45</pos>
-              <blend>
-                <min_height>0</min_height>
-                <fade_dist>0</fade_dist>
-              </blend>
-            </heightmap>
+            <mesh>
+              <uri>model://rampa/mesh/rampa.dae</uri>
+            </mesh>
           </geometry>
+          <material>
+            <script>
+              <uri>model://rampa/materials/scripts</uri>
+              <uri>model://rampa/materials/textures</uri>
+              <name>rampa/rampa</name>
+            </script>
+          </material>
         </visual>
         <self_collide>0</self_collide>
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>-0.031256 -0.330993 0 0 -0 0</pose>
+      <pose>1.9457 -0.436588 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
-      <sim_time>176 635000000</sim_time>
-      <real_time>177 422453163</real_time>
-      <wall_time>1676546750 258760237</wall_time>
-      <iterations>176635</iterations>
-      <model name='apollo15_landing_site_1000x1000'>
-        <pose>-0.031256 -0.330993 0 0 -0 0</pose>
-        <scale>1 1 1</scale>
-        <link name='link'>
-          <pose>-0.031256 -0.330993 0 0 -0 0</pose>
-          <velocity>0 0 0 0 -0 0</velocity>
-          <acceleration>0 0 0 0 -0 0</acceleration>
-          <wrench>0 0 0 0 -0 0</wrench>
-        </link>
-      </model>
+      <sim_time>5 988000000</sim_time>
+      <real_time>85 559447972</real_time>
+      <wall_time>1677420264 428318340</wall_time>
+      <iterations>5988</iterations>
       <model name='ground_plane'>
         <pose>0 0 0 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
           <pose>0 0 0 0 -0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='rampa'>
+        <pose>1.9457 -0.436588 0 0 -0 0</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose>1.9457 -0.436588 0 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -186,7 +163,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>67.0002 -69.7061 -19.1072 0 0.111459 2.3682</pose>
+        <pose>5 -5 2 0 0.275643 2.35619</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>

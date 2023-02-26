@@ -32,7 +32,7 @@ install(TARGETS
 
 
 install(
-  DIRECTORY launch meshes urdf worlds models config
+  DIRECTORY launch meshes urdf worlds models config src
   DESTINATION share/${PROJECT_NAME}
 )
 
