@@ -13,12 +13,12 @@
             
             <visual>
                 <geometry>
-                    <mesh filename="$(find grasslammer2_description)/meshes/rocker_wheel.stl"/>
+                    <mesh filename="file://$(find grasslammer2_description)/meshes/rocker_wheel.stl"/>
                 </geometry>
             </visual>
             <collision>
                 <geometry>
-                    <mesh filename="$(find grasslammer2_description)/meshes/rocker_wheel.stl"/>
+                    <mesh filename="file://$(find grasslammer2_description)/meshes/rocker_wheel.stl"/>
                 </geometry>
             </collision>
             <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_length}" radius="${wheel_radius}">

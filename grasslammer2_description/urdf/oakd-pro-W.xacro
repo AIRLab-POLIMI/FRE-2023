@@ -14,7 +14,7 @@
           <visual>
               <origin rpy="0 0 0" xyz="0 0 0" />
               <geometry>
-                      <mesh filename="$(find grasslammer2_description)/meshes/OAK-D_pro.dae"/>
+                      <mesh filename="file://$(find grasslammer2_description)/meshes/OAK-D_pro.dae"/>
               </geometry>
                <material name="black" />
           </visual>

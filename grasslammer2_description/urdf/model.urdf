@@ -5,7 +5,7 @@
     <xacro:include filename="$(find grasslammer2_description)/urdf/inertials.xacro" />
     <xacro:include filename="$(find grasslammer2_description)/urdf/ros2_control.xacro"/>
     <xacro:include filename="$(find grasslammer2_description)/urdf/lidar.xacro" />
-    <xacro:include filename="$(find grasslammer2_description)/urdf/oakd-pro-W.xacro"/>
+    <xacro:include filename="$(find grasslammer2_description)/urdf/oakd_pro_W.xacro"/>
 
 
     <xacro:property name="ground_clearance" value="0.14"/>
@@ -50,14 +50,14 @@
             <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
             
             <geometry>
-                <mesh filename="$(find grasslammer2_description)/meshes/rocker_body.dae"/>
+                <mesh filename="file://$(find grasslammer2_description)/meshes/rocker_body.dae"/>
                 <!-- <box size="${box_x} ${box_y} ${box_z}"/> -->
             </geometry>
         </visual>
         <collision>
             <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
             <geometry>
-                <mesh filename="$(find grasslammer2_description)/meshes/rocker_body.dae"/>
+                <mesh filename="file://$(find grasslammer2_description)/meshes/rocker_body.dae"/>
                 <!-- <box size="${box_x} ${box_y} ${box_z}"/> -->
             </geometry>
         </collision>
@@ -72,12 +72,12 @@
     <link name="right_bar">
         <visual>
             <geometry>
-                <mesh filename="$(find grasslammer2_description)/meshes/rocker_R_leg_short.stl"/>
+                <mesh filename="file://$(find grasslammer2_description)/meshes/rocker_R_leg_short.stl"/>
             </geometry>
         </visual>
         <collision>
             <geometry>
-                <mesh filename="$(find grasslammer2_description)/meshes/rocker_R_leg_short.stl"/>
+                <mesh filename="file://$(find grasslammer2_description)/meshes/rocker_R_leg_short.stl"/>
             </geometry>
         </collision>
         <xacro:inertial_box mass="${bar_mass}" x="0.320" y="0.015" z="0.08">
@@ -105,12 +105,12 @@
     <link name="left_bar">
         <visual>
             <geometry>
-                <mesh filename="$(find grasslammer2_description)/meshes/rocker_L_leg_short.stl"/>
+                <mesh filename="file://$(find grasslammer2_description)/meshes/rocker_L_leg_short.stl"/>
             </geometry>
         </visual>
         <collision>
             <geometry>
-                <mesh filename="$(find grasslammer2_description)/meshes/rocker_L_leg_short.stl"/>
+                <mesh filename="file://$(find grasslammer2_description)/meshes/rocker_L_leg_short.stl"/>
             </geometry>
         </collision>
         <xacro:inertial_box mass="${bar_mass}" x="0.320" y="0.015" z="0.08">
