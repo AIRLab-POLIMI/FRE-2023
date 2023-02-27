@@ -77,7 +77,7 @@ def generate_launch_description():
         use_sim_time_arg,
         world_arg,
         start_gazebo_server,
-        start_gazebo_client,
+        #start_gazebo_client,
 
     ])
  

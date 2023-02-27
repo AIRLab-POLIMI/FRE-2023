@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'grasslammer2_navigation'
+package_name = 'grasslammer2_nav_py'
 
 setup(
     name=package_name,
@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'laser_reader = grasslammer2_nav_py.laser_reader:main',
         ],
     },
 )
