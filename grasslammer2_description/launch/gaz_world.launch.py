@@ -20,7 +20,7 @@ def generate_launch_description():
     path_gz = os.path.join(get_package_share_directory('gazebo_ros'))
 
     #set path to world file 
-    world_file = 'test_bot.world'
+    world_file = 'field3.world'
 
     # roboPark.world
     # farm.world
@@ -77,7 +77,7 @@ def generate_launch_description():
         use_sim_time_arg,
         world_arg,
         start_gazebo_server,
-        #start_gazebo_client,
+        start_gazebo_client,
 
     ])
  
