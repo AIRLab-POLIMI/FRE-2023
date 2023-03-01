@@ -15,6 +15,7 @@ def generate_launch_description():
     pkg_path = os.path.join(get_package_share_directory('grasslammer2_description'))
     pkg_path_fre = os.path.join(get_package_share_directory('virtual_maize_field')) # I want to launch the gaz_sim.launch.py that is the launch file for the 2022 FRE environment
     pkg_path_joy = os.path.join(get_package_share_directory('joystick_ros2'))
+    nav_path = os.path.join(get_package_share_directory('grasslammer2_nav_py'))
 
 
     start_gazebo = IncludeLaunchDescription(
@@ -41,6 +42,11 @@ def generate_launch_description():
                                 ),
                     )
 
+    navigation = IncludeLaunchDescription(
+                                PythonLaunchDescriptionSource(
+                                    os.path.join(nav_path, 'nav.launch.py')
+                                ),
+                    )
     
     # Control robot using joystick
     teleop_joy = GroupAction(
@@ -52,8 +58,7 @@ def generate_launch_description():
                             PythonLaunchDescriptionSource(pkg_path_joy + '/launch/joystick.launch.py'),
                         )
                     ]
-                )           
-    
+                )    
 
     
 
@@ -63,5 +68,6 @@ def generate_launch_description():
         start_urdf,
         start_control,
         teleop_joy,
+        navigation,
          
     ])
