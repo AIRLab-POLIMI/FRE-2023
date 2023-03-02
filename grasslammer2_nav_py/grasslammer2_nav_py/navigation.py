@@ -40,37 +40,77 @@ class Navigation(Node):
         
     def scan_callback(self, scan_msg):
         
+        # Transform laser scan msg of ROI points into cartesian coordinate
         points_2d = self.laser_scan_to_cartesian(scan_msg)
-        self.visualize_points_2d(points_2d)
        
-        initial_medoids = np.array([0, 1])
-
-        # if self.previous_centroids is None:
-            
-        # else:
-        #     initial_medoids = self.previous_centroids 
-
-
         
 
         if(np.size(points_2d) == 0):
+            # Used to prevent crash from no points detected in the region of interest
             print('No points found in ROI! ')
         else:
-            print('Found ', len(points_2d), ' points in ROI ! ')
-            metric = distance_metric(type_metric.EUCLIDEAN_SQUARE)
-            k=2   
-            kmedoids_instance = kmedoids(points_2d, initial_medoids, metric=metric)
 
-            kmedoids_instance.process()
-            clusters = kmedoids_instance.get_clusters()
-            medoids = kmedoids_instance.get_medoids()
-            self.previous_centroids = medoids
+            # Use Kmedoids algorithm
+            #self.algorithm_kmedoids(points_2d)
+            
+            # Use least square regression
+            self.algorithm_lsqr(points_2d)
 
+
+
+        
+        
+        # Visualization using markers on Rviz
         #self.visualize_marker(points_2d[medoids[0]], points_2d[medoids[1]])
-
         #self.visualize_clusters(points_2d[clusters[0]], points_2d[clusters[1]])
         
+    def algorithm_kmedoids(self, points_2d):
+        print('Found ', len(points_2d), ' points in ROI ! ') 
 
+        # Medoids initialization
+        initial_medoids = np.array([0, 1])
+            
+        # Set medoids parameter and instance an object
+        metric = distance_metric(type_metric.EUCLIDEAN_SQUARE)
+        k=2   
+        kmedoids_instance = kmedoids(points_2d, initial_medoids, metric=metric)
+
+        # Run the algorithm 
+        kmedoids_instance.process()
+        clusters = kmedoids_instance.get_clusters()
+        # Bidimensional array, in [0,:] there are index of points belonging to cluster one
+        medoids = kmedoids_instance.get_medoids()
+        # Bidimensional array, in [0] there is the index of first medoid, in [1] index of 2nd medoid
+        
+        self.previous_centroids = medoids
+
+        #Visualization using Matplotlib
+        self.visualize_matplot_medoids(points_2d, points_2d[clusters[0]], points_2d[clusters[1]], points_2d[medoids[0]], points_2d[medoids[1]])
+
+    def algorithm_lsqr(self, points):
+        # I take all the points in the ROI and I perform a linear regression to separate points 
+        x = points[:,0]
+        y = points[:,1]
+        A = np.vstack([x, np.ones(len(x))]).T
+        m, c = np.linalg.lstsq(A, y, rcond=None)[0]
+
+        # Lsqr on lower points
+        points_minor = points[np.where(points[:,1] < m*x+c)]
+        y_minor = points_minor[:,1]
+        x_minor = points_minor[:,0]
+        A_minor = np.vstack([x_minor, np.ones(len(x_minor))]).T
+        m_minor, c_minor = np.linalg.lstsq(A_minor, y_minor, rcond=None)[0]
+
+        # Lsqr on higher points
+        points_greater = points[np.where(points[:,1] > m*x+c)]
+        y_greater = points_greater[:,1]
+        x_greater = points_greater[:,0]
+        A_greater = np.vstack([x_greater, np.ones(len(x_greater))]).T
+        m_greater, c_greater = np.linalg.lstsq(A_greater, y_greater, rcond=None)[0]
+
+
+
+        self.visualize_matplot_lsqr(x, m, c, points, x_minor, y_minor, m_minor, c_minor, x_greater, y_greater, m_greater, c_greater)
 
     def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
@@ -88,6 +128,7 @@ class Navigation(Node):
         return points_filtered
 
     def visualize_marker(self, point1, point2):
+
         
         marker_msgs = MarkerArray()
 
@@ -129,6 +170,31 @@ class Navigation(Node):
         
         self.mark_pub.publish(marker_msgs)
     
+    def visualize_marker_points(self, points_2d):
+    
+        marker_msgs = MarkerArray()
+        for i in range(len(points_2d)):
+            marker = Marker()
+            marker.id = i
+            marker.header.frame_id = "laser_frame"
+            marker.type = marker.SPHERE
+            marker.action = marker.ADD
+            marker.scale.x = 0.05
+            marker.scale.y = 0.05
+            marker.scale.z = 0.05
+            marker.color.a = 1.0
+            marker.color.r = 0.0
+            marker.color.g = 1.0
+            marker.color.b = 0.0
+            marker.pose.orientation.w = 1.0
+            marker.pose.position.x = points_2d[i, 0]
+            marker.pose.position.y = points_2d[i, 1]
+            marker.pose.position.z = 0.0
+            marker_msgs.markers.append(marker)
+
+        self.cluster1_pub.publish(marker_msgs)
+        marker_msgs.markers = []
+
     def visualize_clusters(self, point_cluster1, point_cluster2):
         
         marker_msgs = MarkerArray()
@@ -175,38 +241,32 @@ class Navigation(Node):
 
         self.cluster2_pub.publish(marker_msgs2)
 
-    def visualize_points_2d(self, points_2d): 
-                       
+    def visualize_matplot_medoids(self, points_2d, point_cluster1, point_cluster2, medoid1, medoid2):
         self.ax.clear()
-        plt.scatter(points_2d[:,0], points_2d[:,1])
+        #plt.scatter(points_2d[:, 0], points_2d[:, 1], color='blue')
+        plt.scatter(point_cluster1[:, 0], point_cluster1[:, 1], color='red')
+        plt.scatter(point_cluster2[:, 0], point_cluster2[:, 1], color='green')
+        plt.scatter(medoid1[0], medoid1[1], color='blue')
+        plt.scatter(medoid2[0], medoid2[1], color='blue')
         plt.xlim(0,3)
         plt.ylim(-2,2)
         self.fig.canvas.draw()
         plt.pause(0.01)
 
-        # marker_msgs = MarkerArray()
-        # for i in range(len(points_2d)):
-        #     marker = Marker()
-        #     marker.id = i
-        #     marker.header.frame_id = "laser_frame"
-        #     marker.type = marker.SPHERE
-        #     marker.action = marker.ADD
-        #     marker.scale.x = 0.05
-        #     marker.scale.y = 0.05
-        #     marker.scale.z = 0.05
-        #     marker.color.a = 1.0
-        #     marker.color.r = 0.0
-        #     marker.color.g = 1.0
-        #     marker.color.b = 0.0
-        #     marker.pose.orientation.w = 1.0
-        #     marker.pose.position.x = points_2d[i, 0]
-        #     marker.pose.position.y = points_2d[i, 1]
-        #     marker.pose.position.z = 0.0
-        #     marker_msgs.markers.append(marker)
-
-        # self.cluster1_pub.publish(marker_msgs)
-        # marker_msgs.markers = []
-
+    def visualize_matplot_lsqr(self, x, m, c, points, x_minor, y_minor, m_minor, c_minor, x_greater, y_greater, m_greater, c_greater):
+        self.ax.clear()
+        #plt.scatter(points[:, 0], points[:, 1], color='blue')
+        plt.scatter(x_minor, y_minor, color='green')
+        plt.plot(x_minor, m_minor*x_minor + c_minor, color='g')
+        plt.scatter(x_greater, y_greater, color='b')
+        plt.plot(x_greater, m_greater*x_greater + c_greater, color='b')
+        #plt.plot(x, m*x + c, color='r')
+        plt.xlim(0,3)
+        plt.ylim(-2,2)
+        self.fig.canvas.draw()
+        plt.pause(0.01)
+        
+    
         
 def main(args=None):
     rclpy.init(args=args)
