@@ -18,10 +18,10 @@ def generate_launch_description():
     urdf_file = os.path.join(pkg_path, 'urdf', 'model.urdf')
     robot_description_config = xacro.process_file(urdf_file)
 
-    spawn_x_val = '-1'
+    spawn_x_val = '0'
     spawn_y_val = '0'
     spawn_z_val = '0.2'
-    spawn_yaw_val = '0.0'#'1.57'
+    spawn_yaw_val = '1.57'#'1.57'
 
     #Create robot state publisher node 
     params = {'robot_description' : robot_description_config.toxml()}
