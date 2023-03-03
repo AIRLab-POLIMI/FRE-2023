@@ -1,9 +1,8 @@
 import rclpy
 from rclpy.node import Node
 
-from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Point
-
+from sensor_msgs.msg import LaserScan, Joy
+from geometry_msgs.msg import Point, Twist
 from visualization_msgs.msg import MarkerArray, Marker
 
 from pyclustering.cluster import cluster_visualizer
@@ -12,31 +11,37 @@ from pyclustering.utils import read_sample
 from pyclustering.samples.definitions import FCPS_SAMPLES
 from pyclustering.utils.metric import distance_metric, type_metric
 
-
+import math
 
 import numpy as np 
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN, AgglomerativeClustering
 
 
 class Navigation(Node):
     def __init__(self):
         super().__init__('navigation')
 
+        self.NAV = True
 
         self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
 
-        #self.pub_centroid_1 = self.create_publisher(Point, '/centroid1', 1)
-        #self.pub_centroid_2 = self.create_publisher(Point, '/centroid2', 1)
+        self.joy_sub = self.create_subscription(Joy, '/joy', self.navigation_active, 1)
+
+        self.cmd_pub = self.create_publisher(Twist, '/grasslammer_velocity_controller/cmd_vel_unstamped', 1)
         
-        self.mark_pub = self.create_publisher(MarkerArray, '/centroids', 1)
-        self.cluster1_pub = self.create_publisher(MarkerArray, '/cluster1', 1)
+        #self.mark_pub = self.create_publisher(MarkerArray, '/centroids', 1)
+        #self.cluster1_pub = self.create_publisher(MarkerArray, '/cluster1', 1)
         #self.cluster2_pub = self.create_publisher(MarkerArray, '/cluster2', 1)
 
         self.previous_centroids = None
+        self.clustering_db = DBSCAN(eps= 0.5, min_samples=3)
+        self.clustering_AG = AgglomerativeClustering(n_clusters=2, linkage='single')
 
         self.fig, self.ax = plt.subplots()
+        
         
     def scan_callback(self, scan_msg):
         
@@ -45,18 +50,33 @@ class Navigation(Node):
        
         
 
-        if(np.size(points_2d) == 0):
+        if(np.size(points_2d) < 8):
             # Used to prevent crash from no points detected in the region of interest
             print('No points found in ROI! ')
+            self.NAV = False
         else:
 
             # Use Kmedoids algorithm
             #self.algorithm_kmedoids(points_2d)
             
             # Use least square regression
-            self.algorithm_lsqr(points_2d)
+            #self.algorithm_lsqr(points_2d)
 
+            # Use DBSCAN
+            #self.dbscan(points_2d)
+            
+            # Use agglomerative clustering
+            clusters = self.agclustering(points_2d)
 
+            goal = self.goal_point_cluster(clusters)
+
+            self.visualize_matplot_DBSCAN(clusters[0], clusters[1], points_2d, goal)
+
+            
+
+            print('Navigation: Active' if self.NAV else 'Navigation: Stopped')
+
+            self.heading(goal)
 
         
         
@@ -111,6 +131,26 @@ class Navigation(Node):
 
 
         self.visualize_matplot_lsqr(x, m, c, points, x_minor, y_minor, m_minor, c_minor, x_greater, y_greater, m_greater, c_greater)
+
+    def agclustering(self, points):
+        clusters = self.clustering_AG.fit(points)
+
+        cluster1 = points[np.where(clusters.labels_ == 0)]
+        cluster2 = points[np.where(clusters.labels_ == 1)]
+
+        # print(clusters.labels_)
+        
+        
+        
+        return [cluster1, cluster2]
+
+    def dbscan(self, points):
+        clusters = self.clustering_db.fit(points)
+
+        cluster1 = points[np.where(clusters.labels_ == 0)]
+        cluster2 = points[np.where(clusters.labels_ == 1)]
+
+        print(clusters.labels_)
 
     def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
@@ -266,7 +306,62 @@ class Navigation(Node):
         self.fig.canvas.draw()
         plt.pause(0.01)
         
+    def visualize_matplot_DBSCAN(self, cluster1, cluster2, points, goal):
+        self.ax.clear()
+        plt.scatter(points[:, 0], points[:, 1], color='blue')
+        plt.scatter(cluster1[:, 0], cluster1[:, 1], color='red')
+        plt.scatter(cluster2[:, 0], cluster2[:, 1], color='green')
+        plt.scatter(goal[0], goal[1], color = 'y')
+        plt.xlim(0,3)
+        plt.ylim(-2,2)
+        self.fig.canvas.draw()
+        plt.pause(0.01)
+
+    def goal_point_cluster(self, clusters):
+        # Find medium point of cluster1 
+        midpoint1 = np.array([np.mean(clusters[0][:, 0]), np.mean(clusters[0][:,1])])
+
+        # Find medium point of cluster2 
+        midpoint2 = np.array([np.mean(clusters[1][:, 0]), np.mean(clusters[1][:,1])])
+
+        points = np.array((midpoint1, midpoint2))
+
+        # Find goal point 
+        x = np.mean(points[:, 0])
+        y = np.mean(points[:, 1])
+        goal = np.array((x,y))
+
+        return goal
     
+    def heading(self, goal_point):
+        alfa = 0.4
+        beta = 0.6
+        cmd_msg = Twist()
+        if(self.NAV):
+            theta = math.atan(goal_point[1]/goal_point[0])
+            cmd_msg.linear.x = alfa*goal_point[0]
+            cmd_msg.angular.z = beta*theta
+
+            print(cmd_msg.linear.x, '\t', cmd_msg.angular.z)
+            if (cmd_msg.linear.x > 0.1):
+                self.cmd_pub.publish(cmd_msg)
+            else: 
+                self.NAV = False
+        # else:
+        #     cmd_msg.linear.x = 0
+        #     cmd_msg.angular.z = 0
+        #     self.cmd_pub.publish(cmd_msg)
+    
+    def navigation_active(self, msg):
+        
+        if(msg.buttons[9]==1):
+            self.NAV = True
+        if(msg.buttons[8]==1):
+            self.NAV = False
+        
+
+
+
         
 def main(args=None):
     rclpy.init(args=args)
