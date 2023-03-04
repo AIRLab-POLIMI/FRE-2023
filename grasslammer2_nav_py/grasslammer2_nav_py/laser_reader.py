@@ -11,7 +11,7 @@ class LaserReader(Node):
     def __init__(self):
         super().__init__('laser_reader')
 
-        self.area = np.array([1.4, 2]) # rect shape x,y
+        self.area = np.array([1.5, 3]) # rect shape x,y
 
         self.scan_sub = self.create_subscription(LaserScan, '/scan', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 

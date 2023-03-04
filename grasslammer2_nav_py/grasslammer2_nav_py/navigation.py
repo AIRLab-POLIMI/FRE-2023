@@ -17,13 +17,14 @@ import numpy as np
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN, AgglomerativeClustering
+from sklearn.linear_model import RANSACRegressor
 
 
 class Navigation(Node):
     def __init__(self):
         super().__init__('navigation')
 
-        self.NAV = True
+        self.NAV = False
 
         self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
@@ -39,6 +40,7 @@ class Navigation(Node):
         self.previous_centroids = None
         self.clustering_db = DBSCAN(eps= 0.5, min_samples=3)
         self.clustering_AG = AgglomerativeClustering(n_clusters=2, linkage='single')
+        self.ransac = RANSACRegressor()
 
         self.fig, self.ax = plt.subplots()
         
@@ -50,7 +52,7 @@ class Navigation(Node):
        
         
 
-        if(np.size(points_2d) < 8):
+        if(np.size(points_2d) < 15):
             # Used to prevent crash from no points detected in the region of interest
             print('No points found in ROI! ')
             self.NAV = False
@@ -64,19 +66,22 @@ class Navigation(Node):
 
             # Use DBSCAN
             #self.dbscan(points_2d)
+
+            # Use RANSAC
+            self.RANSAC(points_2d)
             
             # Use agglomerative clustering
-            clusters = self.agclustering(points_2d)
+            #clusters = self.agclustering(points_2d)
 
-            goal = self.goal_point_cluster(clusters)
+            #goal = self.goal_point_cluster(clusters)
 
-            self.visualize_matplot_DBSCAN(clusters[0], clusters[1], points_2d, goal)
+            #self.visualize_matplot_DBSCAN(clusters[0], clusters[1], points_2d, goal)
 
             
 
-            print('Navigation: Active' if self.NAV else 'Navigation: Stopped')
+            #print('Navigation: Active' if self.NAV else 'Navigation: Stopped')
 
-            self.heading(goal)
+            #self.heading(goal)
 
         
         
@@ -143,6 +148,23 @@ class Navigation(Node):
         
         
         return [cluster1, cluster2]
+
+    def RANSAC(self, points):
+        lines = []
+        row1 = points[np.where( points[:, 1] < 0)]
+        row2 = points[np.where( points[:, 1] > 0)]
+
+        self.ransac.fit(row1[:, 0].reshape(-1, 1), row1[:, 1])
+        slope = self.ransac.estimator_.coef_[0]
+        intercept = self.ransac.estimator_.intercept_
+        lines.append((slope, intercept))
+
+        self.ransac.fit(row2[:, 0].reshape(-1, 1), row2[:, 1])
+        slope = self.ransac.estimator_.coef_[0]
+        intercept = self.ransac.estimator_.intercept_
+        lines.append((slope, intercept))
+
+        self.visualize_ransac(points, lines)
 
     def dbscan(self, points):
         clusters = self.clustering_db.fit(points)
@@ -317,6 +339,18 @@ class Navigation(Node):
         self.fig.canvas.draw()
         plt.pause(0.01)
 
+    def visualize_ransac(self, points, lines):
+        self.ax.clear()
+        plt.scatter(points[:, 0], points[:, 1], color='blue')
+        for line in lines:
+            x = np.linspace(0, 2, 3)
+            y = line[0] * x + line[1]
+            plt.plot(x, y, color='red')
+        plt.xlim(0,3)
+        plt.ylim(-2,2)
+        self.fig.canvas.draw()
+        plt.pause(0.01)
+
     def goal_point_cluster(self, clusters):
         # Find medium point of cluster1 
         midpoint1 = np.array([np.mean(clusters[0][:, 0]), np.mean(clusters[0][:,1])])
@@ -360,7 +394,7 @@ class Navigation(Node):
             self.NAV = False
         
 
-
+    
 
         
 def main(args=None):
