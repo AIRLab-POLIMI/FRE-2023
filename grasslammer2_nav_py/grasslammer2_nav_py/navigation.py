@@ -24,7 +24,7 @@ class Navigation(Node):
     def __init__(self):
         super().__init__('navigation')
 
-        self.NAV = False
+        self.NAV = True
 
         self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
@@ -68,12 +68,12 @@ class Navigation(Node):
             #self.dbscan(points_2d)
 
             # Use RANSAC
-            self.RANSAC(points_2d)
+            #self.RANSAC(points_2d)
             
             # Use agglomerative clustering
-            #clusters = self.agclustering(points_2d)
+            self.agclustering(points_2d)
 
-            #goal = self.goal_point_cluster(clusters)
+            
 
             #self.visualize_matplot_DBSCAN(clusters[0], clusters[1], points_2d, goal)
 
@@ -81,7 +81,7 @@ class Navigation(Node):
 
             #print('Navigation: Active' if self.NAV else 'Navigation: Stopped')
 
-            #self.heading(goal)
+            
 
         
         
@@ -145,24 +145,35 @@ class Navigation(Node):
 
         # print(clusters.labels_)
         
-        
-        
-        return [cluster1, cluster2]
+        goal = self.goal_point_cluster([cluster1, cluster2])
+        self.visualize_matplot_DBSCAN(cluster1, cluster2, points, goal)
+        self.heading(goal)
 
     def RANSAC(self, points):
         lines = []
         row1 = points[np.where( points[:, 1] < 0)]
         row2 = points[np.where( points[:, 1] > 0)]
 
-        self.ransac.fit(row1[:, 0].reshape(-1, 1), row1[:, 1])
-        slope = self.ransac.estimator_.coef_[0]
-        intercept = self.ransac.estimator_.intercept_
-        lines.append((slope, intercept))
+        if (len(row1)>1): 
+            self.ransac.fit(row1[:, 0].reshape(-1, 1), row1[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            lines.append((slope, intercept))
 
-        self.ransac.fit(row2[:, 0].reshape(-1, 1), row2[:, 1])
-        slope = self.ransac.estimator_.coef_[0]
-        intercept = self.ransac.estimator_.intercept_
-        lines.append((slope, intercept))
+        if (len(row2)>1):
+            self.ransac.fit(row2[:, 0].reshape(-1, 1), row2[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            lines.append((slope, intercept))
+
+        if (len(row1)<4 or len(row2)<4):
+            self.NAV = False
+        medium_slope = (lines[0][0]+lines[1][0]) / 2
+        medium_intercept = 0#(lines[0][1]+lines[1][1]) / 2
+
+        lines.append((medium_slope, medium_intercept)) 
+
+        self.heading_line(lines[2])
 
         self.visualize_ransac(points, lines)
 
@@ -368,16 +379,17 @@ class Navigation(Node):
         return goal
     
     def heading(self, goal_point):
-        alfa = 0.4
+        alfa = 0.05
         beta = 0.6
         cmd_msg = Twist()
         if(self.NAV):
             theta = math.atan(goal_point[1]/goal_point[0])
-            cmd_msg.linear.x = alfa*goal_point[0]
+            cmd_msg.linear.x = alfa*1/abs(theta)
             cmd_msg.angular.z = beta*theta
 
             print(cmd_msg.linear.x, '\t', cmd_msg.angular.z)
-            if (cmd_msg.linear.x > 0.1):
+            self.cmd_pub.publish(cmd_msg)
+            if (theta < 1):
                 self.cmd_pub.publish(cmd_msg)
             else: 
                 self.NAV = False
@@ -385,7 +397,22 @@ class Navigation(Node):
         #     cmd_msg.linear.x = 0
         #     cmd_msg.angular.z = 0
         #     self.cmd_pub.publish(cmd_msg)
-    
+
+    def heading_line(self, line):
+        alfa = 0.4
+        beta = 0.6
+        cmd_msg = Twist()
+        if(self.NAV):
+            theta = line[0]
+            cmd_msg.linear.x = 0.005*(1/abs(theta))
+            cmd_msg.angular.z = beta*theta
+
+            print(cmd_msg.linear.x, '\t', cmd_msg.angular.z)
+            if (theta < 1):
+                self.cmd_pub.publish(cmd_msg)
+            else: 
+                self.NAV = False
+
     def navigation_active(self, msg):
         
         if(msg.buttons[9]==1):

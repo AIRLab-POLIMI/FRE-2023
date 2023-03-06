@@ -91,7 +91,7 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <model name='maize_01'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.049825 3.46854 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -145,7 +145,7 @@
       </link>
     </model>
     <model name='maize_02'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.111759 3.16505 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -199,7 +199,7 @@
       </link>
     </model>
     <model name='maize_01_0'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.015998 3.17206 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -253,7 +253,7 @@
       </link>
     </model>
     <model name='maize_02_0'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.04201 2.87635 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -307,7 +307,7 @@
       </link>
     </model>
     <model name='maize_01_1'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.011051 2.38704 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -361,7 +361,7 @@
       </link>
     </model>
     <model name='maize_01_2'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.074971 2.06028 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -415,7 +415,7 @@
       </link>
     </model>
     <model name='maize_02_1'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.016541 1.96877 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -469,7 +469,7 @@
       </link>
     </model>
     <model name='maize_02_2'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.105618 1.54652 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -523,7 +523,7 @@
       </link>
     </model>
     <model name='maize_01_3'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.015504 1.32268 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -577,7 +577,7 @@
       </link>
     </model>
     <model name='maize_02_3'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.023357 1.49971 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -631,7 +631,7 @@
       </link>
     </model>
     <model name='maize_01_4'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.072572 0.67038 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -685,7 +685,7 @@
       </link>
     </model>
     <model name='maize_02_4'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.001207 0.596565 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -739,7 +739,7 @@
       </link>
     </model>
     <model name='maize_02_5'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.131935 0.266044 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -793,7 +793,7 @@
       </link>
     </model>
     <model name='maize_02_6'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.029944 0.244897 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -847,7 +847,7 @@
       </link>
     </model>
     <model name='maize_01_5'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.06978 1.72616 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -901,7 +901,7 @@
       </link>
     </model>
     <model name='maize_01_6'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.076783 3.80554 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -955,7 +955,7 @@
       </link>
     </model>
     <model name='maize_02_7'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.00736 3.91351 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -1009,7 +1009,7 @@
       </link>
     </model>
     <model name='maize_02_8'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.243541 4.02964 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -1063,7 +1063,7 @@
       </link>
     </model>
     <model name='maize_02_9'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.032657 4.22394 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -1117,7 +1117,7 @@
       </link>
     </model>
     <model name='maize_01_7'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.119233 4.33145 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -1171,7 +1171,7 @@
       </link>
     </model>
     <model name='maize_01_8'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.031177 4.91656 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -1225,7 +1225,7 @@
       </link>
     </model>
     <model name='maize_01_9'>
-      <static>1</static>
+      <static>0</static>
       <pose>-0.013724 5.3365 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -1450,7 +1450,7 @@
     </model>
     <model name='Stone_01'>
       <pose>-0.648652 2.32885 0.2 0 -0 0</pose>
-      <static>1</static>
+      <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
       <link name='Stone_01_link'>
         <inertial>
@@ -1513,7 +1513,7 @@
     </model>
     <model name='Stone_02'>
       <pose>3.91963 -2.0917 0.2 0 -0 0</pose>
-      <static>1</static>
+      <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
       <link name='Stone_02_link'>
         <inertial>
@@ -1575,7 +1575,7 @@
       </link>
     </model>
     <model name='maize_01_10'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.724812 5.40268 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -1629,7 +1629,7 @@
       </link>
     </model>
     <model name='maize_02_10'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.776544 5.17782 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -1683,7 +1683,7 @@
       </link>
     </model>
     <model name='maize_02_11'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.84916 4.94849 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -1737,7 +1737,7 @@
       </link>
     </model>
     <model name='maize_01_11'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.821763 4.71955 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -1791,7 +1791,7 @@
       </link>
     </model>
     <model name='maize_02_12'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.856995 4.51664 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -1845,7 +1845,7 @@
       </link>
     </model>
     <model name='maize_02_13'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.868163 3.87583 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -1899,7 +1899,7 @@
       </link>
     </model>
     <model name='maize_02_14'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.872323 3.71669 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -1953,7 +1953,7 @@
       </link>
     </model>
     <model name='maize_01_12'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.840863 3.70277 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2007,7 +2007,7 @@
       </link>
     </model>
     <model name='maize_01_13'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.870665 3.48909 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2061,7 +2061,7 @@
       </link>
     </model>
     <model name='maize_02_15'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.900619 3.11772 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -2115,7 +2115,7 @@
       </link>
     </model>
     <model name='maize_01_14'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.868465 3.02958 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2169,7 +2169,7 @@
       </link>
     </model>
     <model name='maize_02_16'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.854904 2.50047 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -2223,7 +2223,7 @@
       </link>
     </model>
     <model name='maize_02_17'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.871532 2.13424 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -2277,7 +2277,7 @@
       </link>
     </model>
     <model name='maize_01_15'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.837841 2.43256 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2331,7 +2331,7 @@
       </link>
     </model>
     <model name='maize_01_16'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.845044 1.94362 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2385,7 +2385,7 @@
       </link>
     </model>
     <model name='maize_01_17'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.813423 1.8453 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2439,7 +2439,7 @@
       </link>
     </model>
     <model name='maize_02_18'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.815557 1.68966 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -2493,7 +2493,7 @@
       </link>
     </model>
     <model name='maize_02_19'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.845031 1.3783 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -2547,7 +2547,7 @@
       </link>
     </model>
     <model name='maize_01_18'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.752388 1.28292 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2601,7 +2601,7 @@
       </link>
     </model>
     <model name='maize_02_20'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.811056 0.959733 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -2655,7 +2655,7 @@
       </link>
     </model>
     <model name='maize_02_21'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.784947 0.394703 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -2709,7 +2709,7 @@
       </link>
     </model>
     <model name='maize_01_19'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.721958 0.348489 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2763,7 +2763,7 @@
       </link>
     </model>
     <model name='maize_01_20'>
-      <static>1</static>
+      <static>0</static>
       <pose>0.711205 0.57024 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2817,7 +2817,7 @@
       </link>
     </model>
     <model name='maize_01_21'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.57174 0.252303 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -2871,7 +2871,7 @@
       </link>
     </model>
     <model name='maize_02_22'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.63323 0.324722 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -2925,7 +2925,7 @@
       </link>
     </model>
     <model name='maize_02_23'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.58833 0.46473 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -2979,7 +2979,7 @@
       </link>
     </model>
     <model name='maize_01_22'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.57425 0.627197 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -3033,7 +3033,7 @@
       </link>
     </model>
     <model name='maize_02_24'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.5971 0.749602 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -3087,7 +3087,7 @@
       </link>
     </model>
     <model name='maize_01_23'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.5479 0.982451 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -3141,7 +3141,7 @@
       </link>
     </model>
     <model name='maize_02_25'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.57961 1.15183 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -3195,7 +3195,7 @@
       </link>
     </model>
     <model name='maize_02_26'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.56519 1.34875 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -3249,7 +3249,7 @@
       </link>
     </model>
     <model name='maize_02_27'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.5617 1.51707 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -3303,7 +3303,7 @@
       </link>
     </model>
     <model name='maize_01_24'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.55313 2.25146 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -3357,7 +3357,7 @@
       </link>
     </model>
     <model name='maize_02_28'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.62722 2.34663 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -3411,7 +3411,7 @@
       </link>
     </model>
     <model name='maize_01_25'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.46312 3.26689 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -3465,7 +3465,7 @@
       </link>
     </model>
     <model name='maize_02_29'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.52625 3.29351 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -3519,7 +3519,7 @@
       </link>
     </model>
     <model name='maize_02_30'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.53057 3.56459 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -3573,7 +3573,7 @@
       </link>
     </model>
     <model name='maize_01_26'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.44827 4.44465 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -3627,7 +3627,7 @@
       </link>
     </model>
     <model name='maize_01_27'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.50297 4.60712 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -3681,7 +3681,7 @@
       </link>
     </model>
     <model name='maize_01_28'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.43552 5.24636 0.05 0 -0 0</pose>
       <link name='maize_01_link'>
         <inertial>
@@ -3735,7 +3735,7 @@
       </link>
     </model>
     <model name='maize_02_31'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.47616 5.28003 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -3789,7 +3789,7 @@
       </link>
     </model>
     <model name='maize_02_32'>
-      <static>1</static>
+      <static>0</static>
       <pose>1.45822 5.40415 0.05 0 -0 0</pose>
       <link name='maize_02_link'>
         <inertial>
@@ -3908,7 +3908,7 @@
         </link>
       </model>
       <model name='maize_01'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.049824 3.46854 -0 0 -2e-06 0.000121</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -3919,7 +3919,7 @@
         </link>
       </model>
       <model name='maize_01_0'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.015999 3.17206 1e-06 2e-05 -3.1e-05 -0.000122</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -3930,7 +3930,7 @@
         </link>
       </model>
       <model name='maize_01_1'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.011051 2.38704 -1e-05 -2.3e-05 1e-06 9.6e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -3941,7 +3941,7 @@
         </link>
       </model>
       <model name='maize_01_10'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.724811 5.40268 -0 0 -2e-06 0.000193</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -3952,7 +3952,7 @@
         </link>
       </model>
       <model name='maize_01_11'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.821763 4.71955 -0 0 3e-06 8.1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -3963,7 +3963,7 @@
         </link>
       </model>
       <model name='maize_01_12'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.840863 3.70277 0 -6.7e-05 -2e-06 -0.000145</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -3974,7 +3974,7 @@
         </link>
       </model>
       <model name='maize_01_13'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.870665 3.48909 0 -1e-05 -2.2e-05 -8.9e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -3985,7 +3985,7 @@
         </link>
       </model>
       <model name='maize_01_14'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.868465 3.02958 -0 0 -3e-06 9.4e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -3996,7 +3996,7 @@
         </link>
       </model>
       <model name='maize_01_15'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.837841 2.43256 -0 3e-06 0 3.9e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4007,7 +4007,7 @@
         </link>
       </model>
       <model name='maize_01_16'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.845044 1.94362 0 -0 -0 -2.3e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4018,7 +4018,7 @@
         </link>
       </model>
       <model name='maize_01_17'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.813423 1.8453 -1e-05 9e-06 -0 3.1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4029,7 +4029,7 @@
         </link>
       </model>
       <model name='maize_01_18'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.752388 1.28292 1e-06 -8.3e-05 -1e-06 0.000104</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4040,7 +4040,7 @@
         </link>
       </model>
       <model name='maize_01_19'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.721958 0.348489 -0 -4e-06 -0 4e-06</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4051,7 +4051,7 @@
         </link>
       </model>
       <model name='maize_01_2'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.07497 2.06028 1e-06 4e-05 -2e-05 -7.9e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4062,7 +4062,7 @@
         </link>
       </model>
       <model name='maize_01_20'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.711205 0.57024 -0 -0 2e-06 4e-06</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4073,7 +4073,7 @@
         </link>
       </model>
       <model name='maize_01_21'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.57174 0.252303 -1e-06 -8e-06 -4e-06 2.1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4084,7 +4084,7 @@
         </link>
       </model>
       <model name='maize_01_22'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.57425 0.627197 0 2e-06 3.5e-05 1.4e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4095,7 +4095,7 @@
         </link>
       </model>
       <model name='maize_01_23'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.5479 0.982451 -0 0 -1e-06 1.5e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4106,7 +4106,7 @@
         </link>
       </model>
       <model name='maize_01_24'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.55313 2.25146 -0 2.5e-05 -4e-06 2.8e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4117,7 +4117,7 @@
         </link>
       </model>
       <model name='maize_01_25'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.46312 3.26689 -0 0 -1e-06 1.5e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4128,7 +4128,7 @@
         </link>
       </model>
       <model name='maize_01_26'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.44827 4.44465 -0 0 3e-06 1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4139,7 +4139,7 @@
         </link>
       </model>
       <model name='maize_01_27'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.50297 4.60712 0 7e-06 -4.2e-05 4.5e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4150,7 +4150,7 @@
         </link>
       </model>
       <model name='maize_01_28'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.43552 5.24636 -0 0 -0 2.1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4161,7 +4161,7 @@
         </link>
       </model>
       <model name='maize_01_3'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.015504 1.32268 -0 -3e-06 -0 4.7e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4172,7 +4172,7 @@
         </link>
       </model>
       <model name='maize_01_4'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.072572 0.67038 -0 0 3e-06 0.000162</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4183,7 +4183,7 @@
         </link>
       </model>
       <model name='maize_01_5'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.06978 1.72616 -9e-06 -5e-06 -2.3e-05 9.6e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4194,7 +4194,7 @@
         </link>
       </model>
       <model name='maize_01_6'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.076784 3.80554 -0 -1e-06 0 -8.8e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4205,7 +4205,7 @@
         </link>
       </model>
       <model name='maize_01_7'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.119233 4.33145 -0 0 2e-06 -1.6e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4216,7 +4216,7 @@
         </link>
       </model>
       <model name='maize_01_8'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.031178 4.91656 0 1.8e-05 -1.1e-05 -7.1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4227,7 +4227,7 @@
         </link>
       </model>
       <model name='maize_01_9'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.013724 5.3365 0 -3.3e-05 -1.6e-05 -3.9e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_01_link'>
@@ -4238,7 +4238,7 @@
         </link>
       </model>
       <model name='maize_02'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.111758 3.16505 -0 0 -3e-06 7.7e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4249,7 +4249,7 @@
         </link>
       </model>
       <model name='maize_02_0'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.042009 2.87635 -0 -4e-06 1.1e-05 4.1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4260,7 +4260,7 @@
         </link>
       </model>
       <model name='maize_02_1'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.016542 1.96877 -0 0 -2e-06 -3.7e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4271,7 +4271,7 @@
         </link>
       </model>
       <model name='maize_02_10'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.776544 5.17782 0 -3e-06 -1.6e-05 0.000123</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4282,7 +4282,7 @@
         </link>
       </model>
       <model name='maize_02_11'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.84916 4.94849 -0 3e-06 -0 7e-06</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4293,7 +4293,7 @@
         </link>
       </model>
       <model name='maize_02_12'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.856995 4.51664 1e-06 -2e-05 4.2e-05 -5.3e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4304,7 +4304,7 @@
         </link>
       </model>
       <model name='maize_02_13'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.868163 3.87583 -0 -3e-06 -0 -1.8e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4315,7 +4315,7 @@
         </link>
       </model>
       <model name='maize_02_14'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.872322 3.71669 -0 3e-06 -0 -1.7e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4326,7 +4326,7 @@
         </link>
       </model>
       <model name='maize_02_15'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.900619 3.11772 -0 1e-06 0 2.6e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4337,7 +4337,7 @@
         </link>
       </model>
       <model name='maize_02_16'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.854904 2.50047 0 0 1.2e-05 -4.2e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4348,7 +4348,7 @@
         </link>
       </model>
       <model name='maize_02_17'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.871532 2.13424 -0 1.2e-05 -1e-05 8.5e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4359,7 +4359,7 @@
         </link>
       </model>
       <model name='maize_02_18'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.815557 1.68966 0 -4e-06 7.2e-05 2.4e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4370,7 +4370,7 @@
         </link>
       </model>
       <model name='maize_02_19'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.845031 1.3783 -0 0 -4e-06 -9.7e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4381,7 +4381,7 @@
         </link>
       </model>
       <model name='maize_02_2'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.105617 1.54652 -0 1.4e-05 -1.2e-05 5.1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4392,7 +4392,7 @@
         </link>
       </model>
       <model name='maize_02_20'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.811056 0.959733 -0 -4e-06 -0 -9e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4403,7 +4403,7 @@
         </link>
       </model>
       <model name='maize_02_21'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.784947 0.394703 -0 -1e-05 -4e-06 8e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4414,7 +4414,7 @@
         </link>
       </model>
       <model name='maize_02_22'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.63323 0.324722 -0 2e-06 -0 2.3e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4425,7 +4425,7 @@
         </link>
       </model>
       <model name='maize_02_23'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.58833 0.46473 -0 -9e-06 2.2e-05 7.7e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4436,7 +4436,7 @@
         </link>
       </model>
       <model name='maize_02_24'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.5971 0.749602 -9e-06 -7e-06 -4.9e-05 -1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4447,7 +4447,7 @@
         </link>
       </model>
       <model name='maize_02_25'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.57961 1.15183 -0 4e-06 -0 5.3e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4458,7 +4458,7 @@
         </link>
       </model>
       <model name='maize_02_26'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.56519 1.34875 -0 -0 4e-06 5.6e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4469,7 +4469,7 @@
         </link>
       </model>
       <model name='maize_02_27'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.5617 1.51707 0 -4e-06 -0 6.1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4480,7 +4480,7 @@
         </link>
       </model>
       <model name='maize_02_28'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.62722 2.34663 -0 0 2e-06 4.9e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4491,7 +4491,7 @@
         </link>
       </model>
       <model name='maize_02_29'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.52625 3.29351 0 2e-06 1.8e-05 4.8e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4502,7 +4502,7 @@
         </link>
       </model>
       <model name='maize_02_3'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.023357 1.49971 -0 0 1e-06 -5.6e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4513,7 +4513,7 @@
         </link>
       </model>
       <model name='maize_02_30'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.53057 3.56459 1e-06 8e-06 -4.9e-05 1.9e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4524,7 +4524,7 @@
         </link>
       </model>
       <model name='maize_02_31'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.47616 5.28003 0 0 -2e-06 3.1e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4535,7 +4535,7 @@
         </link>
       </model>
       <model name='maize_02_32'>
-        <static>1</static>
+        <static>0</static>
         <pose>1.45822 5.40415 0 0 -0 3.2e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4546,7 +4546,7 @@
         </link>
       </model>
       <model name='maize_02_4'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.001208 0.596565 -0 0 -4e-06 -0.000126</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4557,7 +4557,7 @@
         </link>
       </model>
       <model name='maize_02_5'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.131935 0.266044 -1e-06 1e-05 -4e-06 0.00012</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4568,7 +4568,7 @@
         </link>
       </model>
       <model name='maize_02_6'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.029944 0.244897 -9e-06 1.6e-05 -1e-06 0.000118</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4579,7 +4579,7 @@
         </link>
       </model>
       <model name='maize_02_7'>
-        <static>1</static>
+        <static>0</static>
         <pose>0.000118 3.91355 -0 0 -1e-06 -0.010854</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4590,7 +4590,7 @@
         </link>
       </model>
       <model name='maize_02_8'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.243542 4.02964 -1e-05 -0 2.1e-05 6.4e-05</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
@@ -4601,7 +4601,7 @@
         </link>
       </model>
       <model name='maize_02_9'>
-        <static>1</static>
+        <static>0</static>
         <pose>-0.032657 4.22394 -0 1e-06 -0 -0.000264</pose>
         <scale>1 1 1</scale>
         <link name='maize_02_link'>
