@@ -67,7 +67,7 @@ def generate_launch_description():
         #start_gazebo_fre,
         start_urdf,
         start_control,
-        #teleop_joy,
+        teleop_joy,
         navigation,
          
     ])

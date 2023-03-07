@@ -24,7 +24,7 @@ class Navigation(Node):
     def __init__(self):
         super().__init__('navigation')
 
-        self.NAV = True
+        self.NAV = False
 
         self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
@@ -345,8 +345,8 @@ class Navigation(Node):
         plt.scatter(cluster1[:, 0], cluster1[:, 1], color='red')
         plt.scatter(cluster2[:, 0], cluster2[:, 1], color='green')
         plt.scatter(goal[0], goal[1], color = 'y')
-        plt.xlim(0,3)
-        plt.ylim(-2,2)
+        plt.xlim(0,1)
+        plt.ylim(-1,1)
         self.fig.canvas.draw()
         plt.pause(0.01)
 
