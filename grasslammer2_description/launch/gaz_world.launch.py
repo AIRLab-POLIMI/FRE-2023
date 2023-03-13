@@ -20,7 +20,7 @@ def generate_launch_description():
     path_gz = os.path.join(get_package_share_directory('gazebo_ros'))
 
     #set path to world file 
-    world_file = 'empty_world.world' # World options are the ones in /worlds folder 
+    world_file = 'field_easy.world' # World options are the ones in /worlds folder 
 
     
 
