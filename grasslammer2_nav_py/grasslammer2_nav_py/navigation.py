@@ -68,10 +68,10 @@ class Navigation(Node):
             #self.dbscan(points_2d)
 
             # Use RANSAC
-            #self.RANSAC(points_2d)
+            self.RANSAC(points_2d)
             
             # Use agglomerative clustering
-            self.agclustering(points_2d)
+            #self.agclustering(points_2d)
 
             
 
