@@ -17,6 +17,7 @@ find_package(tf2_ros REQUIRED)
 
 include_directories(include)
 
+# tf builder 
 add_executable(tf_builder src/tf_builder.cpp)
 ament_target_dependencies(
     tf_builder
@@ -25,10 +26,23 @@ ament_target_dependencies(
     rclcpp
     tf2
     tf2_ros
-    
 )
 install(TARGETS
     tf_builder
+    DESTINATION lib/${PROJECT_NAME})
+
+# Rotationss
+add_executable(rotations src/rotations.cpp)
+ament_target_dependencies(
+    rotations
+    nav_msgs
+    geometry_msgs
+    rclcpp
+    tf2
+    tf2_ros   
+)
+install(TARGETS
+    rotations
     DESTINATION lib/${PROJECT_NAME})
 
 
