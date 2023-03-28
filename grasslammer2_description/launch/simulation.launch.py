@@ -14,11 +14,17 @@ def generate_launch_description():
 
     pkg_path = os.path.join(get_package_share_directory('grasslammer2_description'))
     pkg_path_joy = os.path.join(get_package_share_directory('joystick_ros2'))
+    fre_path = os.path.join(get_package_share_directory('virtual_maize_field'))
 
 
     start_gazebo = IncludeLaunchDescription(
                                 PythonLaunchDescriptionSource(
                                     os.path.join(pkg_path, 'launch', 'gaz_world.launch.py')
+                                ),
+    )
+    start_gazebo_fre = IncludeLaunchDescription(
+                                PythonLaunchDescriptionSource(
+                                    os.path.join(fre_path, 'launch', 'simulation.launch.py')
                                 ),
     )
 

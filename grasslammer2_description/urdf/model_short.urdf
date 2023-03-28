@@ -174,7 +174,7 @@
     </xacro:VLP-16> -->
 
     <xacro:include filename="$(find velodyne_description)/urdf/HDL-32E.urdf.xacro"/>
-    <xacro:HDL-32E parent="base_link" name="velodyne2" topic="/velodyne_points2" organize_cloud="false" hz="10" samples="220" gpu="false">
+    <xacro:HDL-32E parent="base_link" name="velodyne2" topic="/velodyne_points2" organize_cloud="false" hz="10" samples="220" gpu="true">
         <origin xyz="0 0 0.05" rpy="0 0 0" />
     </xacro:HDL-32E>
 
