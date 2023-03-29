@@ -15,7 +15,7 @@ def generate_launch_description():
     diff_drive_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        respawn = True,
+        respawn = False,
         arguments=["grasslammer_velocity_controller"],
     )
     joint_broad_spawner = Node(
