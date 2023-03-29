@@ -9,7 +9,7 @@ This repo contains the grasslammer simulation using ros2.
 In order to launch the simulation you first have to clone the repository and to install the required dependencies. 
 
 ```bash
-git clone https://github.com/t-Zeta/grasslammer2_common.git
+git clone https://github.com/t-Zeta/grasslammer2_simulation.git
 ```
 
 ## Usage
