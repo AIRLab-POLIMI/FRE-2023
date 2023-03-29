@@ -1,6 +1,8 @@
-# Grasslammer2
+# Grasslammer2 :seedling:
 
 This repo contains the grasslammer simulation using ros2. 
+
+<img src="https://github.com/t-Zeta/grasslammer2_common/blob/main/tools/VERY_FINAL_LOGO.png" width="500"/>
 
 ## Installation
 
