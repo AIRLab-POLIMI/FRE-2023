@@ -13,19 +13,12 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
 
     pkg_path = os.path.join(get_package_share_directory('grasslammer2_description'))
-    pkg_path_fre = os.path.join(get_package_share_directory('virtual_maize_field')) # I want to launch the gaz_sim.launch.py that is the launch file for the 2022 FRE environment
     pkg_path_joy = os.path.join(get_package_share_directory('joystick_ros2'))
     nav_path = os.path.join(get_package_share_directory('grasslammer2_nav_py'))
-
 
     start_gazebo = IncludeLaunchDescription(
                                 PythonLaunchDescriptionSource(
                                     os.path.join(pkg_path, 'launch', 'gaz_world.launch.py')
-                                ),
-    )
-    start_gazebo_fre = IncludeLaunchDescription(
-                                PythonLaunchDescriptionSource(
-                                    os.path.join(pkg_path_fre, 'launch', 'gaz_sim.launch.py')
                                 ),
     )
 
@@ -64,10 +57,9 @@ def generate_launch_description():
 
     return LaunchDescription([
         start_gazebo,
-        #start_gazebo_fre,
         start_urdf,
         start_control,
-        teleop_joy,
+        #teleop_joy,
         navigation,
          
     ])

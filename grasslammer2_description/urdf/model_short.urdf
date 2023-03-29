@@ -164,4 +164,18 @@
     <xacro:oakd_link mount_point='base'/> 
 
 
+    <!-- <xacro:arg name="gpu" default="false"/>
+    <xacro:property name="gpu" value="$(arg gpu)" />
+    <xacro:arg name="organize_cloud" default="false"/>
+    <xacro:property name="organize_cloud" value="$(arg organize_cloud)" /> -->
+    <!-- <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
+    <xacro:VLP-16 parent="base_link" name="velodyne" topic="/velodyne_points" organize_cloud="false" hz="10" samples="440" gpu="false">
+        <origin xyz="0 0 0.4" rpy="0 0 0" />
+    </xacro:VLP-16> -->
+
+    <xacro:include filename="$(find velodyne_description)/urdf/HDL-32E.urdf.xacro"/>
+    <xacro:HDL-32E parent="base_link" name="velodyne2" topic="/velodyne_points2" organize_cloud="false" hz="10" samples="220" gpu="true">
+        <origin xyz="0 0 0.05" rpy="0 0 0" />
+    </xacro:HDL-32E>
+
 </robot>
