@@ -10,6 +10,13 @@ In order to launch the simulation you first have to clone the repository and to 
 
 ```bash
 git clone https://github.com/t-Zeta/grasslammer2_simulation.git
+rosdep install -i --from-path src --rosdistro humble -y
+colcon build
+```
+to run the simulation you also need to:
+```
+pip install xacro
+pip install setuptools==58.2.0
 ```
 
 ## Usage
