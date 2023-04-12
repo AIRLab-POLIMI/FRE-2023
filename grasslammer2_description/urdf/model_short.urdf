@@ -176,7 +176,7 @@
                 <remapping>~/out:=data</remapping>
               </ros>
               <!-- frame_name ommited, will be "my_link" -->
-              <frame_name>base_link</frame_name>
+              <frame_name>oakd_base</frame_name>
             </plugin>
         </sensor>
     </gazebo>
