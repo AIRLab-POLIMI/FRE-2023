@@ -168,7 +168,7 @@
         <sensor name="my_imu" type="imu">
             <always_on>true</always_on>
             <!-- Publish at 30 hz -->
-            <update_rate>30</update_rate>
+            <update_rate>100</update_rate>
             <plugin name="my_imu_plugin" filename="libgazebo_ros_imu_sensor.so">
               <ros>
                 <!-- Will publish to /imu/data -->

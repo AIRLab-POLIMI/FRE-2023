@@ -64,13 +64,11 @@ def generate_launch_description():
                             'scan_mode': 'Standard'
                         }]
                     )
-
-
-
     return LaunchDescription([
         node_robot_state_publisher,
         spawn_entity, 
         map_odom_static_tf,
         odom_base_footprint_tf,
+        
         #rplidar_node,
     ])
