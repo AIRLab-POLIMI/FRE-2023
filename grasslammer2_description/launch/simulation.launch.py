@@ -33,6 +33,11 @@ def generate_launch_description():
                                     os.path.join(pkg_path, 'launch', 'controller.launch.py')
                                 ),
                     )
+    start_ekf = IncludeLaunchDescription(
+                                PythonLaunchDescriptionSource(
+                                    os.path.join(pkg_path, 'launch', 'ekf_launcher.launch.py')
+                                ),
+    )
 
     
     # Control robot using joystick
@@ -54,6 +59,7 @@ def generate_launch_description():
         start_gazebo,
         start_urdf,
         start_control,
+        start_ekf,
         #teleop_joy,
          
     ])
