@@ -50,7 +50,11 @@ def generate_launch_description():
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
+                  ('/tf_static', 'tf_static'),
+                  ('cmd_vel', 'grasslammer_velocity_controller/cmd_vel_unstamped'),
+                  ('/cmd_vel', 'grasslammer_velocity_controller/cmd_vel_unstamped'),
+                  ('/output/cmd_vel', 'grasslammer_velocity_controller/cmd_vel_unstamped'),
+                  ('output/cmd_vel', 'grasslammer_velocity_controller/cmd_vel_unstamped'),]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -77,12 +81,12 @@ def generate_launch_description():
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='false',
+        default_value='true',
         description='Use simulation (Gazebo) clock if true')
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+        default_value='nav2_params.yaml',
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
@@ -90,7 +94,7 @@ def generate_launch_description():
         description='Automatically startup the nav2 stack')
 
     declare_use_composition_cmd = DeclareLaunchArgument(
-        'use_composition', default_value='False',
+        'use_composition', default_value='True',
         description='Use composed bringup if True')
 
     declare_container_name_cmd = DeclareLaunchArgument(
