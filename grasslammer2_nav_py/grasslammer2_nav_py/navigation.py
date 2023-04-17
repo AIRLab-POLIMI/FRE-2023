@@ -353,9 +353,13 @@ class Navigation(Node):
     def visualize_ransac(self, points, lines):
         self.ax.clear()
         plt.scatter(points[:, 0], points[:, 1], color='blue')
+        # i=0
         for line in lines:
+            # print(i, line, lines)
+            # i=i+1
             x = np.linspace(0, 2, 3)
             y = line[0] * x + line[1]
+            # print(x, y, line[0], line[1])
             plt.plot(x, y, color='red')
         plt.xlim(0,3)
         plt.ylim(-2,2)

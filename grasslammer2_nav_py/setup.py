@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'laser_reader = grasslammer2_nav_py.laser_reader:main',
             'navigation = grasslammer2_nav_py.navigation:main',
+            'navigation_ransac = grasslammer2_nav_py.navigation_ransac:main'
         ],
     },
 )
