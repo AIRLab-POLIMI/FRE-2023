@@ -23,5 +23,14 @@ def test_deque():
         test.appendleft(1)
         print(test)
 
+def test_numpy_comparison():
+        A = [[1, 2, 3],[4, 5, 6]]
+        B = [-1, 4]
+        a_np = np.array(A)
+        # b_np = np.array(B)
+        
+
 # calculate_weigths()
-test_deque()
+# test_deque()
+
+test_numpy_comparison()

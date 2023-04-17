@@ -22,6 +22,11 @@ stop_intercept= 2
 base_exp = 100
 avg_execution = []
 
+# num point needed to work properly
+RANSAC_num_point = 1
+
+
+
 class NavigationRansac(Node):
     def __init__(self):
         super().__init__('navigation_ransac')
@@ -43,6 +48,9 @@ class NavigationRansac(Node):
 
         # TO BE
         self.ransac = RANSACRegressor()
+
+        # line_coefficient
+        self.line_coefficient = [0,0]
 
         # to be defined by 
         self.fig, self.ax = plt.subplots()
@@ -111,9 +119,12 @@ class NavigationRansac(Node):
         # calculate current bisectrice
         medium_slope = (slope[0]+slope[1]) / 2
         medium_intercept = (intercept[0]+intercept[1]) / 2
+
+
         # append value in array
         self.model_parameters.appendleft([medium_slope, medium_intercept])
 
+        # queue dimension
         dim_self_param = len(self.model_parameters)
 
         # not reach maximum queue dimension
@@ -129,24 +140,28 @@ class NavigationRansac(Node):
                 self.weigths_intercept = self.calculate_weigths_intercept(number_points)
                 self.weigths_slope = self.calculate_weigths_slope(number_points)
         
+        
         # test 1
-        print("INTERCEPT ", self.weigths_intercept, "SLOPE ", self.weigths_slope)
+        # print("INTERCEPT ", self.weigths_intercept, "SLOPE ", self.weigths_slope)
         # re calculate dim_self_param
         dim_self_param = len(self.model_parameters)
         # append new parameter as first item
         # calculate weigthed output slope
         output_slope = 0
         output_slope = [output_slope + self.weigths_slope[i]*self.model_parameters[i][0] for i in range(dim_self_param)]
+        
         # calculate weighted intercept
         output_intercept = 0
         output_intercept = [output_intercept + self.weigths_intercept[i]*self.model_parameters[i][1] for i in range(dim_self_param)]
-        print("MODEL: ",self.model_parameters)
+        # print("MODEL: ",self.model_parameters)
         output_line = [output_slope[0], output_intercept[0]]
+        
         # output_line = [output_slope[0],0]
         # sobstitute the medium with avg 
         self.model_parameters.popleft()
         self.model_parameters.appendleft(output_line)
-        print("MODEL: ",self.model_parameters)
+        # print("MODEL: ",self.model_parameters)
+
         return output_line
        
         
@@ -179,24 +194,32 @@ class NavigationRansac(Node):
     def RANSAC_with_MA(self, points):
         # contains intercept + slope two interpolated lines
         crop_lines = []
-        row_positive_value = points[np.where(points[:, 1] > 0)]
-        row_negative_value = points[np.where(points[:, 1] < 0)]
-
-       
-        self.ransac.fit(row_positive_value[:, 0].reshape(-1, 1), row_positive_value[:, 1])
-        slope = self.ransac.estimator_.coef_[0]
-        intercept = self.ransac.estimator_.intercept_
-        crop_lines.append([slope, intercept])
         
-        self.ransac.fit(row_negative_value[:, 0].reshape(-1, 1), row_negative_value[:, 1])
-        slope = self.ransac.estimator_.coef_[0]
-        intercept = self.ransac.estimator_.intercept_
-        crop_lines.append([slope, intercept])
+        row_positive_value = points[np.where(points[:, 1] > self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1])]
+        row_negative_value = points[np.where(points[:, 1] < self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1])]
 
-        # print("CROP_LINES ", crop_lines)
-        robot_line = self.calculate_MA_slope_intercept(crop_lines)
-        # visualization
-        self.visualize_ransac_MA(points, crop_lines, robot_line)
+        if (len(row_positive_value)>=1):
+            self.ransac.fit(row_positive_value[:, 0].reshape(-1, 1), row_positive_value[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            crop_lines.append([slope, intercept])
+        if (len(row_negative_value)>=1):
+            self.ransac.fit(row_negative_value[:, 0].reshape(-1, 1), row_negative_value[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            crop_lines.append([slope, intercept])
+
+        if(len(row_negative_value)>=RANSAC_num_point and len(row_positive_value)>=RANSAC_num_point):
+            # print("CROP_LINES ", crop_lines)
+            robot_line = self.calculate_MA_slope_intercept(crop_lines)
+            # visualization
+            self.visualize_ransac_MA(points, crop_lines, robot_line)
+    
+            # update boundaries
+            self.line_coefficient = robot_line
+        else:
+            self.line_coefficient = [0, 0]
+
 
 
     def laser_scan_to_cartesian(self, msg):
@@ -360,11 +383,11 @@ class NavigationRansac(Node):
         for line in lines:
             # print(i, line, lines)
             # i=i+1
-            x = np.linspace(0, 2, 3)
+            x = np.linspace(0, 2, 10)
             y = line[0] * x + line[1]
             # print(x, y, line[0], line[1])
             plt.plot(x, y, color='red')
-        plt.xlim(0,1.2)
+        plt.xlim(0,2)
         plt.ylim(-2,2)
         self.fig.canvas.draw()
         plt.pause(0.01)
