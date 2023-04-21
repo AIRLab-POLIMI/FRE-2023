@@ -3,6 +3,7 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import LaserScan, Joy
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Float64MultiArray
 from visualization_msgs.msg import MarkerArray, Marker
 
 import math
@@ -31,6 +32,9 @@ weight_intercept = 0.8
 # num point needed to work properly
 RANSAC_num_point = 1
 
+# tunable distance goal point
+distance_goal_point = 1
+
 
 
 class NavigationRansac(Node):
@@ -39,8 +43,7 @@ class NavigationRansac(Node):
 
         self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
-
-        self.cmd_pub = self.create_publisher(Twist, '/grasslammer_velocity_controller/cmd_vel_unstamped', 1)
+        self.goal_poisition_pub = self.create_publisher(Float64MultiArray, '/goal_position', 1)
         
         # use deque to maintain history parameter most recent value
         self.parameters_positive_row = deque()
@@ -99,7 +102,7 @@ class NavigationRansac(Node):
         # exp 10
         # values_function = [pow(base_exp,value) for value in values]
         # all same weigth --> values_function = [1 for _ in values]
-        values_function = [value for value in values]
+        values_function = [pow(base_exp,value) for value in values]
         values_sum = np.sum(values_function)
         normalized_weigths = [value/values_sum for value in values_function]
         normalized_weigths.reverse()
@@ -198,12 +201,17 @@ class NavigationRansac(Node):
             # print("CROP_LINES ", crop_lines)
             robot_line = self.calculate_MA_slope_intercept(crop_lines)
             # visualization
-            self.visualize_ransac_MA(points, crop_lines, robot_line)
+            # self.visualize_ransac_MA(points, crop_lines, robot_line)
     
             # update boundaries
             self.line_coefficient = robot_line
+            # calculate goal position 
+            msg = self.calculate_goal_point_bisectrice(robot_line)
+            # publish goal position
+            self.goal_poisition_pub.publish(msg)
+            
         else:
-            self.line_coefficient = [0, 0]
+            self.line_coefficient = [0, 0, 0]
   
     # tmp1 save 
     def RANSAC(self, points):
@@ -398,23 +406,22 @@ class NavigationRansac(Node):
         self.fig.canvas.draw()
         plt.pause(0.01)
 
-    def goal_point_cluster(self, clusters):
-        # Find medium point of cluster1 
-        midpoint1 = np.array([np.mean(clusters[0][:, 0]), np.mean(clusters[0][:,1])])
+    # return tunable goal position 
+    # [x,y]
+    def calculate_goal_point_bisectrice(self, robot_line):
+        # calculate x,y having y=m*x+q (q=0) and 1 as hypothenous
+        x = math.sqrt(1/(1+robot_line[0]**2))
+        y = robot_line[0]*math.sqrt(1/(1+robot_line[0]**2))
+        theta = math.atan(y/x)
+        # publish on topic
+        # self.cmd_pub.publish(cmd_msg)
+        # create message 
+        goal_position = Float64MultiArray()
+        # goal_position.layout.dim = 3
+        # goal_position.layout.data_offset = 0
+        goal_position.data = [x,y,theta]
 
-        # Find medium point of cluster2 
-        midpoint2 = np.array([np.mean(clusters[1][:, 0]), np.mean(clusters[1][:,1])])
-
-        points = np.array((midpoint1, midpoint2))
-
-        # Find goal point 
-        x = np.mean(points[:, 0])
-        y = np.mean(points[:, 1])
-        goal = np.array((x,y))
-
-        return goal
-    
-  
+        return goal_position
 
         
 def main(args=None):
