@@ -23,7 +23,9 @@ setup(
             'laser_reader = grasslammer2_nav_py.laser_reader:main',
             'pub_goal_pose = grasslammer2_nav_py.pub_navigation_goals:main',
             'converter_cmd_vel_sim = grasslammer2_nav_py.convert_cmd_vel_for_sim:main',
-            'turner_from_command = grasslammer2_nav_py.turning:main'
+            'turner_from_command = grasslammer2_nav_py.turning:main',
+            'pub_starting_pose = grasslammer2_nav_py.end_of_line_pose:main',
+            'pub_goal_pose_def = grasslammer2_nav_py.definitive_turner:main'
         ],
     },
 )

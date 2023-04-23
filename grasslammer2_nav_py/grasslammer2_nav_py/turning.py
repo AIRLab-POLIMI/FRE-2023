@@ -9,9 +9,9 @@ from rclpy.time import Time
 class Turner(Node):
     def __init__(self):
         super().__init__('turning_controller')
-        self.odom_sub = self.create_subscription(Odometry, '/odom', self.saveOdom, 1)
+        self.odom_sub = self.create_subscription(Odometry, '/grasslammer_velocity_controller/odom', self.saveOdom, 1)
         self.goal_pose_publisher = self.create_publisher(PoseStamped, '/goal_pose', 1)
-        self.actualPos = [0.0, 0.0]
+        self.actualPos = [0.0, -6.0]
         self.lineDimension = 0.75
         self.loopOfCommands()
 
@@ -38,7 +38,7 @@ class Turner(Node):
         poseToNavigate.pose.orientation.x = 0.0
         poseToNavigate.pose.orientation.y = 0.0
         poseToNavigate.pose.orientation.z = 0.0
-        poseToNavigate.pose.orientation.w = 1.0
+        poseToNavigate.pose.orientation.w = 0.0
 
         self.goal_pose_publisher.publish(poseToNavigate)
 
