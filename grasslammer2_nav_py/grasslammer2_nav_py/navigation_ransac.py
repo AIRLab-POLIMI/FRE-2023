@@ -200,13 +200,14 @@ class NavigationRansac(Node):
         if(len(row_negative_value)>=RANSAC_num_point and len(row_positive_value)>=RANSAC_num_point):
             # print("CROP_LINES ", crop_lines)
             robot_line = self.calculate_MA_slope_intercept(crop_lines)
+            # calculate goal position 
+            msg = self.calculate_goal_point_bisectrice(robot_line)
             # visualization
-            # self.visualize_ransac_MA(points, crop_lines, robot_line)
+            self.visualize_ransac_MA_with_goal_point(points, crop_lines, robot_line,msg)
     
             # update boundaries
             self.line_coefficient = robot_line
-            # calculate goal position 
-            msg = self.calculate_goal_point_bisectrice(robot_line)
+            
             # publish goal position
             self.goal_poisition_pub.publish(msg)
             
@@ -385,6 +386,35 @@ class NavigationRansac(Node):
         print("ROBOT ", robot_lines,"X", x)
         plt.plot(x, y, color='green')
 
+        plt.xlim(0,3)
+        plt.ylim(-2,2)
+        self.fig.canvas.draw()
+        plt.pause(0.01)
+
+
+    def visualize_ransac_MA_with_goal_point(self, points, crop_lines, robot_lines, msg):
+        # clear axes
+        self.ax.clear()
+        # creates scatter plot
+        plt.scatter(points[:, 0], points[:, 1], color='blue')
+        
+        # takes 3 values btw 0/2
+        x = np.linspace(0, 2, 3)
+        
+        # for each line
+        for line in crop_lines:
+            # creates line
+            y = line[0] * x + line[1]
+            # plot line
+            # print("LINE", line, "CROP",  crop_lines)
+            plt.plot(x, y, color='red')
+
+        # robot line
+        y = robot_lines[0] * x + robot_lines[1]
+        print("ROBOT ", robot_lines,"X", x)
+        plt.plot(x, y, color='green')
+
+        plt.plot(msg.data[0], msg.data[1], marker="o", markersize=10, markeredgecolor="blue", markerfacecolor="blue")
         plt.xlim(0,3)
         plt.ylim(-2,2)
         self.fig.canvas.draw()
