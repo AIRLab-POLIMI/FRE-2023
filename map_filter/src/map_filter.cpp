@@ -17,29 +17,39 @@
 
 #include <pcl_conversions/pcl_conversions.h>
 
+#include <sensor_msgs/msg/laser_scan.hpp>
+
+#include <stdio.h>
+
 class map_filter : public rclcpp::Node{
     private:
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub;
+        rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr sub2;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_filter;
 
 
-        double radius = 0.13; //radius for calculate local density
+        float radius = 0.1; //radius for calculate local density
         int threshold = 8; //minimum number of neighbors
+        float laserscan_range = 1.3;
 
-        
+        sensor_msgs::msg::LaserScan laser_scan;
+
     public:
         map_filter() : Node("map_filter"){
-            
+
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/selected", 10, std::bind(&map_filter::callback, this, std::placeholders::_1));
+
+            sub2 = this->create_subscription<sensor_msgs::msg::LaserScan>("/scan_initial", 10, std::bind(&map_filter::populate_scan, this, std::placeholders::_1));
                         
             pub_filter = this->create_publisher<sensor_msgs::msg::PointCloud2>("/filtered_point_cloud", 1);
 
-
+        }
+        void populate_scan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& input){
+            this->laser_scan=*input;
         }
 
         void callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& input){
-            sensor_msgs::msg::PointCloud2 cloud_msg; //Message for containing the pointcloud to be published
             pcl::PCLPointCloud2 pc2, pc2_out; //intermediate pointcloud transformations
             pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_in(new pcl::PointCloud<pcl::PointXYZ>); //input cloud obtained from /selected
             pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_out(new pcl::PointCloud<pcl::PointXYZ>); //output cloud
@@ -56,10 +66,21 @@ class map_filter : public rclcpp::Node{
             //apply the density based filter
             density_filter(pcl_cloud_in, pcl_cloud_out);
 
+            //add point from monoplanar lidar
+            add_scan_points(pcl_cloud_out);
+
+            publish_point_cloud(pcl_cloud_out);
+        }
+
+        //publish a point cloud including the latest update from the laserscan
+        void publish_point_cloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud){
+            sensor_msgs::msg::PointCloud2 cloud_msg; //Message for containing the pointcloud to be published
+            pcl::PCLPointCloud2 pc2;
+
             //Conversion from PCLPointCloud<T> to PCLPointCloud2 and from PCLPointCloud2 to sensor_msgs::msg::PointCloud2
-            pcl::toPCLPointCloud2(*pcl_cloud_out, pc2_out);
-            pcl_conversions::fromPCL(pc2_out, cloud_msg);
-            //publish the new pointcloud
+            pcl::toPCLPointCloud2(*pcl_cloud, pc2);
+            pcl_conversions::fromPCL(pc2, cloud_msg);
+            //publish the pcl_cloudnew pointcloud
             pub_filter->publish(cloud_msg);
         }
 
@@ -97,6 +118,22 @@ class map_filter : public rclcpp::Node{
                 }
             }
         }
+
+        //add nearby points from laserscan
+        void add_scan_points(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud){
+            int i;
+            float th=laser_scan.angle_min;
+            int length = laser_scan.ranges.size();
+
+            for(i=0; i<length; i++){
+                th=th + laser_scan.angle_increment;
+                if(laser_scan.ranges[i]<=laserscan_range){
+                    pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th), laser_scan.ranges[i]*sin(th), 0.2));
+                    pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th)+0.001, laser_scan.ranges[i]*sin(th), 0.18));
+                    pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th)-0.001, laser_scan.ranges[i]*sin(th), 0.16));
+                }
+            }
+        }
 };
 
 
@@ -105,6 +142,6 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
  	rclcpp::spin(std::make_shared<map_filter>());
-    
+    rclcpp::shutdown();
  	return 0;
 }
