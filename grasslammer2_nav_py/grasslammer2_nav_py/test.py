@@ -1,5 +1,6 @@
 import numpy as np
 from collections import deque
+import os
 number_points = 3
 start=0
 stop=2
@@ -36,11 +37,17 @@ def test_numpy_matrices():
         A.append([3,4])
         print(A[0], A[1])
         print(A[0][0], A[1][0])
-        
 
-calculate_weigths()
+def test_folder():
+        data_analysis_path = os.path.abspath("data_analysis")
+        performance_file = open(data_analysis_path+"/data_analysis_max_trials.csv", "x")
+        print(performance_file)
+
+# calculate_weigths()
 # test_deque()
 
 # test_numpy_comparison()
 
 # test_numpy_matrices()
+
+test_folder()
