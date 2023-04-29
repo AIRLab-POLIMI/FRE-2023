@@ -1,6 +1,7 @@
 import numpy as np
 from collections import deque
 import os
+import math
 number_points = 3
 start=0
 stop=2
@@ -43,6 +44,21 @@ def test_folder():
         performance_file = open(data_analysis_path+"/data_analysis_max_trials.csv", "x")
         print(performance_file)
 
+
+def test_mq():
+        m = 3
+        q = 4
+        # solve system
+        tmp = (m**2)*(q**2) + (1+(m**2))*(+(q**2)-1)
+        print(tmp)
+        x_pos = (-m*q+ math.sqrt((m**2)*(q**2) + (1+(m**2))*(+(q**2)-1)))/(1+m**2)
+        x_neg = (-m*q- math.sqrt((m**2)*(q**2) + (1+(m**2))*(+(q**2)-1)))/(1+m**2)
+        # solve equation
+        y_pos = m**x_pos + q
+        y_neg = m**x_neg + q
+
+        print(x_pos, y_pos, "----------", x_neg, y_neg)
+
 # calculate_weigths()
 # test_deque()
 
@@ -50,4 +66,4 @@ def test_folder():
 
 # test_numpy_matrices()
 
-test_folder()
+test_mq()
