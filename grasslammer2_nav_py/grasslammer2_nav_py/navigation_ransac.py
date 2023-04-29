@@ -77,17 +77,13 @@ class NavigationRansac(Node):
 
         # write performances in folder
         # print(data_analysis_path)
-        self.performance_file = open(data_analysis_path+"data_analysis_trials_"+str(self.ransac.max_trials)+"_inliers_"+str(self.ransac.stop_n_inliers)+"_score_"+str(self.ransac.stop_score)+".csv", "x")
-        self.csv_writer = csv.writer(self.performance_file)
-        # write header
-        self.csv_writer.writerow(['current', 'min', 'max', 'avg'])
-        self.samples_file = open(data_analysis_path+"number_samples"+str(self.ransac.min_samples)+".csv", "x")
-        
-        self.csv_writer_samples = csv.writer(self.samples_file)
-        self.csv_writer_samples.writerow(['current', 'min', 'max', 'avg'])
+        self.performance_file = ''
+        self.csv_writer = ''
+        self.csv_writer_samples = ''
         self.samples = []
         self.last_sample = ''
         self.num_lines = 0
+        # self.initialization_ransac_formula_analysis()
         # to be defined by 
         self.fig, self.ax = plt.subplots()
   
@@ -107,33 +103,12 @@ class NavigationRansac(Node):
             # self.RANSAC_with_MA(points_2d)
             # Use Ransac WIth MA with intercept
             self.RANSAC_with_MA_with_intercept(points_2d)
+        end_time = time.perf_counter()
+        # self.ransac_formula_analysis(start_time, end_time)
             
         
         
-        end_time = time.perf_counter()
-
-        execution_time = end_time - start_time
-        avg_execution.append(execution_time)
-        avg_execution_np = np.array(avg_execution)
-        
-        # write num_items to evaluate performances
-        if (self.num_lines < num_items):
-            self.csv_writer.writerow([execution_time,np.min(avg_execution_np),np.max(avg_execution_np),np.mean(avg_execution_np)])
-            # write on csv file
-            if (self.last_sample!= ''):
-                self.samples.append(self.last_sample)
-                self.csv_writer_samples.writerow([self.last_sample, np.min(self.samples), np.max(self.samples), np.mean(self.samples)])
-            self.num_lines = self.num_lines + 1
-        else:
-            self.performance_file.close()
-            self.samples_file.close()
-
-        # print or file or so
-        # print("EXECUTION TIME: ",execution_time)
-        # print("AVG EXECUTION: ", np.mean(avg_execution_np), ", MIN VALUE: ", np.min(avg_execution_np), ", MAX VALUE: ", np.max(avg_execution_np))
-        # Visualization using markers on Rviz
-        # self.visualize_marker(points_2d[medoids[0]], points_2d[medoids[1]])
-        # self.visualize_clusters(points_2d[clusters[0]], points_2d[clusters[1]])
+       
 
     def calculate_weigths_slope(self, num_points):
         values = np.arange(start_slope,stop_slope, step=(stop_slope-start_slope)/num_points)
@@ -334,6 +309,7 @@ class NavigationRansac(Node):
             # print("CROP_LINES ", crop_lines)
             robot_line = self.calculate_MA_slope_intercept(crop_lines)
             # calculate goal position 
+            #msg = self.calculate_goal_point_bisectrice_with_intercept
             msg = self.calculate_goal_point_bisectrice_with_intercept(robot_line)
             # visualization
             self.visualize_ransac_MA_with_goal_point(points, crop_lines, robot_line,msg)
@@ -644,7 +620,43 @@ class NavigationRansac(Node):
 
         return goal_position
 
+    def initialization_ransac_formula_analysis(self):
+        # write performances in folder
+        # print(data_analysis_path)
+        self.performance_file = open(data_analysis_path+"data_analysis_trials_"+str(self.ransac.max_trials)+"_inliers_"+str(self.ransac.stop_n_inliers)+"_score_"+str(self.ransac.stop_score)+".csv", "x")
+        self.csv_writer = csv.writer(self.performance_file)
+        # write header
+        self.csv_writer.writerow(['current', 'min', 'max', 'avg'])
+        self.samples_file = open(data_analysis_path+"number_samples"+str(self.ransac.min_samples)+".csv", "x")
         
+        self.csv_writer_samples = csv.writer(self.samples_file)
+        self.csv_writer_samples.writerow(['current', 'min', 'max', 'avg'])
+
+    
+    def ransac_formula_analysis(self, end_time, start_time):   
+        execution_time = end_time - start_time
+        avg_execution.append(execution_time)
+        avg_execution_np = np.array(avg_execution)
+        
+        # write num_items to evaluate performances
+        if (self.num_lines < num_items):
+            self.csv_writer.writerow([execution_time,np.min(avg_execution_np),np.max(avg_execution_np),np.mean(avg_execution_np)])
+            # write on csv file
+            if (self.last_sample!= ''):
+                self.samples.append(self.last_sample)
+                self.csv_writer_samples.writerow([self.last_sample, np.min(self.samples), np.max(self.samples), np.mean(self.samples)])
+            self.num_lines = self.num_lines + 1
+        else:
+            self.performance_file.close()
+            self.samples_file.close()
+
+        # print or file or so
+        # print("EXECUTION TIME: ",execution_time)
+        print("AVG EXECUTION: ", np.mean(avg_execution_np), ", MIN VALUE: ", np.min(avg_execution_np), ", MAX VALUE: ", np.max(avg_execution_np))
+
+
+
+
 def main(args=None):
     rclpy.init(args=args)
 
