@@ -1,4 +1,3 @@
-//#include <ros/ros.h>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <pcl/point_types.h>
@@ -28,14 +27,14 @@ class plane_filter : public rclcpp::Node{
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_filter;
         double roll, pitch, yaw, init_roll, init_pitch, init_yaw;
         bool flag = false; //flag for initializing Imu data
-        double eps_angle = 8.0; //maximum deviation from the axis specified in perpendicular plane
-        double threshold = 0.12; //distance threshold for selecting the points near the plane
         Eigen::VectorXf coefficients; //found coefficient of the plane
         pcl::Indices inliers; //inliers for the found plane
         
     public:
         plane_filter() : Node("plane_filter"){
             //n = rclcpp::Node::make_shared("plane_filter");
+            this->declare_parameter("eps_angle", 8.0); //maximum deviation from the axis specified in perpendicular plane
+            this->declare_parameter("threshold", 0.12); //distance threshold for selecting the points near the plane
             
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/velodyne_points2", 10, std::bind(&plane_filter::callback_lidar, this, std::placeholders::_1));
             
@@ -45,6 +44,8 @@ class plane_filter : public rclcpp::Node{
     }
 
         void callback_lidar(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& input){
+            double eps_angle = this->get_parameter("eps_angle").as_double(); 
+            double threshold = this->get_parameter("threshold").as_double(); 
             sensor_msgs::msg::PointCloud2 cloud_msg; //Message for containing the pointcloud to be published
             pcl::PCLPointCloud2 pc2, pc2_out;
             pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZ>);

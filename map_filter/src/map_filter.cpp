@@ -29,14 +29,18 @@ class map_filter : public rclcpp::Node{
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_filter;
 
 
-        float radius = 0.1; //radius for calculate local density
-        int threshold = 8; //minimum number of neighbors
-        float laserscan_range = 1.3;
 
         sensor_msgs::msg::LaserScan laser_scan;
 
     public:
         map_filter() : Node("map_filter"){
+
+            this->declare_parameter("radius", 0.1); //radius for calculate local density
+
+            this->declare_parameter("threshold", 8); //minimum number of neighbors
+
+            this->declare_parameter("laserscan_range", 1.3); //range in which points from monoplanar lidar are added
+
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/selected", 10, std::bind(&map_filter::callback, this, std::placeholders::_1));
 
@@ -86,6 +90,8 @@ class map_filter : public rclcpp::Node{
 
         //given a point cloud "input" selects the points having enough neighbors. Selected points are added to the "output" pointcloud
         void density_filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr input, const pcl::PointCloud<pcl::PointXYZ>::Ptr output){
+            double radius = this->get_parameter("radius").as_double();
+            double threshold = this->get_parameter("threshold").as_int();
             //counter for the neighbors
             int neighbors;
             //double used for saving the distance 
@@ -121,6 +127,7 @@ class map_filter : public rclcpp::Node{
 
         //add nearby points from laserscan
         void add_scan_points(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud){
+            double laserscan_range = this->get_parameter("laserscan_range").as_double();
             int i;
             float th=laser_scan.angle_min;
             int length = laser_scan.ranges.size();
