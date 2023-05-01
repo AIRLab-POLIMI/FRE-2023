@@ -63,6 +63,9 @@ class NavigationRansac(Node):
         self.weigths_slope = []
         self.weigths_intercept = []
         self.num_points_arrived = False
+        
+        # to be commented
+        self.compare_bisectrice_no_incercept()
 
         # TO BE
         # self.ransac = RANSACRegressor(min_samples=min_samples, max_trials=num_trials)
@@ -70,6 +73,7 @@ class NavigationRansac(Node):
 
         # line_coefficient
         self.line_coefficient = [0,0]
+        self.line_coefficient_no_intercept = [0,0]
 
         # previous_line 
         self.previous_line = [0.0, 0.0]
@@ -83,9 +87,11 @@ class NavigationRansac(Node):
         self.samples = []
         self.last_sample = ''
         self.num_lines = 0
-        # self.initialization_ransac_formula_analysis()
+        # self.initialization_ransac_formula_analysis()mmit -m '
         # to be defined by 
         self.fig, self.ax = plt.subplots()
+        
+        # self.fig_2, self.ax_2 = plt.subplots(nrows=1, ncols=2)
   
     def scan_callback(self, scan_msg):
         start_time = time.perf_counter()
@@ -102,13 +108,19 @@ class NavigationRansac(Node):
             # Use Ransac WIth MA
             # self.RANSAC_with_MA(points_2d)
             # Use Ransac WIth MA with intercept
-            self.RANSAC_with_MA_with_intercept(points_2d)
+            # self.RANSAC_with_MA_with_intercept_and_not(points_2d)
+            self.RANSAC_with_MA_with_prefiltering(points_2d)
         end_time = time.perf_counter()
         # self.ransac_formula_analysis(start_time, end_time)
-            
-        
-        
-       
+             
+    def compare_bisectrice_no_incercept(self):
+        # use deque to maintain history parameter most recent value
+        self.parameters_positive_row_no_intercept = deque()
+        self.parameters_negative_row_no_intercept = deque()
+        self.model_parameters_no_intercept = deque()
+        # weigths to add consistency to goal point
+        self.weigths_slope_no_intercept = []
+
 
     def calculate_weigths_slope(self, num_points):
         values = np.arange(start_slope,stop_slope, step=(stop_slope-start_slope)/num_points)
@@ -202,19 +214,24 @@ class NavigationRansac(Node):
     def RANSAC_with_MA_with_prefiltering(self, points):
         # contains intercept + slope two interpolated lines
         crop_lines = []
-        y = self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]
-        
-        row_positive_value = points[np.where(points[:, 1] > y)]
-        row_negative_value = points[np.where(points[:, 1] < y)]
+        # y = self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]
+        mask_pos = ((points[:, 1] > self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) & (points[:, 1] < ((self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) + delta_from_bisectrice)))
+        mask_neg = ((points[:, 1] < self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) & (points[:, 1] > ((self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) - delta_from_bisectrice)))
+        # print(mask_pos, mask_neg)
+        row_positive_value = points[mask_pos]
+        row_negative_value = points[mask_neg]
         
         # remove outlier by adding value on bisectrice
         # y_pos = y + delta_from_bisectrice
         # y_neg = y- delta_from_bisectrice
 
-        y_pos = y + delta_from_bisectrice
-        y_neg = y - delta_from_bisectrice
-        row_positive_value = points[np.where(points[:, 1] < y_pos)]
-        row_negative_value = points[np.where(points[:, 1] > y_neg)]
+        # y = self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]
+
+        # y_pos = y + delta_from_bisectrice
+        # y_neg = y - delta_from_bisectrice
+        
+        # row_positive_value = points[np.where(points[:, 1] < y_pos)]
+        # row_negative_value = points[np.where(points[:, 1] > y_neg)]
         
         # [samples, min, max, avg]
         # taking minimum btw positive and negatives
@@ -237,9 +254,10 @@ class NavigationRansac(Node):
             # print("CROP_LINES ", crop_lines)
             robot_line = self.calculate_MA_slope_intercept(crop_lines)
             # calculate goal position 
-            msg = self.calculate_goal_point_bisectrice(robot_line)
+            msg = self.calculate_goal_point_bisectrice_with_intercept(robot_line)
             # visualization
-            self.visualize_ransac_MA_with_goal_point(points, crop_lines, robot_line,msg)
+            # self.visualize_ransac_MA_with_goal_point(points, crop_lines, robot_line,msg)
+            self.visualize_ransac_MA_with_goal_point_with_prefiltering(row_positive_value, row_negative_value, crop_lines, robot_line,msg)
     
             # update boundaries
             self.line_coefficient = robot_line
@@ -286,6 +304,40 @@ class NavigationRansac(Node):
         else:
             self.line_coefficient = [0, 0, 0]
 
+    def RANSAC_with_MA_no_intercept(self, points):
+        # contains intercept + slope two interpolated lines
+        crop_lines = []
+        
+        row_positive_value = points[np.where(points[:, 1] > self.line_coefficient_no_intercept[0]*points[:, 0]+ self.line_coefficient[1])]
+        row_negative_value = points[np.where(points[:, 1] < self.line_coefficient_no_intercept[0]*points[:, 0]+ self.line_coefficient[1])]
+
+        if (len(row_positive_value)>=1):
+            self.ransac.fit(row_positive_value[:, 0].reshape(-1, 1), row_positive_value[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            # intercept = self.ransac.estimator_.intercept_
+            intercept = 0
+            crop_lines.append([slope, intercept])
+
+        if (len(row_negative_value)>=1):
+            self.ransac.fit(row_negative_value[:, 0].reshape(-1, 1), row_negative_value[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            # intercept = self.ransac.estimator_.intercept_
+            intercept = 0
+            crop_lines.append([slope, intercept])
+
+        if(len(row_negative_value)>=RANSAC_num_point and len(row_positive_value)>=RANSAC_num_point):
+            # print("CROP_LINES ", crop_lines)
+            robot_line = self.calculate_MA_slope_intercept(crop_lines)
+            # calculate goal position 
+            goal_point = self.calculate_goal_point_bisectrice(robot_line)
+            self.line_coefficient_no_intercept = robot_line
+            
+        else:
+            self.line_coefficient_no_intercept = [0, 0, 0]
+            robot_line = [0, 0, 0]
+            goal_point = [0, 0, 0]
+        return crop_lines, robot_line, goal_point
+
     def RANSAC_with_MA_with_intercept(self, points):
         # contains intercept + slope two interpolated lines
         crop_lines = []
@@ -305,14 +357,61 @@ class NavigationRansac(Node):
             intercept = self.ransac.estimator_.intercept_
             crop_lines.append([slope, intercept])
 
+        # calculate dual no intercept
         if(len(row_negative_value)>=RANSAC_num_point and len(row_positive_value)>=RANSAC_num_point):
             # print("CROP_LINES ", crop_lines)
             robot_line = self.calculate_MA_slope_intercept(crop_lines)
             # calculate goal position 
-            #msg = self.calculate_goal_point_bisectrice_with_intercept
+            # msg = self.calculate_goal_point_bisectrice_with_intercept
             msg = self.calculate_goal_point_bisectrice_with_intercept(robot_line)
-            # visualization
-            self.visualize_ransac_MA_with_goal_point(points, crop_lines, robot_line,msg)
+
+
+            # TO BE DECOMMENTED
+            self.visualize_ransac_MA_with_goal_point(points, crop_lines, robot_line, msg)
+            
+            # update boundaries
+            self.line_coefficient = robot_line
+            
+            # publish goal position
+            self.goal_poisition_pub.publish(msg)
+            
+        else:
+            self.line_coefficient = [0, 0, 0]
+
+
+    def RANSAC_with_MA_with_intercept_and_not(self, points):
+        # contains intercept + slope two interpolated lines
+        crop_lines = []
+        
+        row_positive_value = points[np.where(points[:, 1] > self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1])]
+        row_negative_value = points[np.where(points[:, 1] < self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1])]
+
+        if (len(row_positive_value)>=1):
+            self.ransac.fit(row_positive_value[:, 0].reshape(-1, 1), row_positive_value[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            crop_lines.append([slope, intercept])
+
+        if (len(row_negative_value)>=1):
+            self.ransac.fit(row_negative_value[:, 0].reshape(-1, 1), row_negative_value[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            crop_lines.append([slope, intercept])
+
+        # to be commented
+         # to be commented
+        crop_lines_no_intercept, robot_line_no_intercept, goal_point_no_intercept = self.RANSAC_with_MA_no_intercept(points)
+
+        # calculate dual no intercept
+        if(len(row_negative_value)>=RANSAC_num_point and len(row_positive_value)>=RANSAC_num_point):
+            # print("CROP_LINES ", crop_lines)
+            robot_line = self.calculate_MA_slope_intercept(crop_lines)
+            # calculate goal position 
+            # msg = self.calculate_goal_point_bisectrice_with_intercept
+            msg = self.calculate_goal_point_bisectrice_with_intercept(robot_line)
+
+            # visualization to be commented
+            self.visualize_ransac_MA_with_goal_point_intercept_and_not(points, crop_lines, robot_line, robot_line_no_intercept, msg, goal_point_no_intercept)
     
             # update boundaries
             self.line_coefficient = robot_line
@@ -506,7 +605,6 @@ class NavigationRansac(Node):
         self.fig.canvas.draw()
         plt.pause(0.01)
 
-
     def visualize_ransac_MA_with_goal_point(self, points, crop_lines, robot_lines, msg):
         # clear axes
         self.ax.clear()
@@ -524,7 +622,6 @@ class NavigationRansac(Node):
         plt.plot(x, y_pos, color='red')
         plt.plot(x, y_neg, color='red')
 
-
         # robot line
         y = robot_lines[0] * x + robot_lines[1]
         # print("ROBOT ", robot_lines,"X", x)
@@ -532,6 +629,95 @@ class NavigationRansac(Node):
         plt.plot(x, y, color='green')
         # goal point
         plt.plot(msg.data[0], msg.data[1], marker="o", markersize=10, markeredgecolor="blue", markerfacecolor="blue")
+        # remove outlier from bisectrice
+        y_pos_delta = y + delta_from_bisectrice
+        y_neg_delta = y - delta_from_bisectrice
+        # plot line
+        print("LINE", robot_lines, "CROP",  crop_lines)
+        plt.plot(x, y_pos_delta, color='violet')
+        plt.plot(x, y_neg_delta, color='black')
+
+        plt.xlim(0,3)
+        plt.ylim(-2,2)
+
+        self.fig.canvas.draw()
+        plt.pause(0.01)
+
+    def visualize_single_plot_DISCARDED(self, points, ax_index, crop_lines, robot_lines, goal_point):
+        # clear axes
+        self.ax_2[ax_index].clear()
+
+        # creates scatter plot
+        self.ax_2[ax_index].scatter(points[:, 0], points[:, 1], color='blue')
+        
+        # takes 3 values btw 0/2
+        x = np.linspace(0, 2, 3)
+
+        # creates line
+        y_pos = crop_lines[0][0] * x + crop_lines[0][1]
+        y_neg = crop_lines[1][0] * x + crop_lines[1][1]
+
+        # plot line
+        # print("LINE", line, "CROP",  crop_lines)
+        self.ax_2[ax_index].plot(x, y_pos, color='red')
+        self.ax_2[ax_index].plot(x, y_neg, color='red')
+
+        # robot line
+        y = robot_lines[0] * x + robot_lines[1]
+        # print("ROBOT ", robot_lines,"X", x)
+        # bisectrice
+        self.ax_2[ax_index].plot(x, y, color='green')
+        # goal point
+        self.ax_2[ax_index].plot(goal_point.data[0], goal_point.data[1], marker="o", markersize=10, markeredgecolor="blue", markerfacecolor="blue")
+        # remove outlier from bisectrice
+        # y_pos_delta = y + delta_from_bisectrice
+        # y_neg_delta = y - delta_from_bisectrice
+        # plot line
+        print("LINE", robot_lines, "CROP",  crop_lines)
+        # plt.plot(x, y_pos_delta, color='violet')
+        # plt.plot(x, y_neg_delta, color='black')
+
+        self.ax_2[ax_index].xlim(0,3)
+        self.ax_2[ax_index].ylim(-2,2)
+
+        
+    def visualize_ransac_MA_with_goal_point_intercept_and_not_DISCARDED_double_plot(self, points, crop_lines, crop_lines_no_intercept, robot_lines, robot_lines_no_intercept, msg, goal_point_no_intercept):
+        self.visualize_single_plot(points, 0, crop_lines, robot_lines, msg)
+        self.visualize_single_plot(points ,1, crop_lines_no_intercept, robot_lines_no_intercept, goal_point_no_intercept)
+        self.fig.canvas.draw()
+        plt.pause(0.01)
+
+    def visualize_ransac_MA_with_goal_point_intercept_and_not(self, points, crop_lines, robot_lines,old_robot_lines,  msg, old_msg):
+        # clear axes
+        self.ax.clear()
+        # creates scatter plot
+        plt.scatter(points[:, 0], points[:, 1], color='blue')
+        
+        # takes 3 values btw 0/2
+        x = np.linspace(0, 2, 3)
+
+        # creates line
+        y_pos = crop_lines[0][0] * x + crop_lines[0][1]
+        y_neg = crop_lines[1][0] * x + crop_lines[1][1]
+        # plot line
+        # print("LINE", line, "CROP",  crop_lines)
+        plt.plot(x, y_pos, color='red')
+        plt.plot(x, y_neg, color='red')
+
+        # robot line
+        y = robot_lines[0] * x + robot_lines[1]
+        # print("ROBOT ", robot_lines,"X", x)
+        # bisectrice
+        plt.plot(x, y, color='blue')
+
+        # robot line
+        y_old = old_robot_lines[0] * x + old_robot_lines[1]
+        # print("ROBOT ", robot_lines,"X", x)
+        # bisectrice
+        plt.plot(x, y_old, color='green')
+        # goal point
+        plt.plot(msg.data[0], msg.data[1], marker="o", markersize=10, markeredgecolor="blue", markerfacecolor="blue")
+        plt.plot(old_msg.data[0], old_msg.data[1], marker="o", markersize=10, markeredgecolor="green", markerfacecolor="green")
         # remove outlier from bisectrice
         # y_pos_delta = y + delta_from_bisectrice
         # y_neg_delta = y - delta_from_bisectrice
@@ -544,7 +730,47 @@ class NavigationRansac(Node):
         plt.ylim(-2,2)
 
         self.fig.canvas.draw()
+        plt.pause(0.01)      
+
+    def visualize_ransac_MA_with_goal_point_with_prefiltering(self, row_positive_value, row_negative_value, crop_lines, robot_lines,msg):
+        # clear axes
+        self.ax.clear()
+        # creates scatter plot
+        plt.scatter(row_positive_value[:, 0], row_positive_value[:, 1], color='blue')
+        plt.scatter(row_negative_value[:, 0], row_negative_value[:, 1], color='blue')
+        
+        # takes 3 values btw 0/2
+        x = np.linspace(0, 2, 3)
+
+        # creates line
+        y_pos = crop_lines[0][0] * x + crop_lines[0][1]
+        y_neg = crop_lines[1][0] * x + crop_lines[1][1]
+        # plot line
+        # print("LINE", line, "CROP",  crop_lines)
+        plt.plot(x, y_pos, color='red')
+        plt.plot(x, y_neg, color='red')
+
+        # robot line
+        y = robot_lines[0] * x + robot_lines[1]
+        # print("ROBOT ", robot_lines,"X", x)
+        # bisectrice
+        plt.plot(x, y, color='green')
+        # goal point 
+        plt.plot(msg.data[0], msg.data[1], marker="o", markersize=10, markeredgecolor="blue", markerfacecolor="blue")
+        # remove outlier from bisectrice
+        y_pos_delta = y + delta_from_bisectrice
+        y_neg_delta = y - delta_from_bisectrice
+        # plot line
+        # print("LINE", robot_lines, "CROP",  crop_lines)
+        plt.plot(x, y_pos_delta, color='violet')
+        plt.plot(x, y_neg_delta, color='black')
+
+        plt.xlim(0,3)
+        plt.ylim(-2,2)
+
+        self.fig.canvas.draw()
         plt.pause(0.01)
+
 
     def visualize_ransac(self, points, lines):
         self.ax.clear()
@@ -577,6 +803,7 @@ class NavigationRansac(Node):
         # goal_position.layout.data_offset = 0
         goal_position.data = [x,y,theta]
         return goal_position
+    
     
         # return tunable goal position 
     # [x,y]

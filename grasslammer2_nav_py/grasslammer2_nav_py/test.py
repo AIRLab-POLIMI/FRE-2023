@@ -2,6 +2,8 @@ import numpy as np
 from collections import deque
 import os
 import math
+import matplotlib.pyplot as plt
+
 number_points = 3
 start=0
 stop=2
@@ -59,6 +61,28 @@ def test_mq():
 
         print(x_pos, y_pos, "----------", x_neg, y_neg)
 
+def visualize_single_plot(ax_2,  ax_index, x, y, y2):
+        # clear axes
+        ax_2[ax_index].clear()
+
+        # creates scatter plot
+        ax_2[ax_index].scatter(x, y2, color='blue')
+        ax_2[ax_index].plot(x, y, color='green')
+
+
+def test_plot():
+        x = np.linspace(0,3,4)
+        y = 0.5 * x + 0.7
+        y2 = y + np.random.randint(0,1)
+        fig_2, ax_2 = plt.subplots(nrows=1, ncols=2,figsize=(20,8))
+
+        for i in range(2):
+             visualize_single_plot(ax_2, i, x, y, y2)
+        
+        fig_2.canvas.draw()
+
+        
+
 # calculate_weigths()
 # test_deque()
 
@@ -66,4 +90,6 @@ def test_mq():
 
 # test_numpy_matrices()
 
-test_mq()
+# test_mq()
+
+test_plot()
