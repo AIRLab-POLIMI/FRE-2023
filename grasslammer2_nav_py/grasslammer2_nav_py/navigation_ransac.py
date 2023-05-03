@@ -62,6 +62,14 @@ class NavigationRansac(Node):
         # weigths to add consistency to goal point
         self.weigths_slope = []
         self.weigths_intercept = []
+        self.weigths_slope_crop_negative = []
+        self.weigths_intercept_crop_negative = []
+        self.weigths_slope_crop_positive = []
+        self.weigths_intercept_crop_positive = []
+        self.last_valid_positive = [0.0, 0.0]
+        self.last_valid_negative = [0.0, 0.0]
+
+
         self.num_points_arrived = False
         
         # to be commented
@@ -76,7 +84,7 @@ class NavigationRansac(Node):
         self.line_coefficient_no_intercept = [0,0]
 
         # previous_line 
-        self.previous_line = [0.0, 0.0]
+        self.previous_valid_line = [0.0, 0.0]
         self.first_iteration = False
 
         # write performances in folder
@@ -101,6 +109,8 @@ class NavigationRansac(Node):
         
         if(np.size(points_2d) < 15):
             # Used to prevent crash from no points detected in the region of interest
+            # turning
+            self.line_coefficient= [0, 0]
             print('No points found in ROI! ')
         else:
             # Use RANSAC
@@ -110,6 +120,7 @@ class NavigationRansac(Node):
             # Use Ransac WIth MA with intercept
             # self.RANSAC_with_MA_with_intercept_and_not(points_2d)
             self.RANSAC_with_MA_with_prefiltering(points_2d)
+            # self.RANSAC_with_MA_with_prefiltering_enhanced(points_2d)
         end_time = time.perf_counter()
         # self.ransac_formula_analysis(start_time, end_time)
              
@@ -120,7 +131,6 @@ class NavigationRansac(Node):
         self.model_parameters_no_intercept = deque()
         # weigths to add consistency to goal point
         self.weigths_slope_no_intercept = []
-
 
     def calculate_weigths_slope(self, num_points):
         values = np.arange(start_slope,stop_slope, step=(stop_slope-start_slope)/num_points)
@@ -171,7 +181,6 @@ class NavigationRansac(Node):
         dim_self_param = len(self.model_parameters)
 
         # not reach maximum queue dimension
-        # print("DIM MODEL PARAM ",dim_self_param)
         if(dim_self_param <= number_points):
             self.weigths_intercept = self.calculate_weigths_intercept(dim_self_param)
             self.weigths_slope = self.calculate_weigths_slope(dim_self_param)
@@ -209,9 +218,160 @@ class NavigationRansac(Node):
         # print("MODEL: ",self.model_parameters)
 
         return output_line
- 
+
+    def update_queue_positive_crop_MA(self, last_valid, crop_line):
+        # queue dimension
+        # do the same reasoning for 
+        dim_self_param = len(self.parameters_positive_row)
+        print("POSITIVE", dim_self_param)
+        # not reach maximum queue dimension
+        # zero
+        if(dim_self_param <= number_points):
+            if(dim_self_param == 0):
+                self.parameters_positive_row.appendleft([0, 0])
+                dim_self_param = len(self.parameters_positive_row)
+            self.weigths_intercept_crop_positive = self.calculate_weigths_intercept(dim_self_param)
+            self.weigths_slope_crop_positive = self.calculate_weigths_slope(dim_self_param)
+        else:
+            # remove last item, add current first element of queue
+            self.parameters_positive_row.pop()
+            self.weigths_intercept_crop_positive = self.calculate_weigths_intercept(dim_self_param)
+            self.weigths_slope_crop_positive = self.calculate_weigths_slope(dim_self_param)
+        
+
+        if (last_valid):
+            # take crop row and add queue
+            self.parameters_positive_row.pop()
+            self.parameters_positive_row.appendleft(crop_line)
+            self.last_valid_positive = crop_line
+
+        else:
+            # take last avlid positive param row and add queue
+            self.parameters_positive_row.pop()
+            self.parameters_positive_row.appendleft(self.last_valid_positive)
+        
+    def update_queue_negative_crop_MA(self, last_valid, crop_line):
+        # queue dimension
+        # do the same reasoning for 
+        dim_self_param = len(self.parameters_negative_row)
+
+        # not reach maximum queue dimension
+        if(dim_self_param <= number_points):
+            if(dim_self_param == 0):
+                self.parameters_negative_row.appendleft([0, 0])
+                dim_self_param = len(self.parameters_negative_row)
+            self.weigths_intercept_crop_negative = self.calculate_weigths_intercept(dim_self_param)
+            self.weigths_intercept_crop_negative = self.calculate_weigths_slope(dim_self_param)
+        else:
+            # remove last item, add current first element of queue
+            self.parameters_negative_row.pop()
+            self.weigths_intercept_crop_negative = self.calculate_weigths_intercept(dim_self_param)
+            self.weigths_intercept_crop_negative = self.calculate_weigths_slope(dim_self_param)
+        
+
+        if (last_valid):
+            # take crop row and add queue
+            self.parameters_negative_row.pop()
+            self.parameters_negative_row.appendleft(crop_line)
+            self.last_valid_negative= crop_line
+
+        else:
+            # take last avlid positive param row and add queue
+            self.parameters_negative_row.pop()
+            self.parameters_negative_row.appendleft(self.last_valid_negative)
+
+    def calculate_positive_intercept_slope_MA(self):
+
+        print(len(self.parameters_positive_row))
+        dim_parameter = len(self.parameters_positive_row)
+        output_slope = 0
+        output_slope = [output_slope + self.weigths_slope_crop_positive[i]*self.parameters_positive_row[i][0] for i in range(dim_parameter)]
+        
+        # calculate weighted intercept
+        output_intercept = 0
+        # set intercept 0
+        # output_intercept = [0]
+        output_intercept = [output_intercept + self.weigths_slope_crop_positive[i]*self.parameters_positive_row[i][1] for i in range(dim_parameter)]
+        # output_intercept = [output_intercept + self.weigths_intercept[i]*self.model_parameters[i][1] for i in range(dim_self_param)]
+        # print("MODEL: ",self.model_parameters)
+
+        return output_slope[0], output_intercept[0]
+    
+    def calculate_negative_intercept_slope_MA(self):
+        dim_parameter = len(self.parameters_negative_row)
+        print(dim_parameter, self.weigths_slope_crop_negative)
+        output_slope = 0
+        output_slope = [output_slope + self.weigths_slope_crop_negative[i]*self.parameters_negative_row[i][0] for i in range(dim_parameter)]
+        
+        # calculate weighted intercept
+        output_intercept = 0
+        # set intercept 0
+        # output_intercept = [0]
+        output_intercept = [output_intercept + self.weigths_slope_crop_negative[i]*self.parameters_negative_row[i][1] for i in range(dim_parameter)]
+        # output_intercept = [output_intercept + self.weigths_intercept[i]*self.model_parameters[i][1] for i in range(dim_self_param)]
+        # print("MODEL: ",self.model_parameters)
+        return output_slope[0], output_intercept[0]
+
+    def calculate_MA_bisectrice_slope_intercept(self):
+        # take last value of weigths through weigthed avarage
+        positive_weigths, positive_intercept = self.calculate_positive_intercept_slope_MA()
+        negative_weigths, negative_intercept = self.calculate_negative_intercept_slope_MA()
+
+        # calculate current bisectrice
+        medium_slope = (positive_weigths+negative_weigths) / 2
+        # set intercept = 0
+        # medium_intercept = 0
+        medium_intercept = (positive_intercept+negative_intercept) / 2
+        
+
+        # append value in array
+        self.model_parameters.appendleft([medium_slope, medium_intercept])
+
+        # queue dimension
+        dim_self_param = len(self.model_parameters)
+
+        # not reach maximum queue dimension
+        # print("DIM MODEL PARAM ",dim_self_param)
+        if(dim_self_param <= number_points):
+            self.weigths_intercept = self.calculate_weigths_intercept(dim_self_param)
+            self.weigths_slope = self.calculate_weigths_slope(dim_self_param)
+        else:
+            # remove last item, add current first element of queue
+            self.model_parameters.pop()
+            # one shot calculus
+            if self.num_points_arrived == False:
+                self.weigths_intercept = self.calculate_weigths_intercept(number_points)
+                self.weigths_slope = self.calculate_weigths_slope(number_points)
+        
+        
+        # test 1
+        # print("INTERCEPT ", self.weigths_intercept, "SLOPE ", self.weigths_slope)
+        # re calculate dim_self_param
+        dim_self_param = len(self.model_parameters)
+        # append new parameter as first item
+        # calculate weigthed output slope
+        output_slope = 0
+        output_slope = [output_slope + self.weigths_slope[i]*self.model_parameters[i][0] for i in range(dim_self_param)]
+        
+        # calculate weighted intercept
+        output_intercept = 0
+        # set intercept 0
+        # output_intercept = [0]
+        output_intercept = [output_intercept + self.weigths_intercept[i]*self.model_parameters[i][1] for i in range(dim_self_param)]
+        # output_intercept = [output_intercept + self.weigths_intercept[i]*self.model_parameters[i][1] for i in range(dim_self_param)]
+        # print("MODEL: ",self.model_parameters)
+        output_line = [output_slope[0], output_intercept[0]]
+        
+        # output_line = [output_slope[0],0]
+        # sobstitute the medium with avg 
+        self.model_parameters.popleft()
+        self.model_parameters.appendleft(output_line)
+        # print("MODEL: ",self.model_parameters)
+
+        self.line_coefficient = output_line
+
     # tmp1 save 
-    def RANSAC_with_MA_with_prefiltering(self, points):
+    def RANSAC_with_MA_with_prefiltering_no_crop_prediction(self, points):
         # contains intercept + slope two interpolated lines
         crop_lines = []
         # y = self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]
@@ -221,20 +381,6 @@ class NavigationRansac(Node):
         row_positive_value = points[mask_pos]
         row_negative_value = points[mask_neg]
         
-        # remove outlier by adding value on bisectrice
-        # y_pos = y + delta_from_bisectrice
-        # y_neg = y- delta_from_bisectrice
-
-        # y = self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]
-
-        # y_pos = y + delta_from_bisectrice
-        # y_neg = y - delta_from_bisectrice
-        
-        # row_positive_value = points[np.where(points[:, 1] < y_pos)]
-        # row_negative_value = points[np.where(points[:, 1] > y_neg)]
-        
-        # [samples, min, max, avg]
-        # taking minimum btw positive and negatives
         # add value number points
         self.last_sample = min(len(row_positive_value), len(row_negative_value))
         
@@ -266,8 +412,156 @@ class NavigationRansac(Node):
             self.goal_poisition_pub.publish(msg)
             
         else:
-            self.line_coefficient = [0, 0, 0]
+            # make prediction on left or rigth and calculate bisectrice
+            # spray!!
+            # Use MA to 'predict' value based on the past values. 
+            # save the last valid m,q inside queue (dedicated)
+            self.line_coefficient = [0, 0]
+            # print(self.line_coefficient)
+    
+    def calculation_positive_crop_line_coefficient(self, masked_points):
 
+        coefficient = []
+        if(len(masked_points)>=1):
+            self.ransac.fit(masked_points[:, 0].reshape(-1, 1), masked_points[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            coefficient = [slope, intercept]
+            if(len(self.parameters_positive_row)>number_points):
+                self.parameters_positive_row.pop()
+                     
+        else:
+            # first get value
+            # then add again
+            if(len(self.parameters_positive_row)>=0):
+                coefficient = self.parameters_positive_row.popleft()
+                self.parameters_positive_row.appendleft(coefficient)
+            else:
+                coefficient = [0, 0]
+            
+           
+            if(len(self.parameters_positive_row)>number_points):
+                self.parameters_positive_row.pop()
+            
+        self.parameters_positive_row.appendleft(coefficient)
+        return coefficient
+    
+    def calculation_negative_crop_line_coefficient(self, masked_points):
+        coefficient = []
+        if(len(masked_points)>=1):
+            self.ransac.fit(masked_points[:, 0].reshape(-1, 1), masked_points[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            coefficient = [slope, intercept]
+            if(len(self.parameters_negative_row)>number_points):
+                self.parameters_negative_row.pop()
+                     
+        else:
+            # first get value
+            # then add again
+            if(len(self.parameters_negative_row)>=0):
+                coefficient = self.parameters_negative_row.popleft()
+                self.parameters_negative_row.appendleft(coefficient)
+            else:
+                coefficient = [0, 0]
+            
+           
+            if(len(self.parameters_negative_row)>number_points):
+                self.parameters_negative_row.pop()
+            
+        self.parameters_negative_row.appendleft(coefficient)
+        return coefficient
+
+    def RANSAC_with_MA_with_prefiltering(self, points):
+        # contains intercept + slope two interpolated lines
+        crop_lines = []
+        # y = self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]
+        mask_pos = ((points[:, 1] > self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) & (points[:, 1] < ((self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) + delta_from_bisectrice)))
+        mask_neg = ((points[:, 1] < self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) & (points[:, 1] > ((self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) - delta_from_bisectrice)))
+        # print(mask_pos, mask_neg)
+        row_positive_value = points[mask_pos]
+        row_negative_value = points[mask_neg]
+    
+        self.last_sample = min(len(row_positive_value), len(row_negative_value))
+        
+        crop_lines.append(self.calculation_positive_crop_line_coefficient(row_positive_value))
+        crop_lines.append(self.calculation_negative_crop_line_coefficient(row_negative_value))
+
+        if(len(row_negative_value)>=RANSAC_num_point and len(row_positive_value)>=RANSAC_num_point):
+            # print("CROP_LINES ", crop_lines)
+            robot_line = self.calculate_MA_slope_intercept(crop_lines)
+            # calculate goal position 
+            msg = self.calculate_goal_point_bisectrice_with_intercept(robot_line)
+            # visualization
+            # self.visualize_ransac_MA_with_goal_point(points, crop_lines, robot_line,msg)
+            self.visualize_ransac_MA_with_goal_point_with_prefiltering(row_positive_value, row_negative_value, crop_lines, robot_line,msg)
+    
+            # update boundaries
+            self.line_coefficient = robot_line
+            
+            # publish goal position
+            self.goal_poisition_pub.publish(msg)
+            
+        else:
+            # make prediction on left or rigth and calculate bisectrice
+            # spray!!
+            # Use MA to 'predict' value based on the past values. 
+            # save the last valid m,q inside queue (dedicated)
+
+            msg = self.calculate_goal_point_bisectrice_with_intercept(self.line_coefficient)
+            self.visualize_ransac_MA_with_goal_point_with_prefiltering(row_positive_value, row_negative_value, crop_lines, self.line_coefficient,msg)
+            # publish goal position
+            self.goal_poisition_pub.publish(msg)
+        
+    def RANSAC_with_MA_with_prefiltering_enhanced(self, points):
+        # contains intercept + slope two interpolated lines
+        crop_lines = []
+        # y = self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]
+        mask_pos = ((points[:, 1] > self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) & (points[:, 1] < ((self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) + delta_from_bisectrice)))
+        mask_neg = ((points[:, 1] < self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) & (points[:, 1] > ((self.line_coefficient[0]*points[:, 0]+ self.line_coefficient[1]) - delta_from_bisectrice)))
+        # print(mask_pos, mask_neg)
+        row_positive_value = points[mask_pos]
+        row_negative_value = points[mask_neg]
+    
+        self.last_sample = min(len(row_positive_value), len(row_negative_value))
+
+        print(len(row_positive_value), len(row_negative_value))
+        if len(row_positive_value)>=RANSAC_num_point:
+            # add queue new value
+            self.ransac.fit(row_positive_value[:, 0].reshape(-1, 1), row_positive_value[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            self.update_queue_positive_crop_MA(True, [slope, intercept])
+        else:
+            # add queue last valid value
+            self.update_queue_positive_crop_MA(False, [0, 0])
+        
+
+        if len(row_negative_value)>=RANSAC_num_point:
+            # add queue new value
+            self.ransac.fit(row_negative_value[:, 0].reshape(-1, 1), row_negative_value[:, 1])
+            slope = self.ransac.estimator_.coef_[0]
+            intercept = self.ransac.estimator_.intercept_
+            self.update_queue_negative_crop_MA(True, [slope, intercept])
+        else:
+            # add queue last valid value
+            self.update_queue_negative_crop_MA(False, [0, 0])
+        
+        # print(self.parameters_negative_row, self.parameters_positive_row)
+        # calculate bisectrice
+        self.calculate_MA_bisectrice_slope_intercept()
+
+        msg = self.calculate_goal_point_bisectrice_with_intercept(self.line_coefficient)
+        # coefficient
+        # take last value of weigths through weigthed avarage
+        # take positive/negative value
+        positive_weigths, positive_intercept = self.calculate_positive_intercept_slope_MA()
+        negative_weigths, negative_intercept = self.calculate_negative_intercept_slope_MA()
+        crop_lines = [[positive_weigths, positive_intercept], [negative_weigths, negative_intercept]]
+        self.visualize_ransac_MA_with_goal_point_with_prefiltering(row_positive_value, row_negative_value, crop_lines, self.line_coefficient,msg)
+        # publish goal position
+        self.goal_poisition_pub.publish(msg)
+ 
     def RANSAC_with_MA(self, points):
         # contains intercept + slope two interpolated lines
         crop_lines = []
@@ -297,12 +591,14 @@ class NavigationRansac(Node):
     
             # update boundaries
             self.line_coefficient = robot_line
-            
+
+            # last valid line
+            self.previous_valid_line = robot_line
             # publish goal position
             self.goal_poisition_pub.publish(msg)
             
         else:
-            self.line_coefficient = [0, 0, 0]
+            self.line_coefficient = self.previous_valid_line
 
     def RANSAC_with_MA_no_intercept(self, points):
         # contains intercept + slope two interpolated lines
@@ -378,7 +674,6 @@ class NavigationRansac(Node):
         else:
             self.line_coefficient = [0, 0, 0]
 
-
     def RANSAC_with_MA_with_intercept_and_not(self, points):
         # contains intercept + slope two interpolated lines
         crop_lines = []
@@ -421,7 +716,6 @@ class NavigationRansac(Node):
             
         else:
             self.line_coefficient = [0, 0, 0]
-
     # tmp1 save 
     def RANSAC(self, points):
         lines = []
@@ -679,8 +973,7 @@ class NavigationRansac(Node):
 
         self.ax_2[ax_index].xlim(0,3)
         self.ax_2[ax_index].ylim(-2,2)
-
-        
+  
     def visualize_ransac_MA_with_goal_point_intercept_and_not_DISCARDED_double_plot(self, points, crop_lines, crop_lines_no_intercept, robot_lines, robot_lines_no_intercept, msg, goal_point_no_intercept):
         self.visualize_single_plot(points, 0, crop_lines, robot_lines, msg)
         self.visualize_single_plot(points ,1, crop_lines_no_intercept, robot_lines_no_intercept, goal_point_no_intercept)
@@ -771,7 +1064,6 @@ class NavigationRansac(Node):
         self.fig.canvas.draw()
         plt.pause(0.01)
 
-
     def visualize_ransac(self, points, lines):
         self.ax.clear()
         plt.scatter(points[:, 0], points[:, 1], color='blue')
@@ -858,8 +1150,7 @@ class NavigationRansac(Node):
         
         self.csv_writer_samples = csv.writer(self.samples_file)
         self.csv_writer_samples.writerow(['current', 'min', 'max', 'avg'])
-
-    
+ 
     def ransac_formula_analysis(self, end_time, start_time):   
         execution_time = end_time - start_time
         avg_execution.append(execution_time)
@@ -880,9 +1171,6 @@ class NavigationRansac(Node):
         # print or file or so
         # print("EXECUTION TIME: ",execution_time)
         print("AVG EXECUTION: ", np.mean(avg_execution_np), ", MIN VALUE: ", np.min(avg_execution_np), ", MAX VALUE: ", np.max(avg_execution_np))
-
-
-
 
 def main(args=None):
     rclpy.init(args=args)

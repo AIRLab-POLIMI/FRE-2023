@@ -24,7 +24,10 @@ def calculate_weigths():
 
 def test_deque():
         test = deque([1,2,3,4,5])
+        print(test)
         test.popleft()
+        test.appendleft(1)
+        print(test)
         test.appendleft(1)
         print(test)
 
@@ -84,7 +87,7 @@ def test_plot():
         
 
 # calculate_weigths()
-# test_deque()
+test_deque()
 
 # test_numpy_comparison()
 
@@ -92,4 +95,4 @@ def test_plot():
 
 # test_mq()
 
-test_plot()
+#test_plot()
