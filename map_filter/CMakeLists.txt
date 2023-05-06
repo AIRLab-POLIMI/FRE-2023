@@ -43,6 +43,49 @@ install(TARGETS
   map_filter
   DESTINATION lib/${PROJECT_NAME}/
 )
+
+add_executable(cropbox_cloud src/cropbox_cloud.cpp)
+target_link_libraries(cropbox_cloud ${PCL_LIBRARIES})
+target_link_libraries(cropbox_cloud
+  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
+)
+ament_target_dependencies(
+  cropbox_cloud
+  geometry_msgs #
+  pcl_conversions#
+  rcl_interfaces#
+  pcl_ros#
+  rclcpp #
+  rcutils
+  sensor_msgs#
+  std_msgs
+)
+install(TARGETS
+  cropbox_cloud
+  DESTINATION lib/${PROJECT_NAME}/
+)
+
+add_executable(cloud_to_scan src/cloud_to_scan.cpp)
+target_link_libraries(cloud_to_scan ${PCL_LIBRARIES})
+target_link_libraries(cloud_to_scan
+  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
+)
+ament_target_dependencies(
+  cloud_to_scan
+  geometry_msgs #
+  pcl_conversions#
+  rcl_interfaces#
+  pcl_ros#
+  rclcpp #
+  rcutils
+  sensor_msgs#
+  std_msgs
+)
+install(TARGETS
+  cloud_to_scan
+  DESTINATION lib/${PROJECT_NAME}/
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
