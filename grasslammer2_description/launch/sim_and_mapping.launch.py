@@ -12,7 +12,7 @@ import xacro
 def generate_launch_description():
 
     pkg_path = os.path.join(get_package_share_directory('grasslammer2_description'))
-    slam_path = os.path.join(get_package_share_directory('slam_toolbox'))
+    #slam_path = os.path.join(get_package_share_directory('slam_toolbox'))
 
     start_simulation = IncludeLaunchDescription(
                             PythonLaunchDescriptionSource(
@@ -24,21 +24,29 @@ def generate_launch_description():
 
     density_filter = Node(package='map_filter', executable='map_filter',)
 
-    pointcloud_converter = Node(package='pointcloud_to_laserscan',
+    """pointcloud_converter = Node(package='pointcloud_to_laserscan',
                                 executable='pointcloud_to_laserscan_node',
                                 remappings=[('cloud_in', '/filtered_point_cloud')]
+                                )"""
+    pointcloud_converter = Node(package='map_filter',
+                                executable='cloud_to_scan',
                                 )
 
     start_slam = IncludeLaunchDescription(
                             PythonLaunchDescriptionSource(
-                                os.path.join(slam_path, 'launch', 'online_sync_launch.py')
+                                os.path.join(pkg_path, 'launch', 'online_sync_launch.py')
                             ),
                 )
-
+    """ start_nav2 = IncludeLaunchDescription(
+                            PythonLaunchDescriptionSource(
+                                os.path.join(pkg_path, 'launch', 'navigation_launch.py')
+                            ),
+            )"""
     return LaunchDescription([
         start_simulation,
         remove_ground_node, 
         density_filter,
         pointcloud_converter,
+        #start_nav2,
         start_slam,
     ])
