@@ -35,11 +35,11 @@ class map_filter : public rclcpp::Node{
     public:
         map_filter() : Node("map_filter"){
 
-            this->declare_parameter("radius", 0.1); //radius for calculate local density
+            this->declare_parameter("radius", 0.09); //radius for calculate local density
 
-            this->declare_parameter("threshold", 8); //minimum number of neighbors
+            this->declare_parameter("threshold", 5); //minimum number of neighbors
 
-            this->declare_parameter("laserscan_range", 1.3); //range in which points from monoplanar lidar are added
+            this->declare_parameter("laserscan_range", 2.0); //range in which points from monoplanar lidar are added
 
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/selected", 10, std::bind(&map_filter::callback, this, std::placeholders::_1));
@@ -101,10 +101,16 @@ class map_filter : public rclcpp::Node{
             //the point from the input point cloud that may be a neighbor of "point"
             pcl::PointXYZ other;
 
+            int cur_threshold;
             //for every point in the "input" point cloud
             for (long unsigned int i=0; i < input->points.size(); i++) {
                 point=input->points[i];
                 neighbors=0;
+                if(pow(point.x,2) + pow(point.y, 2) < 3) {
+                    if(pow(point.x,2) + pow(point.y, 2) < 2) cur_threshold = 3*threshold + 2;
+                    else cur_threshold = 2 * threshold + 1;
+                }
+                else cur_threshold = threshold;
                 //for every point in the "input" point cloud
                 for (long unsigned int j=0; j < input->points.size(); j++){
                     other=input->points[j];
@@ -119,7 +125,7 @@ class map_filter : public rclcpp::Node{
                 }
                 //if current "point" has enough neighbors it is added to the output
                 //note that we have ">" and not ">=" because in the neighbors is counted "point" himself
-                if(neighbors>threshold){
+                if(neighbors>cur_threshold){
                     output->push_back(point);
                 }
             }
@@ -136,8 +142,8 @@ class map_filter : public rclcpp::Node{
                 th=th + laser_scan.angle_increment;
                 if(laser_scan.ranges[i]<=laserscan_range){
                     pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th), laser_scan.ranges[i]*sin(th), 0.2));
-                    pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th)+0.001, laser_scan.ranges[i]*sin(th), 0.18));
-                    pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th)-0.001, laser_scan.ranges[i]*sin(th), 0.16));
+                    //pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th)+0.001, laser_scan.ranges[i]*sin(th), 0.18));
+                    //pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th)-0.001, laser_scan.ranges[i]*sin(th), 0.16));
                 }
             }
         }
