@@ -12,7 +12,6 @@ import xacro
 def generate_launch_description():
 
     pkg_path = os.path.join(get_package_share_directory('grasslammer2_description'))
-    #slam_path = os.path.join(get_package_share_directory('slam_toolbox'))
 
     start_simulation = IncludeLaunchDescription(
                             PythonLaunchDescriptionSource(
@@ -37,16 +36,17 @@ def generate_launch_description():
                                 os.path.join(pkg_path, 'launch', 'online_sync_launch.py')
                             ),
                 )
-    """ start_nav2 = IncludeLaunchDescription(
+    """start_nav2 = IncludeLaunchDescription(
                             PythonLaunchDescriptionSource(
                                 os.path.join(pkg_path, 'launch', 'navigation_launch.py')
                             ),
-            )"""
+                )"""
+
     return LaunchDescription([
         start_simulation,
         remove_ground_node, 
         density_filter,
         pointcloud_converter,
-        #start_nav2,
         start_slam,
+        #start_nav2,
     ])
