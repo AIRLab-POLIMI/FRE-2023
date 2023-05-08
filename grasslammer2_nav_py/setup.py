@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'laser_reader = grasslammer2_nav_py.laser_reader:main',
+            'spray_switch = grasslammer2_nav_py.spray_switch:main',
         ],
     },
 )
