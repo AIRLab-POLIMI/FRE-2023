@@ -1,8 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 from glob import glob
 
 package_name = 'grasslammer2_nav_py'
+
+#packages=find_packages(exclude=['test', 'launch', 'rviz', 'test'])
 
 setup(
     name=package_name,
@@ -27,7 +29,8 @@ setup(
         'console_scripts': [
             'laser_reader = grasslammer2_nav_py.laser_reader:main',
             'navigation = grasslammer2_nav_py.navigation:main',
-            'navigation_ransac = grasslammer2_nav_py.navigation_ransac:main'
+            'in_row_navigation = grasslammer2_nav_py.in_row_navigation:main',
+            'prediction = grasslammer2_nav_py.prediction'
         ],
     },
 )

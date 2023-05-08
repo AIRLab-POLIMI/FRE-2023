@@ -3,6 +3,7 @@ from collections import deque
 import os
 import math
 import matplotlib.pyplot as plt
+import line
 
 number_points = 3
 start=0
@@ -84,15 +85,23 @@ def test_plot():
         
         fig_2.canvas.draw()
 
-        
 
+def test_line():
+        line_test = line.Line(5)
+        line_test.set_line(2,3)
+        for i in range(10):
+                line_test.set_line(i,i**2)
+                print(line_test)
+
+def test_line_ma():
+        line_test = line.Line(5, True, False, 0.5, 5)
+        # line_test.set_line(2,3)
+        for i in range(10):
+                line_test.update_line_parameters(i,i**2)
+                # print(line_test)
+        line_test.initialize_line()
+        for i in range(10):
+                line_test.update_line_parameters_checking_threshold(i,i**2)
+                #print(line_test)
 # calculate_weigths()
-test_deque()
-
-# test_numpy_comparison()
-
-# test_numpy_matrices()
-
-# test_mq()
-
-#test_plot()
+test_line_ma()
