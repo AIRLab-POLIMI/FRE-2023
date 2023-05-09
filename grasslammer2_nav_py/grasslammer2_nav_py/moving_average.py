@@ -6,11 +6,11 @@ class MovingAvarage():
         self.start = start
         self.stop = stop
         self.base_exp = base_exp
-        self.dimension_MA = dimension_queue
     
-    def update_weights(self, length_queue):
+    def update_weights(self, length_queue, dimension_queue):
         # update weigths of moving avarage only when wwights < num_points 
-        if (length_queue <= self.dimension_MA):
+        print("update_weights ", length_queue, dimension_queue)
+        if (length_queue <= dimension_queue):
             values = np.arange(self.start,self.stop, step=(self.stop-self.start)/length_queue)
             # linear -> values_function = [value for value in values]
             # exp
@@ -26,21 +26,23 @@ class MovingAvarage():
         return self.weigths
     
 
-    def calculate_MA(self, array):
-        if(len(self.weigths) != len(array)):
-            print("ERROR MA computation weights, queue", len(self.weigths), len(array))
-            return 1
+    def calculate_MA(self, coefficients):
+        if(len(self.weigths) != len(coefficients)):
+            print("calculate_MA: ERROR MA computation weights, queue", len(self.weigths), len(coefficients))
         else:
             output_MA = 0
-            output_MA = [output_MA + self.weigths[i]*array[i] for i in range(len(array))]
+            output_MA = [output_MA + self.weigths[i]*coefficients[i] for i in range(len(coefficients))]
             return output_MA[0]
     
+
     def get_weigths(self):
         return self.weigths
     
+
     def initialize_weigths(self):
         self.weights = []
     
+
     def __repr__ (self):
         tmp_weights = ''
         weights = [tmp_weights+ str(item)+'' for item in self.weigths]

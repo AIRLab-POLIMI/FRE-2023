@@ -5,7 +5,7 @@ import line, costum_queue
 
 class Prediction():
     # assume type are exponentials
-    def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, window_allowed_outdated_parameters=5,threshold_crop_line = 0.5, threshold_bisectrice_line = 0.5) :
+    def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, window_allowed_outdated_parameters=5,threshold_crop_line = 0.30, threshold_bisectrice_line = 0) :
         # dimension_queue -> n
         
         # save right/left cluster data
@@ -13,12 +13,12 @@ class Prediction():
         # self.right_cluster = costum_queue.CustomQueue(dimension_queue, window_allowed_outdated_parameters)
         # self.left_cluster = costum_queue.CustomQueue(dimension_queue, window_allowed_outdated_parameters)
         # save crop/bisectrice parameters
-        self.navigation_line =  line.Line(dimension_queue, ma_navigation_flag, True, threshold_bisectrice_line, window_allowed_outdated_parameters)
-        self.positive_crop_line = line.Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters)
-        self.negative_crop_line = line.Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters)
+        self.navigation_line =  line.Line(dimension_queue, ma_navigation_flag, True, threshold_bisectrice_line, window_allowed_outdated_parameters, 0)
+        self.positive_crop_line = line.Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, 0.375)
+        self.negative_crop_line = line.Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, -0.375)
 
         # min_point_for_predition + threshold
-        self.num_min_points_required_for_fitting = 2
+        self.num_min_points_required_for_fitting = 3
 
     
     # initialization of lines
@@ -43,10 +43,12 @@ class Prediction():
         medium_intercept = (positive_intercept+negative_intercept) / 2
 
         # add coeddificent to bisectrice
-        self.navigation_line.update_line_parameters_checking_threshold(medium_slope, medium_intercept)
+        self.navigation_line.update_line_parameters(medium_slope, medium_intercept)
 
 
     def compute_crop_line_coefficients(self, local_line, points):
+        # print("num points", len(points))
+
         if(len(points)> self.num_min_points_required_for_fitting):
             # compute slope, intercept through fitting
             slope, intercept = local_line.fitting_line(points)
@@ -54,7 +56,11 @@ class Prediction():
             local_line.update_line_parameters_checking_threshold(slope, intercept)
         else:
             # mantain last value -> use False, False
-            local_line.update_line_parameters(False, False)
+            # get latest value (if exist)
+
+            # else reset value
+            slope, intercept = local_line.get_most_recent_coefficients()
+            local_line.update_line_parameters_checking_threshold(slope, intercept)
 
 
     def __repr__ (self):

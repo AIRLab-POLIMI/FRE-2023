@@ -5,57 +5,32 @@ from collections import deque
 class MovingAvarageQueue():
 
     # assume type are exponentials
-    def __init__(self, dimension_queue, window_allowed_outdated_parameters, start, stop, base_exp):
+    def __init__(self, dimension_queue, start, stop, base_exp, reset_value):
         self.dimension_queue = dimension_queue
         self.queue = deque()
-        self.weights = moving_average.MovingAvarage(start=start, stop=stop, base_exp=base_exp, dimension_queue=dimension_queue )
-        # counter outdated lines
-        self.counter_outdated_consecutive_values = 0
-        # consistency on filter in terms of number required points
-        self.window_allowed_outdated_parameters = window_allowed_outdated_parameters
-
-
-    # update queue with last valid value
-    def update_queue_last_valid_value(self):
-        if(len(self.queue) >= self.dimension_queue) and len(self.queue)!= 0:
-            self.last_valid_value = self.queue.popleft()
-            self.window_allowed_outdated_parameters = self.window_allowed_outdated_parameters + 1
-        else:
-            self.counter_outdated_consecutive_values = 0
-            self.last_valid_value = 0
-        self.queue.appendleft(self.last_valid_value)
-        # update counter
+        self.weights = moving_average.MovingAvarage(start=start, stop=stop, base_exp=base_exp, dimension_queue=dimension_queue)
+        self.reset_value = reset_value
         
     # update queue regularly
     def update_queue_regularly(self, value):
-        # re-initialize counter outdated values and last_valid_value
-        self.counter_outdated_consecutive_values = 0
-        self.last_valid_value = 0
+        print("update_queue_regularly ", len(self.queue),self.dimension_queue)
+        if(len(self.queue) >= self.dimension_queue):
+            self.queue.pop()
+        
+        self.queue.appendleft(value)
+        self.weights.update_weights(len(self.queue), self.dimension_queue)
 
-        if len(self.queue) != 0:
-            if(len(self.queue) >= self.dimension_queue):
-                self.queue.pop()
-            self.queue.appendleft(value)
-            self.weights.update_weights(len(self.queue))
-            # calculate the MA
-            MA = self.weights.calculate_MA(self.queue)
-            # add MA as most recent element
-            self.queue.popleft()
-            self.queue.appendleft(MA)
-        else:
-            self.queue.appendleft(0)
+        # calculate the MA
+        MA = self.weights.calculate_MA(self.queue)
+
+        # add MA as most recent element
+        self.queue.popleft()
+        self.queue.appendleft(MA)
             
-
-    
-    # value = False -> use last value on queue UNLESS 5 consecutive times
+    # updated queue
     def update_queue(self, value):
-        # append value to queue
-        # print(current_dim_queue, self.queue)
-        if self.counter_outdated_consecutive_values < self.window_allowed_outdated_parameters:
-            if value == False:
-                self.update_queue_last_valid_value()
-            else:
-                self.update_queue_regularly(value)
+        if(len(self.queue) == 0):
+            self.queue.appendleft(self.reset_value)
         else:
             self.update_queue_regularly(value)
           
@@ -65,20 +40,24 @@ class MovingAvarageQueue():
         if(len(self.queue) > 0):
             return self.queue[0]
         else:
-            return False
+            return self.reset_value
     
+
     # needed to compute goal point position data
     def return_oldest_element(self):
         if(len(self.queue) > 0):
             return self.queue[-1]
         else:
-            return False
+            return self.reset_value
     
 
     # initialize queue
     def initialize_queue(self):
         self.queue = deque()
         self.weights.initialize_weigths()
+
+    def get_reset_value(self):
+        return self.reset_value
 
     def __repr__ (self):
         tmp_queue = ''

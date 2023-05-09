@@ -83,11 +83,12 @@ class InRowNavigation(Node):
             # invoke prefiltering
             row_positive_value, row_negative_value = self.prefilter_point_far_from_bisectrice(points_2d)
             
-            if (self.counter_start_line < self.window_skipped_start_line):
-                start_line = True
-                self.counter_start_line = self.counter_start_line + 1
-            else:
-                start_line = False
+            # skip first measurements 
+            # if (self.counter_start_line < self.window_skipped_start_line):
+                # start_line = True
+                # self.counter_start_line = self.counter_start_line + 1
+            # else:
+                # start_line = False
             
             # bisectrice prediction
             self.prediction_instance.compute_bisectrice_coefficients(row_positive_value, row_negative_value)
