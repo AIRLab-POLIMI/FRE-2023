@@ -59,7 +59,7 @@ def generate_launch_description():
         start_gazebo,
         start_urdf,
         start_control,
-        start_ekf,
+        #start_ekf,
         #teleop_joy,
          
     ])
