@@ -5,6 +5,9 @@ from sensor_msgs.msg import LaserScan
 
 from visualization_msgs.msg import MarkerArray, Marker
 
+# laser_mono = /scan_mono
+# laser = /scan
+
 import numpy as np 
 
 class LaserReader(Node):

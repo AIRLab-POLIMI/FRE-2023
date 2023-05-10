@@ -41,6 +41,10 @@ class CustomQueue:
         return self.reset_value
 
 
+    # initialize queue
+    def initialize_queue(self):
+        self.queue = deque()
+
     def __repr__ (self):
         tmp_queue = ''
         queue_str = [tmp_queue+ str(item)+'' for item in self.queue]

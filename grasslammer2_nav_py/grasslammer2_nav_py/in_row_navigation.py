@@ -1,9 +1,10 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.time import Time
 
 from sensor_msgs.msg import LaserScan, Joy
 from geometry_msgs.msg import Twist
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Float64MultiArray
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
@@ -24,13 +25,13 @@ class InRowNavigation(Node):
         self.scan_sub # prevent unused variable warning 
         self.goal_pose_pub = self.create_publisher(Float64MultiArray, '/goal_position', 1)
         self.goal_pose_pub # prevent unused variable warning
-        self.end_of_line_pose_topic = self.create_publisher(Pose, '/end_of_line_pose', 1)
+        self.end_of_line_pose_topic = self.create_publisher(PoseStamped, '/end_of_line_pose', 1)
         self.end_of_line_pose_topic # prevent unused variable warning
 
         # HELPED
         # publish most recent pose and oldest pose
         # TODO
-        self.collision_detected_topic = self.create_publisher(Pose, '/collision_detected_topic', 1)
+        self.collision_detected_topic = self.create_publisher(PoseStamped, '/collision_detected_topic', 1)
         
         # minimum number points
         self.min_num_required_points = min_num_required_points
@@ -48,6 +49,7 @@ class InRowNavigation(Node):
         self.prefiltering_threshold = 0.75 
 
         # Prediction obj
+        # add parameters
         self.prediction_instance = prediction.Prediction()
 
         # Display Ransac
@@ -56,6 +58,10 @@ class InRowNavigation(Node):
         # num_accepted_points
         self.counter_start_line = 0
         self.window_skipped_start_line = num_skip
+
+        # needed for goal publication
+        self.is_end_of_line = False
+        self.first_time_ROI = True
 
 
     def scan_callback(self, scan_msg):
@@ -70,16 +76,26 @@ class InRowNavigation(Node):
             # assume roi = 0 reset counter start line
             self.counter_start_line = 0
             # parameter read from parameter server. TODO.
-            if(self.end_of_line_flag == True):
-                # publish last goal pose
-                x, y, theta = self.calculate_goal_point()
-                # invoke publish_end_of_line
-                self.publish_end_of_line_pose(x, y, theta)
-
-                # initialize_prediction
-                self.prediction_instance.initialize_prediction()
+            # print(self.is_end_of_line, self.first_time_ROI)
+            if(self.is_end_of_line == True):
+                if (self.first_time_ROI == True):
+                    # publish last goal pose
+                    x, y, theta = self.calculate_goal_point()
+                    # invoke publish_end_of_line
+                    self.publish_end_of_line_pose(x, y, theta)
+                    # reset first_time_roi
+                    self.first_time_ROI = False
+            else: 
+                self.is_end_of_line = False
+            
+            # initialize_prediction
+            self.prediction_instance.initialize_prediction()
             
         else:
+            # reset first_time_ROI, is_end_of_line
+            self.first_time_ROI = True
+            self.is_end_of_line = True
+
             # invoke prefiltering
             row_positive_value, row_negative_value = self.prefilter_point_far_from_bisectrice(points_2d)
             
@@ -174,17 +190,29 @@ class InRowNavigation(Node):
 
     def publish_end_of_line_pose(self, x, y, theta):
         # create message Pose
-        end_of_line_pose = Pose()
+        end_of_line_pose = PoseStamped()
+        
+        # update timestamp and frame
+        time_now = Time()
+        end_of_line_pose.header.stamp = time_now.to_msg()
+        end_of_line_pose.header.frame_id = "map"
 
         # get x,y
-        end_of_line_pose.position.x = x
-        end_of_line_pose.position.y = y
+        end_of_line_pose.pose.position.x = x
+        end_of_line_pose.pose.position.y = y
 
         # get orientation
-        end_of_line_pose.orientation = quaternion_from_euler(0, 0, theta)
+        quaternion = quaternion_from_euler(0, 0, theta)
+        end_of_line_pose.pose.orientation.x = quaternion[0]
+        end_of_line_pose.pose.orientation.y = quaternion[1]
+        end_of_line_pose.pose.orientation.z = quaternion[2]
+        end_of_line_pose.pose.orientation.w = quaternion[3]
 
-        # publish goal pose
-        self.self.end_of_line_pose_topic.publish(end_of_line_pose)
+        if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
+            return
+        else:
+            # publish goal pose
+            self.end_of_line_pose_topic.publish(end_of_line_pose)
         
     def display_prediction(self, row_positive_value, row_negative_value, x_goal, y_goal):
         # clear axes
