@@ -8,9 +8,8 @@ import math
 class TurnerFinal(Node):
     def __init__(self):
         super().__init__('turner_final')
-        self.lineDimension = 1.0
-        self.coefficient = 1.0
-        self.y_movement = -1.0
+        self.lineDimension = 0.75
+        self.y_movement = 1.0
         self.starting_pose_sub = self.create_subscription(PoseStamped, '/end_of_line_pose', self.elaborate_goal_point, 1)
         self.goal_pub = self.create_publisher(PoseStamped, '/goal_pose', 1)
     
@@ -28,13 +27,13 @@ class TurnerFinal(Node):
 
 
         poseToNavigate.header.stamp = time_now.to_msg()
-        poseToNavigate.header.frame_id = "map"
+        poseToNavigate.header.frame_id = "base_footprint"
 
         yaw = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         print(yaw)
 
-        poseToNavigate.pose.position.x = msg.pose.position.x + self.lineDimension*float(coeff)*math.sin(yaw[2]) #+ self.y_movement*math.sin(yaw[2] - math.pi/2)
-        poseToNavigate.pose.position.y = msg.pose.position.y + self.lineDimension*float(coeff)*math.cos(yaw[2]) #+ self.y_movement*math.cos(yaw[2] - math.pi/2)
+        poseToNavigate.pose.position.x = msg.pose.position.x + self.lineDimension*float(coeff)*math.sin(yaw[2]) + self.y_movement*math.sin(yaw[2] - math.pi/2)
+        poseToNavigate.pose.position.y = msg.pose.position.y + self.lineDimension*float(coeff)*math.cos(yaw[2]) + self.y_movement*math.cos(yaw[2] - math.pi/2)
         poseToNavigate.pose.position.z = 0.0
 
         poseToNavigate.pose.orientation.x = msg.pose.orientation.x

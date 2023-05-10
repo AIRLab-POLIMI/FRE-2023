@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-
+import math
 from sensor_msgs.msg import LaserScan
 
 from visualization_msgs.msg import MarkerArray, Marker
@@ -37,7 +37,7 @@ class LaserReader(Node):
 
     def laser_scan_to_points(self, msg):
         ranges = np.array(msg.ranges) # Converting ranges field into a numpy array 
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=msg.angle_increment) # Return evenly spaced value of angles based on its index 
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/720) # Return evenly spaced value of angles based on its index 
 
         x = ranges * np.cos(angles) # array of all the x coordinates in 2D
         y = ranges * np.sin(angles) # array of all the y coordinates in 2D

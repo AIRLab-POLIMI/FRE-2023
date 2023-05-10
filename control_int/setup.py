@@ -24,7 +24,7 @@ setup(
         	'pid2 = control_int.pid2:main',
         	'pid3 = control_int.pid3:main',
         	'aut_nav = control_int.aut_nav:main',
-        	'aut_nav_param = control_int.aut_nav_param:main'
+        	'aut_nav_param = control_int.aut_nav_param:main',
         ],
     },
 )
