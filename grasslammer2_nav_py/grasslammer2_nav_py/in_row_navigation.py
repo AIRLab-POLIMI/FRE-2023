@@ -266,7 +266,7 @@ def main(args=None):
 
     rclpy.spin(in_row_navigation)
 
-    navigation.destroy_node()
+    in_row_navigation.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
