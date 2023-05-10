@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/")
+sys.path.append("/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/")
 import moving_average
 from collections import deque
 class MovingAvarageQueue():

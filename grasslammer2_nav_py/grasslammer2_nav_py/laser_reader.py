@@ -6,6 +6,7 @@ from sensor_msgs.msg import LaserScan
 from visualization_msgs.msg import MarkerArray, Marker
 
 # laser_mono = /scan_mono
+# laser_mono = /scan_initial
 # laser = /scan
 
 import numpy as np 
@@ -16,7 +17,7 @@ class LaserReader(Node):
 
         self.area = np.array([2, 1]) # rect shape x,y
 
-        self.scan_sub = self.create_subscription(LaserScan, '/scan', self.scan_callback, 1)
+        self.scan_sub = self.create_subscription(LaserScan, '/scan_initial', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
         self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered', 1)
         self.cluster1_pub = self.create_publisher(MarkerArray, '/cluster1', 1)
