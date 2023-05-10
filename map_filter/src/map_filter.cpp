@@ -39,7 +39,7 @@ class map_filter : public rclcpp::Node{
 
             this->declare_parameter("threshold", 5); //minimum number of neighbors
 
-            this->declare_parameter("laserscan_range", 2.0); //range in which points from monoplanar lidar are added
+            this->declare_parameter("laserscan_range", 1.4); //range in which points from monoplanar lidar are added
 
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/selected", 10, std::bind(&map_filter::callback, this, std::placeholders::_1));
@@ -142,8 +142,6 @@ class map_filter : public rclcpp::Node{
                 th=th + laser_scan.angle_increment;
                 if(laser_scan.ranges[i]<=laserscan_range){
                     pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th), laser_scan.ranges[i]*sin(th), 0.2));
-                    //pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th)+0.001, laser_scan.ranges[i]*sin(th), 0.18));
-                    //pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th)-0.001, laser_scan.ranges[i]*sin(th), 0.16));
                 }
             }
         }
