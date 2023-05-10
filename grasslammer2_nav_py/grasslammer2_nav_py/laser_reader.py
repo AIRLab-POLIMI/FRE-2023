@@ -3,17 +3,23 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import LaserScan
 
+from visualization_msgs.msg import MarkerArray, Marker
+
+# laser_mono = /scan_mono
+# laser = /scan
+
 import numpy as np 
 
 class LaserReader(Node):
     def __init__(self):
         super().__init__('laser_reader')
 
-        self.area = np.array([1.4, 2]) # rect shape x,y
+        self.area = np.array([2, 1]) # rect shape x,y
 
         self.scan_sub = self.create_subscription(LaserScan, '/scan', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
         self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered', 1)
+        self.cluster1_pub = self.create_publisher(MarkerArray, '/cluster1', 1)
 
 
 
@@ -26,7 +32,7 @@ class LaserReader(Node):
 
             self.filter_pub.publish(self.points_to_scan(selected_coord, msg))
 
-
+        #self.visualize_points_2d(selected_coord)
 
     def laser_scan_to_points(self, msg):
         ranges = np.array(msg.ranges) # Converting ranges field into a numpy array 
@@ -67,7 +73,28 @@ class LaserReader(Node):
         return nmsg
         
 
-        
+    def visualize_points_2d(self, points_2d): 
+        marker_msgs = MarkerArray()
+        for i in range(len(points_2d)):
+            marker = Marker()
+            marker.id = i
+            marker.header.frame_id = "laser_frame"
+            marker.type = marker.SPHERE
+            marker.action = marker.ADD
+            marker.scale.x = 0.05
+            marker.scale.y = 0.05
+            marker.scale.z = 0.05
+            marker.color.a = 1.0
+            marker.color.r = 0.0
+            marker.color.g = 1.0
+            marker.color.b = 0.0
+            marker.pose.orientation.w = 1.0
+            marker.pose.position.x = points_2d[i, 0]
+            marker.pose.position.y = points_2d[i, 1]
+            marker.pose.position.z = 0.0
+            marker_msgs.markers.append(marker)
+
+        self.cluster1_pub.publish(marker_msgs)
 
     
 def main(args=None):

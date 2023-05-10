@@ -46,13 +46,13 @@
       
 
   <!-- Gazebo plugin for depth camera (ficticious, used instead of stereo ) -->
-  <gazebo reference="oakd_${mount_point}">
+  <!-- <gazebo reference="oakd_${mount_point}">
     <sensor type="depth" name="oakd_depth">
 
-        <!-- Set always_on only sensor, not on plugin -->
+        
         <always_on>1</always_on>
 
-        <!-- Set update_rate only sensor, not on plugin -->
+        
         <update_rate>15</update_rate>
 
         <camera name="oakd_d_camera">
@@ -80,7 +80,7 @@
             <max_depth>9.0</max_depth>
         </plugin>
     </sensor>
-  </gazebo>
+  </gazebo> -->
 
  <!-- Gazebo plugin for center RGB camera -->
 
