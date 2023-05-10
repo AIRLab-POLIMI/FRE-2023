@@ -115,6 +115,7 @@
       </link>
     </model>
     
+
     <include>
       <uri>model://maize_02</uri>
       <pose>1.0684294287607656 -3.4090732195960474 0.31790526315565537 0.0 0.0 4.374161382609899</pose>
@@ -1682,6 +1683,7 @@
       <name>maize_01_0223</name>
       <static>false</static>
     </include>
+
     <gui fullscreen='0'>
       <camera name='user_camera'>
         <pose frame=''>5.45099 -4.71679 1.58055 0 0.275643 2.35619</pose>
