@@ -39,7 +39,7 @@ class Navigation(Node):
 
         theta = goal.data[2]
         cmd_msg.linear.x = self.b * math.cos(2*theta)
-        cmd_msg.angular.z = self.a * math.sqrt(theta)
+        cmd_msg.angular.z = self.a * theta
 
         self.cmd_pub.publish(cmd_msg)
   
