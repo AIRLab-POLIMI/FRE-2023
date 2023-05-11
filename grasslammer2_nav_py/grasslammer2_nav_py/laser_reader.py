@@ -1,11 +1,12 @@
 import rclpy
 from rclpy.node import Node
-
+import math
 from sensor_msgs.msg import LaserScan
 
 from visualization_msgs.msg import MarkerArray, Marker
 
 # laser_mono = /scan_mono
+# laser_mono = /scan_initial
 # laser = /scan
 
 import numpy as np 
@@ -16,7 +17,7 @@ class LaserReader(Node):
 
         self.area = np.array([2, 1]) # rect shape x,y
 
-        self.scan_sub = self.create_subscription(LaserScan, '/scan_mono', self.scan_callback, 1)
+        self.scan_sub = self.create_subscription(LaserScan, '/scan_initial', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
         self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered', 1)
         self.cluster1_pub = self.create_publisher(MarkerArray, '/cluster1', 1)
@@ -36,7 +37,7 @@ class LaserReader(Node):
 
     def laser_scan_to_points(self, msg):
         ranges = np.array(msg.ranges) # Converting ranges field into a numpy array 
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=msg.angle_increment) # Return evenly spaced value of angles based on its index 
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/720) # Return evenly spaced value of angles based on its index 
 
         x = ranges * np.cos(angles) # array of all the x coordinates in 2D
         y = ranges * np.sin(angles) # array of all the y coordinates in 2D

@@ -13,7 +13,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import sys
-sys.path.append("/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/")
+sys.path.append("/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/")
 import prediction
 
 class InRowNavigation(Node):
@@ -121,7 +121,7 @@ class InRowNavigation(Node):
 
     def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=msg.angle_increment) 
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/720) 
 
         x = np.where(ranges == -1, -1, ranges * np.cos(angles))
         y = np.where(ranges == -1, -1, ranges * np.sin(angles))
@@ -195,7 +195,7 @@ class InRowNavigation(Node):
         # update timestamp and frame
         time_now = Time()
         end_of_line_pose.header.stamp = time_now.to_msg()
-        end_of_line_pose.header.frame_id = "map"
+        end_of_line_pose.header.frame_id = "base_footprint"
 
         # get x,y
         end_of_line_pose.pose.position.x = x

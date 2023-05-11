@@ -7,6 +7,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+set(CMAKE_MODULE_PATH "/usr/bin/")
 find_package(gazebo_dev REQUIRED)
 find_package(gazebo_ros REQUIRED)
 

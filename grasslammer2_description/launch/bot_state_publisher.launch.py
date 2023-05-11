@@ -21,7 +21,7 @@ def generate_launch_description():
     spawn_x_val = '0'
     spawn_y_val = '6'
     spawn_z_val = '0.2'
-    spawn_yaw_val = '0.0'#'1.57'
+    spawn_yaw_val = '-1.57' #'0.0'#'1.57'
 
     #Create robot state publisher node 
     params = {'robot_description' : robot_description_config.toxml()}

@@ -36,14 +36,14 @@
 
         <sensor name="laser" type="ray">
             <pose> 0 0 0 0 0 0 </pose>
-            <visualize>false</visualize>
-            <update_rate>5</update_rate>
+            <visualize>true</visualize>
+            <update_rate>10</update_rate>
             <ray>
                 <scan>
                     <horizontal>
                         <samples>720</samples>
-                        <min_angle>-3.14</min_angle>
-                        <max_angle>3.14</max_angle>
+                        <min_angle>-2.62</min_angle>
+                        <max_angle>2.62</max_angle>
                     </horizontal>
                 </scan>
                 <range>
@@ -55,7 +55,7 @@
                 <ros>
                     <argument>--ros-args</argument>
                     <argument>-r</argument>
-                    <argument>~/out:=scan</argument>
+                    <argument>~/out:=scan_initial</argument>
                 </ros>
                 <output_type>sensor_msgs/LaserScan</output_type>
                 <frame_name>laser_frame</frame_name>

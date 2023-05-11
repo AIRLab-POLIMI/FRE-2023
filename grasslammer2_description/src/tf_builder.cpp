@@ -27,9 +27,6 @@ class TF_builder : public rclcpp::Node
 
       tf_2_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
-
-
-
     }
      
 

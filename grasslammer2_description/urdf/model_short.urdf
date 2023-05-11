@@ -154,7 +154,7 @@
 
 
 
-    <!-- oakd pro W -->
+    <!-- ########## oakd pro W ########### -->
     <joint name="base_link_to_oakd" type="fixed">
         <parent link="base_link"/>
         <child link="oakd_base"/>
@@ -163,16 +163,26 @@
     
     <xacro:oakd_link mount_point='base'/> 
 
+    <!-- ############ Imu  ###############-->
+    <gazebo reference="base_link">
+        <sensor name="my_imu" type="imu">
+            <always_on>true</always_on>
+            <!-- Publish at 30 hz -->
+            <update_rate>30</update_rate>
+            <plugin name="my_imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+              <ros>
+                <!-- Will publish to /imu/data -->
+                <namespace>/imu</namespace>
+                <remapping>~/out:=data</remapping>
+              </ros>
+              <!-- frame_name ommited, will be "my_link" -->
+              <frame_name>base_link</frame_name>
+            </plugin>
+        </sensor>
+    </gazebo>
+    
 
-    <!-- <xacro:arg name="gpu" default="false"/>
-    <xacro:property name="gpu" value="$(arg gpu)" />
-    <xacro:arg name="organize_cloud" default="false"/>
-    <xacro:property name="organize_cloud" value="$(arg organize_cloud)" /> -->
-    <!-- <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
-    <xacro:VLP-16 parent="base_link" name="velodyne" topic="/velodyne_points" organize_cloud="false" hz="10" samples="440" gpu="false">
-        <origin xyz="0 0 0.4" rpy="0 0 0" />
-    </xacro:VLP-16> -->
-
+    <!-- ########### Velodyne 32E ############ -->
     <xacro:include filename="$(find velodyne_description)/urdf/HDL-32E.urdf.xacro"/>
     <xacro:HDL-32E parent="base_link" name="velodyne2" topic="/velodyne_points2" organize_cloud="false" hz="10" samples="220" gpu="true">
         <origin xyz="0 0 0.05" rpy="0 0 0" />
