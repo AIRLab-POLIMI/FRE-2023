@@ -21,13 +21,13 @@ class endOfLinePosePub(Node):
         pose_to_pub = PoseStamped()
 
         pose_to_pub.header.stamp = time_now.to_msg()
-        pose_to_pub.header.frame_id = "map"
+        pose_to_pub.header.frame_id = "base_footprint"
 
-        pose_to_pub.pose.position.x = 3.5
-        pose_to_pub.pose.position.y = 11.0
+        pose_to_pub.pose.position.x = 0.99
+        pose_to_pub.pose.position.y = 0.0
         pose_to_pub.pose.position.z = 0.0
 
-        qt = quaternion_from_euler(0, 0, math.pi/2)
+        qt = quaternion_from_euler(0, 0, 0)
         pose_to_pub.pose.orientation.x = qt[0]
         pose_to_pub.pose.orientation.y = qt[1]
         pose_to_pub.pose.orientation.z = qt[2]
