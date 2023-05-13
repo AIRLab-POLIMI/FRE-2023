@@ -12,9 +12,361 @@ import time
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-import sys
-sys.path.append("/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/")
-import prediction
+# QUEUE
+from collections import deque
+# LINE
+from sklearn.linear_model import RANSACRegressor
+
+#################################
+########## MOVING AVARAGE CLASS
+##################################
+class MovingAvarage():
+    # assume type are exponentials
+    def __init__(self, start, stop, base_exp, dimension_queue):
+        self.weigths = []
+        self.start = start
+        self.stop = stop
+        self.base_exp = base_exp
+    
+    def update_weights(self, length_queue, dimension_queue):
+        # update weigths of moving avarage only when wwights < num_points 
+        print("update_weights ", length_queue, dimension_queue)
+        if (length_queue <= dimension_queue):
+            values = np.arange(self.start,self.stop, step=(self.stop-self.start)/length_queue)
+            # linear -> values_function = [value for value in values]
+            # exp
+            # values_function = [np.exp(value) for value in values]
+            # exp 10
+            # values_function = [pow(base_exp,value) for value in values]
+            # all same weigth --> values_function = [1 for _ in values]
+            values_function = [pow(self.base_exp,value) for value in values]
+            values_sum = np.sum(values_function)
+            self.weigths = [value/values_sum for value in values_function]
+            self.weigths.reverse()
+        # else remains same
+        return self.weigths
+    
+
+    def calculate_MA(self, coefficients):
+        if(len(self.weigths) != len(coefficients)):
+            print("calculate_MA: ERROR MA computation weights, queue", len(self.weigths), len(coefficients))
+        else:
+            output_MA = 0
+            output_MA = [output_MA + self.weigths[i]*coefficients[i] for i in range(len(coefficients))]
+            return output_MA[0]
+    
+
+    def get_weigths(self):
+        return self.weigths
+    
+
+    def initialize_weigths(self):
+        self.weights = []
+    
+
+    def __repr__ (self):
+        tmp_weights = ''
+        weights = [tmp_weights+ str(item)+'' for item in self.weigths]
+        return str(weights)
+
+#################################
+########## MOVING AVARAGE QUEUE
+##################################
+
+class MovingAvarageQueue():
+    # assume type are exponentials
+    def __init__(self, dimension_queue, start, stop, base_exp, reset_value):
+        self.dimension_queue = dimension_queue
+        self.queue = deque()
+        self.weights = MovingAvarage(start=start, stop=stop, base_exp=base_exp, dimension_queue=dimension_queue)
+        self.reset_value = reset_value
+        
+    # update queue regularly
+    def update_queue_regularly(self, value):
+        print("update_queue_regularly ", len(self.queue),self.dimension_queue)
+        if(len(self.queue) >= self.dimension_queue):
+            self.queue.pop()
+        
+        self.queue.appendleft(value)
+        self.weights.update_weights(len(self.queue), self.dimension_queue)
+
+        # calculate the MA
+        MA = self.weights.calculate_MA(self.queue)
+
+        # add MA as most recent element
+        self.queue.popleft()
+        self.queue.appendleft(MA)
+            
+    # updated queue
+    def update_queue(self, value):
+        if(len(self.queue) == 0):
+            self.queue.appendleft(self.reset_value)
+        else:
+            self.update_queue_regularly(value)
+          
+        
+    # needed to compute validity data
+    def return_element_time_t(self):
+        if(len(self.queue) > 0):
+            return self.queue[0]
+        else:
+            return self.reset_value
+    
+
+    # needed to compute goal point position data
+    def return_oldest_element(self):
+        if(len(self.queue) > 0):
+            return self.queue[-1]
+        else:
+            return self.reset_value
+    
+
+    # initialize queue
+    def initialize_queue(self):
+        self.queue = deque()
+        self.weights.initialize_weigths()
+
+    def get_reset_value(self):
+        return self.reset_value
+
+    def __repr__ (self):
+        tmp_queue = ''
+        queue_str = [tmp_queue+ str(item)+'' for item in self.queue]
+        return 'weights: ' + self.weights.__repr__() + ' queue '+ str(queue_str)
+    
+
+#################################
+#################### COSTUM QUEUE
+##################################
+class CustomQueue:
+    def __init__(self, dimension_queue, reset_value):
+        self.dimension_queue = dimension_queue
+        self.queue = deque()
+        self.reset_value = reset_value
+
+
+    # update queue regularly
+    def update_queue_regularly(self, value):
+        print("update_queue_regularly ", len(self.queue),self.dimension_queue)
+        if(len(self.queue) >= self.dimension_queue):
+            self.queue.pop()
+        self.queue.appendleft(value)
+            
+    # updated queue
+    def update_queue(self, value):
+        if(len(self.queue) == 0):
+            self.queue.appendleft(self.reset_value)
+        else:
+            self.update_queue_regularly(value)
+          
+        
+    # needed to compute validity data
+    def return_element_time_t(self):
+        if(len(self.queue) > 0):
+            return self.queue[0]
+        else:
+            return self.reset_value
+    
+
+    # needed to compute goal point position data
+    def return_oldest_element(self):
+        if(len(self.queue) > 0):
+            return self.queue[-1]
+        else:
+            return self.reset_value
+    
+    
+    def get_reset_value(self):
+        return self.reset_value
+
+
+    # initialize queue
+    def initialize_queue(self):
+        self.queue = deque()
+
+    def __repr__ (self):
+        tmp_queue = ''
+        queue_str = [tmp_queue+ str(item)+'' for item in self.queue]
+        # queue_str = ''.join(self.queue)
+        return 'queue' + str(queue_str) + ' '
+    
+    def __str__ (self):
+        tmp_queue = ''
+        queue_str = [tmp_queue+ str(item)+'' for item in self.queue]
+        return 'queue' + str(queue_str) + ' '
+    
+    
+#################################
+#################### LINE
+##################################    
+
+class Line():
+    # assume type are exponentials
+    def __init__(self, dimension_queue, ma_flag, is_bisectrice, threshold, window_allowed_outdated_parameters, reset_value_intercept):
+
+        if ma_flag == True:
+            self.slope = MovingAvarageQueue(dimension_queue=dimension_queue, start=0, stop=4, base_exp=100, reset_value=0)
+            self.intercept = MovingAvarageQueue(dimension_queue=dimension_queue,start=0, stop=4, base_exp=100, reset_value=reset_value_intercept)
+        else:
+            self.slope = CustomQueue(dimension_queue, reset_value=0)
+            self.intercept = CustomQueue(dimension_queue, reset_value=reset_value_intercept)
+        
+        # ? needed flag
+        self.is_bisectrice = is_bisectrice
+        # threshold allowed btw two consecutive lines 
+        self.threshold_btw_consecutive_lines = threshold
+        # counter outdated lines
+        self.counter_outdated_consecutive_values = 0
+        # consistency on filter in terms of number required points
+        self.window_allowed_outdated_parameters = dimension_queue
+        
+        # previous status
+        self.last_valid_slope = 0
+        self.last_valid_intercept = 0
+
+        # TO DO add consistency num_trials and min sample
+        self.ransac = RANSACRegressor()
+    
+    # initialization of queues
+    def initialize_line(self):
+        self.slope.initialize_queue()
+        self.intercept.initialize_queue()
+
+    # update line coefficient
+    # slope, intercept = False -> update parameters last value
+    def update_line_parameters(self, slope, intercept):
+        self.slope.update_queue(slope) 
+        self.intercept.update_queue(intercept) 
+        self.last_valid_slope = slope
+        self.last_valid_intercept = intercept
+        self.counter_outdated_consecutive_values = 0
+    
+    # update line coefficient
+    # slope, intercept = False -> update parameters last value
+    def update_line_parameters_no_threshold(self, slope, intercept):
+        self.slope.update_queue(slope) 
+        self.intercept.update_queue(intercept) 
+    
+    # select line in case the slope,line contained in threshold. Otherwise, takes the previous value
+    def update_line_parameters_checking_threshold(self, slope, intercept):
+        # check slope/intercept t vs slope/intercept t-1
+        slope_time_t_min_1 = self.slope.return_element_time_t()
+        intercept_time_t_min_1 = self.intercept.return_element_time_t()
+        # print(slope_time_t_min_1, slope, intercept_time_t_min_1, intercept)
+        # check existance of data at time t and t-1
+        if(self.threshold_btw_consecutive_lines != 0):
+            if (self.counter_outdated_consecutive_values <= self.window_allowed_outdated_parameters):
+                if slope_time_t_min_1 != False and intercept_time_t_min_1 != False:
+                    # calculate threshold
+                    if abs(slope_time_t_min_1 - slope) > self.threshold_btw_consecutive_lines or abs(intercept_time_t_min_1 - intercept) > self.threshold_btw_consecutive_lines:
+                        # update_last_valid_coefficient
+                        self.slope.update_queue(self.last_valid_slope) 
+                        self.intercept.update_queue(self.last_valid_intercept) 
+                        # update window
+                        self.counter_outdated_consecutive_values = self.counter_outdated_consecutive_values +1
+                    else:
+                        # add just computed parameters
+                        self.update_line_parameters(slope, intercept)
+
+                else:    
+                    # slope, intercept queue was empty 
+                    self.update_line_parameters(slope, intercept)
+            else:
+                # too outdated value -> add new one
+                self.update_line_parameters(slope, intercept)
+        else:
+            self.update_line_parameters_no_threshold(slope, intercept)
+
+    
+    def fitting_line(self, points):
+        self.ransac.fit(points[:, 0].reshape(-1, 1), points[:, 1])
+        slope = self.ransac.estimator_.coef_[0]
+        intercept = self.ransac.estimator_.intercept_
+        return slope, intercept
+    
+
+    def get_most_recent_coefficients(self):
+        slope = self.slope.return_element_time_t()
+        intercept = self.intercept.return_element_time_t()
+        return slope, intercept
+    
+    
+    def get_oldest_coefficients(self):
+        slope = self.slope.return_oldest_element()
+        intercept = self.intercept.return_oldest_element()
+        return slope, intercept
+
+        
+    def __repr__ (self):
+        return 'Line(slope=' + self.slope.__repr__() + ' ,intercept=' + self.intercept.__repr__()  + ')'
+
+
+#################################
+#################### PREDICTION
+##################################  
+class Prediction():
+    # assume type are exponentials
+    def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, window_allowed_outdated_parameters=5,threshold_crop_line = 0.30, threshold_bisectrice_line = 0) :
+        # dimension_queue -> n
+        
+        # save right/left cluster data
+        # in case of rototranslation -> to be developed
+        # self.right_cluster = costum_queue.CustomQueue(dimension_queue, window_allowed_outdated_parameters)
+        # self.left_cluster = costum_queue.CustomQueue(dimension_queue, window_allowed_outdated_parameters)
+        # save crop/bisectrice parameters
+        self.navigation_line =  Line(dimension_queue, ma_navigation_flag, True, threshold_bisectrice_line, window_allowed_outdated_parameters, 0)
+        self.positive_crop_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, 0.375)
+        self.negative_crop_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, -0.375)
+
+        # min_point_for_predition + threshold
+        self.num_min_points_required_for_fitting = 3
+
+    
+    # initialization of lines
+    def initialize_prediction(self):
+        self.navigation_line.initialize_line()
+        self.positive_crop_line.initialize_line()
+        self.negative_crop_line.initialize_line() 
+
+    
+    def compute_bisectrice_coefficients(self, positive_points, negative_points):
+
+        # compute positive crop line
+        self.compute_crop_line_coefficients(self.positive_crop_line, positive_points)
+        positive_slope, positive_intercept = self.positive_crop_line.get_most_recent_coefficients() 
+        
+        # compute negative crop line
+        self.compute_crop_line_coefficients(self.negative_crop_line, negative_points)
+        negative_slope, negative_intercept =self.negative_crop_line.get_most_recent_coefficients() 
+        
+        # compute bisectrice
+        medium_slope = (positive_slope+negative_slope) / 2
+        medium_intercept = (positive_intercept+negative_intercept) / 2
+
+        # add coeddificent to bisectrice
+        self.navigation_line.update_line_parameters(medium_slope, medium_intercept)
+
+
+    def compute_crop_line_coefficients(self, local_line, points):
+        # print("num points", len(points))
+
+        if(len(points)> self.num_min_points_required_for_fitting):
+            # compute slope, intercept through fitting
+            slope, intercept = local_line.fitting_line(points)
+            # update the queue with the new slope and intercept
+            local_line.update_line_parameters_checking_threshold(slope, intercept)
+        else:
+            # mantain last value -> use False, False
+            # get latest value (if exist)
+
+            # else reset value
+            slope, intercept = local_line.get_most_recent_coefficients()
+            local_line.update_line_parameters_checking_threshold(slope, intercept)
+
+
+    def __repr__ (self):
+        return 'Line(slope=' + self.slope.__repr__() + ' ,intercept=' + self.intercept.__repr__()  + ')'
+    
 
 class InRowNavigation(Node):
     # assume type are exponentials
@@ -50,7 +402,7 @@ class InRowNavigation(Node):
 
         # Prediction obj
         # add parameters
-        self.prediction_instance = prediction.Prediction()
+        self.prediction_instance = Prediction()
 
         # Display Ransac
         self.fig, self.ax = plt.subplots()
