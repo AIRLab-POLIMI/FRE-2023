@@ -34,6 +34,7 @@ setup(
             'pub_starting_pose = grasslammer2_nav_py.end_of_line_pose:main',
             'pub_goal_pose_def = grasslammer2_nav_py.definitive_turner:main',
             'in_row_navigation = grasslammer2_nav_py.in_row_navigation:main',
+            'spray_switch = grasslammer2_nav_py.spray_switch:main',
         ],
     },
 )
