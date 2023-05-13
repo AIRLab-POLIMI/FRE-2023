@@ -5,7 +5,7 @@ from rclpy.duration import Duration
 from geometry_msgs.msg import PoseStamped
 import tf2_geometry_msgs
 from geometry_msgs.msg._pose_stamped import PoseStamped
-from tf_transformations import euler_from_quaternion, quaternion_inverse
+from tf_transformations import euler_from_quaternion, quaternion_from_euler, quaternion_conjugate
 from rclpy.time import Time
 import tf2_ros
 import math
@@ -15,7 +15,7 @@ from tf2_ros.buffer import Buffer
 class TurnerFinal(Node):
     def __init__(self):
         super().__init__('turner_final')
-        self.lineDimension = 0.75
+        self.lineDimension = 0.50
         self.y_movement = -1.5
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
@@ -40,7 +40,8 @@ class TurnerFinal(Node):
 
         yaw = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         print(yaw)
-        qt = quaternion_inverse([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
+
+        qt = quaternion_from_euler(-yaw[0], -yaw[1], -yaw[2])
 
         staged_from_bf_to_odom = self.get_tf_of_frames("base_footprint", "map")
 

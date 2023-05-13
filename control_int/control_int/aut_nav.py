@@ -28,7 +28,7 @@ class Navigation(Node):
         self.goal_point_sub = self.create_subscription(Float64MultiArray, '/goal_position', self.goal_callback, 1)
         self.goal_point_sub #prevent unused variable warning 
 
-        self.cmd_pub = self.create_publisher(Twist, '/grasslammer_velocity_controller/cmd_vel_unstamped', 1)
+        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_row_nav', 1)
         self.a = args.a
         self.b = args.b
 

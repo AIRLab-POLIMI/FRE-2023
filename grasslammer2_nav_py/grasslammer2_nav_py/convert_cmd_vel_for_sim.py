@@ -9,20 +9,24 @@ class CMDConverter(Node):
     def __init__(self):
         super().__init__('cmd_vel_converter')
         self.cmd_vel_sub = self.create_subscription(Twist, '/cmd_vel', self.callback, 1)
+        self.cmd_vel_sub = self.create_subscription(Twist, '/cmd_vel_row_nav', self.callback1, 1)
         self.switcher = self.create_subscription(PoseStamped, '/end_of_line_pose', self.switch, 1)
         self.cmd_vel_unstamped_pub = self.create_publisher(Twist, '/grasslammer_velocity_controller/cmd_vel_unstamped', 1)
-        self.turning = True 
+        self.turning = False 
 
     
     def callback(self, msg):
-        #msg = Twist()
-        #fields = self.cmd_vel_sub.topic.find()
+        #converts nav2 cmd_vel to cmd_vel_unstamped
         if(self.turning):
             self.cmd_vel_unstamped_pub.publish(msg=msg)
     
-    # TO DO
+    def callback1(self, msg):
+        #converts controller cmd_vel to cmd_vel_unstamped
+        if(not self.turning):
+            self.cmd_vel_unstamped_pub.publish(msg=msg)
+    
     def switch(self, msg):
-        self.turning = True 
+        self.turning = not self.turning
 
     
 
