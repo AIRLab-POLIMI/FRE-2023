@@ -30,7 +30,7 @@ class MovingAvarage():
     
     def update_weights(self, length_queue, dimension_queue):
         # update weigths of moving avarage only when wwights < num_points 
-        print("update_weights ", length_queue, dimension_queue)
+        # print("update_weights ", length_queue, dimension_queue)
         if (length_queue <= dimension_queue):
             values = np.arange(self.start,self.stop, step=(self.stop-self.start)/length_queue)
             # linear -> values_function = [value for value in values]
@@ -125,6 +125,8 @@ class MovingAvarageQueue():
     def initialize_queue(self):
         self.queue = deque()
         self.weights.initialize_weigths()
+        self.queue.appendleft(0)
+        self.weights.update_weights(len(self.queue), self.dimension_queue)
 
     def get_reset_value(self):
         return self.reset_value
@@ -147,7 +149,7 @@ class CustomQueue:
 
     # update queue regularly
     def update_queue_regularly(self, value):
-        print("update_queue_regularly ", len(self.queue),self.dimension_queue)
+        # print("update_queue_regularly ", len(self.queue),self.dimension_queue)
         if(len(self.queue) >= self.dimension_queue):
             self.queue.pop()
         self.queue.appendleft(value)
@@ -183,6 +185,7 @@ class CustomQueue:
     # initialize queue
     def initialize_queue(self):
         self.queue = deque()
+        self.queue.appendleft(0)
 
     def __repr__ (self):
         tmp_queue = ''
@@ -370,7 +373,7 @@ class Prediction():
 
 class InRowNavigation(Node):
     # assume type are exponentials
-    def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, num_skip = 5,threshold_crop_line = 0.5, threshold_bisectrice_line = 0.5, min_num_required_points=15) :
+    def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, num_skip = 5,threshold_crop_line = 0.5, threshold_bisectrice_line = 0.5, min_num_required_points=15, num_points_traverse_line=30) :
         super().__init__('in_row_navigation')
         # topics where the data are published
         self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback, 1)
@@ -387,11 +390,6 @@ class InRowNavigation(Node):
         
         # minimum number points
         self.min_num_required_points = min_num_required_points
-
-        # ?
-        self.end_of_line_flag = False
-        self.gap_left = False
-        self.gap_right = False
 
         # parameters needed during perfomance calculation
         self.end_computation = -1
@@ -412,8 +410,9 @@ class InRowNavigation(Node):
         self.window_skipped_start_line = num_skip
 
         # needed for goal publication
-        self.is_end_of_line = False
-        self.first_time_ROI = True
+        self.counter_num_valid_point = 0
+        self.number_points_traverse_line = num_points_traverse_line
+        self.is_line_traversed = False
 
 
     def scan_callback(self, scan_msg):
@@ -425,29 +424,30 @@ class InRowNavigation(Node):
 
         if(np.size(points_2d) < self.min_num_required_points):
             print('No points found in ROI! ')
-            # assume roi = 0 reset counter start line
-            self.counter_start_line = 0
             # parameter read from parameter server. TODO.
             # print(self.is_end_of_line, self.first_time_ROI)
-            if(self.is_end_of_line == True):
-                if (self.first_time_ROI == True):
-                    # publish last goal pose
-                    x, y, theta = self.calculate_goal_point()
-                    # invoke publish_end_of_line
-                    self.publish_end_of_line_pose(x, y, theta)
-                    # reset first_time_roi
-                    self.first_time_ROI = False
-            else: 
-                self.is_end_of_line = False
+            if (self.is_line_traversed==True):
+                # publish last goal pose
+                x, y, theta = self.calculate_goal_point()
+                # invoke publish_end_of_line
+                self.publish_end_of_line_pose(x, y, theta)
             
+            # reset_is_line_traversed
+            self.is_line_traversed = False
+            self.counter_num_valid_point = 0
+            # self.counter_start_line = 0
             # initialize_prediction
             self.prediction_instance.initialize_prediction()
             
         else:
-            # reset first_time_ROI, is_end_of_line
-            self.first_time_ROI = True
-            self.is_end_of_line = True
+            
+            #  update counter understand if you've crossed a crop_line
+            if(self.counter_num_valid_point < self.number_points_traverse_line) and (self.is_line_traversed == False):
+                self.counter_num_valid_point = self.counter_num_valid_point + 1
+            else:
+                self.is_line_traversed = True
 
+            
             # invoke prefiltering
             row_positive_value, row_negative_value = self.prefilter_point_far_from_bisectrice(points_2d)
             
