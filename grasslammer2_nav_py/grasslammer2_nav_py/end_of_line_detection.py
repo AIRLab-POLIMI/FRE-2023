@@ -72,17 +72,19 @@ class EndOfLineDetection(Node):
         self.end_of_line_pose_topic_pub = self.create_publisher(PoseStamped, '/end_of_line_pose', 1)
         
         # min points
-        self.min_number_points = 2
+        self.min_number_points = 0
 
         # divide into three regions
-        self.area = np.array([1.2, 0.75]) # rect shape x,y
+        self.area = np.array([1.2, 0.5]) # rect shape x,y
 
         # needed trigger turning
         # subscribe topic end of turning to understand publish/not
         self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
         # publish topic end of turning after first publication
-        self.pub_turning_status = self.create_publisher(Bool, '/end_of_turning', 1)
+        # self.pub_turning_status = self.create_publisher(Bool, '/end_of_turning', 1)
         # initialize value. Local variable.
+        # test -> trigger only first time
+        self.first_in_row_navigation = False
         self.publish_goal_position = False
         self.distance_goal_position = 0.75
 
@@ -171,10 +173,10 @@ class EndOfLineDetection(Node):
         points_2d = self.laser_scan_to_cartesian(scan_msg)
         # divide the region in 3 spaces: middle, left, right
         mask_left, mask_middle, mask_rigth = self.split_points_into_regions(points_2d)
-        # not have enough points
-        if len(mask_left)>= self.min_number_points and len(mask_rigth)>= self.min_number_points:
-            # can publish
-            if (self.publish_goal_position == True):
+        # not have enough points and flag = true -> publish
+        if self.publish_goal_position == True:
+            if len(mask_left)<= self.min_number_points and len(mask_rigth)<= self.min_number_points : 
+                # can publish
                 # calculate goal point
                 x, y, theta = self.calculate_goal_point()
                 # print(x)
@@ -184,8 +186,15 @@ class EndOfLineDetection(Node):
                     # print("INSIDE")
                     self.publish_end_of_line_pose(x, y , theta)
                     self.update_turning_status_after_pose_publication()
-            # publish last pose, grater most recent pose
-            # set variable to false
+                # publish last pose, grater most recent pose
+                # set variable to false
+            # else:
+                # print("ROI NOT EMPTY")
+        else:
+            if(self.first_in_row_navigation == True):
+                self.publish_goal_position = True
+                self.first_in_row_navigation = False
+            # print("ROI HAS POINTS")
         # understand empty/not
         # all empty publish the end_of_line_pose
         # two ways: with/without goal pose
