@@ -469,7 +469,7 @@ class InRowNavigation(Node):
 
             # publish last slope, intercept
             self.publish_coefficient_bisectrice()
-            
+
             # invoke calculate_goal_position
             x, y, theta = self.calculate_goal_point()
 
@@ -582,7 +582,6 @@ class InRowNavigation(Node):
         msg = Float64MultiArray()
         msg.data = coefficients
         self.bisectrice_coefficient_pub.publish(msg) 
-
 
     def display_prediction(self, row_positive_value, row_negative_value, x_goal, y_goal):
         # clear axes
