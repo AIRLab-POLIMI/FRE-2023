@@ -173,7 +173,7 @@ class EndOfLineDetection(Node):
             if (self.publish_goal_position == True):
                 # calculate goal point
                 x, y, theta = self.calculate_goal_point()
-                # verify if has greater coordinates last goal
+                # TODO verify if has greater coordinates last goal
                 self.publish_end_of_line_pose(x, y , theta)
                 self.update_turning_status_after_pose_publication()
             # publish last pose, grater most recent pose
@@ -195,6 +195,7 @@ class EndOfLineDetection(Node):
     def callback_update_goal_position(self, msg):
         self.queue_coefficient.update_queue(msg)
 
+    # publish end of line pose
     def publish_end_of_line_pose(self, x, y, theta):
         # create message Pose
         end_of_line_pose = PoseStamped()
@@ -217,12 +218,14 @@ class EndOfLineDetection(Node):
 
         self.end_of_line_pose_topic_pub.publish(end_of_line_pose)
 
+    # update turning status: make switch work
     def update_turning_status_after_pose_publication(self):
         self.publish_goal_position = False
-        msg = Bool()
-        msg.data = self.publish_goal_position
-        self.pub_turning_status(msg)
+        # msg = Bool()
+        # msg.data = self.publish_goal_position
+        # self.pub_turning_status(msg)
 
+    # initialize queue
     def initialize_queue(self):
         self.queue_coefficient.initialize_queue()
         self.queue_goal_position.initialize_queue()
