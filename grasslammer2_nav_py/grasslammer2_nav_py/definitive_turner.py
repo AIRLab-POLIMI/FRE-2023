@@ -16,7 +16,7 @@ class TurnerFinal(Node):
     def __init__(self):
         super().__init__('turner_final')
         self.lineDimension = 0.70
-        self.y_movement = -1.5
+        self.y_movement = -1.0
         self.turnNum = 0;
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
@@ -40,12 +40,12 @@ class TurnerFinal(Node):
         print(yaw)
 
         if(turningInfo[1] == "L"):
-            if(yaw[2] > 1.57): #wrong but solve first the yaw not visible problem
+            if(yaw[2] <= 1.57): #wrong but solve first the yaw not visible problem
                 coeff = float(turningInfo[0])
             else:
                 coeff = -float(turningInfo[0])
         else :
-            if(yaw[2] >  1.57):
+            if(yaw[2] <=  1.57):
                 coeff = -float(turningInfo[0])
             else:
                 coeff = float(turningInfo[0])
@@ -81,7 +81,8 @@ class TurnerFinal(Node):
         while not self.navigator.isTaskComplete():
             result = self.navigator.getResult()
             if result == TaskResult.SUCCEEDED:
-                self.done.publish(True)
+                mess = Bool()
+                self.done.publish(mess)
             else:
                 if result == TaskResult.FAILED:
                     print("Failed To Reach The Goal")
