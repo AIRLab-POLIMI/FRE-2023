@@ -20,6 +20,7 @@ from sklearn.linear_model import RANSACRegressor
 #################################
 ########## MOVING AVARAGE CLASS
 ##################################
+
 class MovingAvarage():
     # assume type are exponentials
     def __init__(self, start, stop, base_exp, dimension_queue):
@@ -388,6 +389,11 @@ class InRowNavigation(Node):
         # TODO
         self.collision_detected_topic = self.create_publisher(PoseStamped, '/collision_detected_topic', 1)
         
+        # needed for end_od_line_detection
+        self.bisectrice_coefficient_pub= self.create_publisher(Float64MultiArray, '/bisectrice_coefficient', 1)
+
+
+        self.goal_pose_pub # prevent unused variable warning
         # minimum number points
         self.min_num_required_points = min_num_required_points
 
@@ -430,7 +436,7 @@ class InRowNavigation(Node):
                 # publish last goal pose
                 x, y, theta = self.calculate_goal_point()
                 # invoke publish_end_of_line
-                self.publish_end_of_line_pose(x, y, theta)
+                # self.publish_end_of_line_pose(x, y, theta)
             
             # reset_is_line_traversed
             self.is_line_traversed = False
@@ -461,6 +467,9 @@ class InRowNavigation(Node):
             # bisectrice prediction
             self.prediction_instance.compute_bisectrice_coefficients(row_positive_value, row_negative_value)
 
+            # publish last slope, intercept
+            self.publish_coefficient_bisectrice()
+            
             # invoke calculate_goal_position
             x, y, theta = self.calculate_goal_point()
 
@@ -565,7 +574,16 @@ class InRowNavigation(Node):
         else:
             # publish goal pose
             self.end_of_line_pose_topic.publish(end_of_line_pose)
-        
+
+    def publish_coefficient_bisectrice(self):
+        # publish last value
+        m,q = self.prediction_instance.navigation_line.get_most_recent_coefficients()
+        coefficients = [m,q]
+        msg = Float64MultiArray()
+        msg.data = coefficients
+        self.bisectrice_coefficient_pub.publish(msg) 
+
+
     def display_prediction(self, row_positive_value, row_negative_value, x_goal, y_goal):
         # clear axes
         self.ax.clear()
