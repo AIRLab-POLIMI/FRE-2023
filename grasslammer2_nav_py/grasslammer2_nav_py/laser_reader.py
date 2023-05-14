@@ -16,10 +16,11 @@ class LaserReader(Node):
         super().__init__('laser_reader')
 
         self.area = np.array([2, 1]) # rect shape x,y
-
+        self.area_end_of_line = np.array([1.2, 0.75]) # rect shape x,y
         self.scan_sub = self.create_subscription(LaserScan, '/scan_initial', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
         self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered', 1)
+        self.filter_pub_end_of_line = self.create_publisher(LaserScan, '/scan/filtered_end_of_line', 1)
         self.cluster1_pub = self.create_publisher(MarkerArray, '/cluster1', 1)
 
 
@@ -28,11 +29,16 @@ class LaserReader(Node):
         coord = self.laser_scan_to_points(msg) # converts laser point to numpy array
         
         selected_coord = self.mask(coord) # takes only coordinate inside the area specified by self.area
+        selected_coord_end_of_line = self.mask_end_of_line(coord) # takes only coordinate inside the area specified by self.area
+        
         # convert selected coord into a laser scan message and publish them throught our publisher
         if np.any(selected_coord):
-
             self.filter_pub.publish(self.points_to_scan(selected_coord, msg))
-
+        
+        # convert selected coord into a laser scan message and publish them throught our publisher
+        if np.any(selected_coord_end_of_line):
+            self.filter_pub_end_of_line.publish(self.points_to_scan(selected_coord_end_of_line, msg))
+        
         #self.visualize_points_2d(selected_coord)
 
     def laser_scan_to_points(self, msg):
@@ -54,6 +60,19 @@ class LaserReader(Node):
         masked_points = np.full_like(points, -1)
         masked_points[mask] = points[mask]
         return masked_points
+
+     
+    # mask for end of line
+    def mask_end_of_line(self, points: np.ndarray):
+        x_mask = (points[:, 0] >= 0) & (points[:, 0] <= self.area_end_of_line[1]) # return a boolean array, after AND 
+        y_mask = (points[:, 1] >= -self.area_end_of_line[0]/2) & (points[:, 1] <= self.area_end_of_line[0]/2)#self.area[1])
+        range_mask = points[:,2] >=0
+        mask = x_mask & y_mask & range_mask
+
+        masked_points = np.full_like(points, -1)
+        masked_points[mask] = points[mask]
+        return masked_points
+
 
     def points_to_scan(self, points: np.ndarray, msg: LaserScan):
         
