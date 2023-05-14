@@ -133,7 +133,7 @@ controller_server:
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 1.0 #changed from 0.15
+      xy_goal_tolerance: 0.50 #changed from 0.15
       yaw_goal_tolerance: 0.15
     # DWB parameters
     FollowPath:
@@ -195,7 +195,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 30.0
-        inflation_radius: 0.25
+        inflation_radius: 0.15
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
@@ -229,7 +229,7 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       use_sim_time: True
-      robot_radius: 0.10
+      robot_radius: 0.22
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
@@ -252,8 +252,8 @@ global_costmap:
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 30.0
-        inflation_radius: 0.25
+        cost_scaling_factor: 40.0
+        inflation_radius: 0.15
       always_send_full_costmap: True
 
 map_server:
