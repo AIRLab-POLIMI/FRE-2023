@@ -38,22 +38,28 @@ class TurnerFinal(Node):
         
         staged_from_bf_to_odom = self.get_tf_of_frames("base_footprint", "map")
 
-        yawpose = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
+        #yawpose = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         yawtf = euler_from_quaternion([staged_from_bf_to_odom.transform.rotation.x, staged_from_bf_to_odom.transform.rotation.y, staged_from_bf_to_odom.transform.rotation.z, staged_from_bf_to_odom.transform.rotation.w])
-        print(yawpose, yawtf)
+        print( yawtf)
 
-        yaw = yawpose[2] + yawtf[2]
+        yaw = yawtf[2] + math.pi/2
 
         if(turningInfo[1] == "L"):
             if(yaw <= 1.57): #wrong but solve first the yaw not visible problem
                 coeff = float(turningInfo[0])
+                print(coeff)
             else:
                 coeff = -float(turningInfo[0])
+                print(coeff)
         else :
             if(yaw <=  1.57):
                 coeff = -float(turningInfo[0])
+                print(coeff)
+
             else:
                 coeff = float(turningInfo[0])
+                print(coeff)
+
 
 
         poseToNavigate.header.stamp = time_now.to_msg()
@@ -62,12 +68,12 @@ class TurnerFinal(Node):
         #yaw = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         
 
-        qt = quaternion_from_euler(-(yawpose[0] + yawtf[0]), -(yawpose[1] + yawtf[1]), -yaw)
+        qt = quaternion_from_euler(-(yawtf[0]), -(yawtf[1]), -yaw)
 
 
 
-        poseToNavigate.pose.position.x = staged_from_bf_to_odom.transform.translation.x + msg.pose.position.x + self.lineDimension*float(coeff)*math.sin(yaw[2] + math.pi) + self.y_movement*math.sin(yaw[2] + math.pi/2)
-        poseToNavigate.pose.position.y = staged_from_bf_to_odom.transform.translation.y + msg.pose.position.y + self.lineDimension*float(coeff)*math.cos(yaw[2] + math.pi) + self.y_movement*math.cos(yaw[2] + math.pi/2)
+        poseToNavigate.pose.position.x = staged_from_bf_to_odom.transform.translation.x + self.lineDimension*float(coeff)*math.cos(      yaw      ) + self.y_movement*math.cos(math.pi/2 - yaw)
+        poseToNavigate.pose.position.y = staged_from_bf_to_odom.transform.translation.y + self.lineDimension*float(coeff)*math.cos(math.pi/2 - yaw) + self.y_movement*math.cos(      yaw      )
         poseToNavigate.pose.position.z = 0.0
 
 
@@ -86,7 +92,9 @@ class TurnerFinal(Node):
             result = self.navigator.getResult()
             if result == TaskResult.SUCCEEDED:
                 mess = Bool()
+                mess.data = True
                 self.done.publish(mess)
+                print("Goal Succeded")
                 break
             else:
                 if result == TaskResult.FAILED:

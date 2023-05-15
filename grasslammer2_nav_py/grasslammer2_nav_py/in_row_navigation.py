@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from collections import deque
 # LINE
 from sklearn.linear_model import RANSACRegressor
+from numpy import float64
 
 #################################
 ########## MOVING AVARAGE CLASS
@@ -290,8 +291,8 @@ class Line():
     
 
     def get_most_recent_coefficients(self):
-        slope = self.slope.return_element_time_t()
-        intercept = self.intercept.return_element_time_t()
+        slope = float64(self.slope.return_element_time_t())
+        intercept = float64(self.intercept.return_element_time_t())
         return slope, intercept
     
     
@@ -477,7 +478,7 @@ class InRowNavigation(Node):
             self.publish_goal_pose(x, y, theta)
 
             # display 
-            self.display_prediction(row_positive_value, row_negative_value, x, y)
+            #self.display_prediction(row_positive_value, row_negative_value, x, y)
 
 
     def laser_scan_to_cartesian(self, msg):
