@@ -35,17 +35,22 @@ class TurnerFinal(Node):
 
         turningInfo = self.turningCommands[self.turnNum]
         self.turnNum += 1
+        
+        staged_from_bf_to_odom = self.get_tf_of_frames("base_footprint", "map")
 
-        yaw = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
-        print(yaw)
+        yawpose = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
+        yawtf = euler_from_quaternion([staged_from_bf_to_odom.transform.rotation.x, staged_from_bf_to_odom.transform.rotation.y, staged_from_bf_to_odom.transform.rotation.z, staged_from_bf_to_odom.transform.rotation.w])
+        print(yawpose, yawtf)
+
+        yaw = yawpose[2] + yawtf[2]
 
         if(turningInfo[1] == "L"):
-            if(yaw[2] <= 1.57): #wrong but solve first the yaw not visible problem
+            if(yaw <= 1.57): #wrong but solve first the yaw not visible problem
                 coeff = float(turningInfo[0])
             else:
                 coeff = -float(turningInfo[0])
         else :
-            if(yaw[2] <=  1.57):
+            if(yaw <=  1.57):
                 coeff = -float(turningInfo[0])
             else:
                 coeff = float(turningInfo[0])
@@ -57,9 +62,8 @@ class TurnerFinal(Node):
         #yaw = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         
 
-        qt = quaternion_from_euler(-yaw[0], -yaw[1], yaw[2] + math.pi)
+        qt = quaternion_from_euler(-(yawpose[0] + yawtf[0]), -(yawpose[1] + yawtf[1]), -yaw)
 
-        staged_from_bf_to_odom = self.get_tf_of_frames("base_footprint", "map")
 
 
         poseToNavigate.pose.position.x = staged_from_bf_to_odom.transform.translation.x + msg.pose.position.x + self.lineDimension*float(coeff)*math.sin(yaw[2] + math.pi) + self.y_movement*math.sin(yaw[2] + math.pi/2)

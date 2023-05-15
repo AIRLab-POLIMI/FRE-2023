@@ -85,7 +85,7 @@ class EndOfLineDetection(Node):
         # initialize value. Local variable.
         # test -> trigger only first time
         self.first_in_row_navigation = False
-        self.publish_goal_position = False
+        self.publish_goal_position = True
         self.distance_goal_position = 0.75
 
     def laser_scan_to_cartesian(self, msg):
@@ -190,10 +190,10 @@ class EndOfLineDetection(Node):
                 # set variable to false
             # else:
                 # print("ROI NOT EMPTY")
-        else:
-            if(self.first_in_row_navigation == True):
-                self.publish_goal_position = True
-                self.first_in_row_navigation = False
+        #else:
+            #if(self.first_in_row_navigation == True):
+            #    self.publish_goal_position = True
+            #    self.first_in_row_navigation = False
             # print("ROI HAS POINTS")
         # understand empty/not
         # all empty publish the end_of_line_pose
@@ -202,7 +202,7 @@ class EndOfLineDetection(Node):
     
     # update bool value
     def callback_update_bool(self, msg):
-        self.publish_goal_position = msg.data
+        self.publish_goal_position = True
 
     # update m,q
     def callback_line_coefficient(self, msg):
