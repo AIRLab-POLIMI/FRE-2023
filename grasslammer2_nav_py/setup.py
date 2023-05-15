@@ -32,6 +32,7 @@ setup(
             'starting_pose_pub = grasslammer2_nav_py.end_of_line_pose:main',
             'turner = grasslammer2_nav_py.definitive_turner:main',
             'in_row_navigation = grasslammer2_nav_py.in_row_navigation:main',
+            'end_of_line_detection = grasslammer2_nav_py.end_of_line_detection:main',
         ],
     },
 )

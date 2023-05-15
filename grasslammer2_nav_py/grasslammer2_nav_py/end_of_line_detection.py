@@ -72,17 +72,19 @@ class EndOfLineDetection(Node):
         self.end_of_line_pose_topic_pub = self.create_publisher(PoseStamped, '/end_of_line_pose', 1)
         
         # min points
-        self.min_number_points = 2
+        self.min_number_points = 0
 
         # divide into three regions
-        self.area = np.array([1.2, 0.75]) # rect shape x,y
+        self.area = np.array([1.2, 0.5]) # rect shape x,y
 
         # needed trigger turning
         # subscribe topic end of turning to understand publish/not
         self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
         # publish topic end of turning after first publication
-        self.pub_turning_status = self.create_publisher(Bool, '/end_of_turning', 1)
+        # self.pub_turning_status = self.create_publisher(Bool, '/end_of_turning', 1)
         # initialize value. Local variable.
+        # test -> trigger only first time
+        self.first_in_row_navigation = False
         self.publish_goal_position = False
         self.distance_goal_position = 0.75
 
@@ -100,6 +102,7 @@ class EndOfLineDetection(Node):
 
     # returns the three regions
     def split_points_into_regions(self, points):
+        # print(points)
         # area width
         width = self.area[1]/6
         # left
@@ -114,10 +117,10 @@ class EndOfLineDetection(Node):
 
 
         # apply mask
-        range_mask = points[:,2] >=0
-        mask_left = x_mask_left & y_mask_left & range_mask
-        mask_middle = x_mask_middle & y_mask_middle & range_mask
-        mask_rigth = x_mask_rigth & y_mask_rigth & range_mask
+        # range_mask = points[:,2] >=0
+        mask_left = x_mask_left & y_mask_left # & range_mask
+        mask_middle = x_mask_middle & y_mask_middle # & range_mask
+        mask_rigth = x_mask_rigth & y_mask_rigth # & range_mask
 
         # remove empty points
         masked_points_left = np.full_like(points, -1)
@@ -132,34 +135,37 @@ class EndOfLineDetection(Node):
     def calculate_goal_point(self):
         # takes the last m/q value of bisectrice
         recent_coefficient_value = self.queue_coefficient.return_element_time_t()
-        slope, intercept = recent_coefficient_value[0], recent_coefficient_value[1]
-
-        # calculate goal_points
-        tmp_result = pow(slope,2)* pow(intercept,2) - (self.distance_goal_position+ pow(slope,2))*(pow(intercept,2)-1)
-    
-        # safety if-else statement
-        if(tmp_result >=0):
-            x_1 = (-slope*intercept + math.sqrt(tmp_result))/(self.distance_goal_position+slope**2)
-            x_2 = (-slope*intercept - math.sqrt(tmp_result))/(self.distance_goal_position+slope**2)
-        else:
-            x_1 = 0
-            x_2 = 0
-            print("ERROR QUADRATIC")
-
-        # take greatest value
-        if x_1 >= x_2:
-            x = x_1
-        else:
-            x = x_2
+        if(recent_coefficient_value != False):
+            slope, intercept = recent_coefficient_value[0], recent_coefficient_value[1]
+            # calculate goal_points
+            tmp_result = pow(slope,2)* pow(intercept,2) - (self.distance_goal_position+ pow(slope,2))*(pow(intercept,2)-1)
         
-        # solve equation
-        y = slope*x + intercept
+            # safety if-else statement
+            if(tmp_result >=0):
+                x_1 = (-slope*intercept + math.sqrt(tmp_result))/(self.distance_goal_position+slope**2)
+                x_2 = (-slope*intercept - math.sqrt(tmp_result))/(self.distance_goal_position+slope**2)
+            else:
+                x_1 = 0
+                x_2 = 0
+                print("ERROR QUADRATIC")
 
-        # take euler angle
-        theta = math.atan(y/x)
+            # take greatest value
+            if x_1 >= x_2:
+                x = x_1
+            else:
+                x = x_2
+            
+            # solve equation
+            y = slope*x + intercept
+
+            # take euler angle
+            theta = math.atan(y/x)
 
 
-        return x,y,theta
+            return x,y,theta
+        
+        else:
+            return False, False, False
     
     # understand empty region
     def scan_callback_ROI(self, scan_msg):
@@ -167,17 +173,28 @@ class EndOfLineDetection(Node):
         points_2d = self.laser_scan_to_cartesian(scan_msg)
         # divide the region in 3 spaces: middle, left, right
         mask_left, mask_middle, mask_rigth = self.split_points_into_regions(points_2d)
-        # not have enough points
-        if len(mask_left)<= self.min_number_points and len(mask_rigth)<= self.min_number_points:
-            # can publish
-            if (self.publish_goal_position == True):
+        # not have enough points and flag = true -> publish
+        if self.publish_goal_position == True:
+            if len(mask_left)<= self.min_number_points and len(mask_rigth)<= self.min_number_points : 
+                # can publish
                 # calculate goal point
                 x, y, theta = self.calculate_goal_point()
-                # TODO verify if has greater coordinates last goal
-                self.publish_end_of_line_pose(x, y , theta)
-                self.update_turning_status_after_pose_publication()
-            # publish last pose, grater most recent pose
-            # set variable to false
+                # print(x)
+                # valuable data
+                if x != False:
+                    # TODO verify if has greater coordinates last goal
+                    # print("INSIDE")
+                    self.publish_end_of_line_pose(x, y , theta)
+                    self.update_turning_status_after_pose_publication()
+                # publish last pose, grater most recent pose
+                # set variable to false
+            # else:
+                # print("ROI NOT EMPTY")
+        else:
+            if(self.first_in_row_navigation == True):
+                self.publish_goal_position = True
+                self.first_in_row_navigation = False
+            # print("ROI HAS POINTS")
         # understand empty/not
         # all empty publish the end_of_line_pose
         # two ways: with/without goal pose
@@ -189,11 +206,11 @@ class EndOfLineDetection(Node):
 
     # update m,q
     def callback_line_coefficient(self, msg):
-        self.queue_goal_position.update_queue(msg)
+        self.queue_coefficient.update_queue(msg.data)
 
     # update goal pose 
     def callback_update_goal_position(self, msg):
-        self.queue_coefficient.update_queue(msg)
+        self.queue_goal_position.update_queue(msg.data)
 
     # publish end of line pose
     def publish_end_of_line_pose(self, x, y, theta):
