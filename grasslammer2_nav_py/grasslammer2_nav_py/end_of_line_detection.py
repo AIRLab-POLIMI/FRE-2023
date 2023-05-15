@@ -86,7 +86,7 @@ class EndOfLineDetection(Node):
         # test -> trigger only first time
         self.first_in_row_navigation = False
         self.publish_goal_position = True
-        self.distance_goal_position = 0.75
+        self.distance_goal_position = 0.05
 
     def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
@@ -136,14 +136,14 @@ class EndOfLineDetection(Node):
         # takes the last m/q value of bisectrice
         recent_coefficient_value = self.queue_coefficient.return_element_time_t()
         if(recent_coefficient_value != False):
-            slope, intercept = recent_coefficient_value[0], recent_coefficient_value[1]
+            m, q = recent_coefficient_value[0], recent_coefficient_value[1]
             # calculate goal_points
-            tmp_result = pow(slope,2)* pow(intercept,2) - (self.distance_goal_position+ pow(slope,2))*(pow(intercept,2)-1)
+            tmp_result = pow(m,2)* pow(q,2) - (pow(self.distance_goal_position, 2) + pow(m,2))*(pow(q,2)-1)
         
             # safety if-else statement
             if(tmp_result >=0):
-                x_1 = (-slope*intercept + math.sqrt(tmp_result))/(self.distance_goal_position+slope**2)
-                x_2 = (-slope*intercept - math.sqrt(tmp_result))/(self.distance_goal_position+slope**2)
+                x_1 = (-m*q + math.sqrt(tmp_result))/(1+m**2)
+                x_2 = (-m*q - math.sqrt(tmp_result))/(1+m**2)
             else:
                 x_1 = 0
                 x_2 = 0
@@ -156,7 +156,7 @@ class EndOfLineDetection(Node):
                 x = x_2
             
             # solve equation
-            y = slope*x + intercept
+            y = m*x + q
 
             # take euler angle
             theta = math.atan(y/x)

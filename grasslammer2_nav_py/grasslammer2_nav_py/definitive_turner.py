@@ -40,7 +40,7 @@ class TurnerFinal(Node):
 
         #yawpose = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         yawtf = euler_from_quaternion([staged_from_bf_to_odom.transform.rotation.x, staged_from_bf_to_odom.transform.rotation.y, staged_from_bf_to_odom.transform.rotation.z, staged_from_bf_to_odom.transform.rotation.w])
-        print( yawtf)
+        print(yawtf)
 
         yaw = yawtf[2] + math.pi/2
 
@@ -64,8 +64,6 @@ class TurnerFinal(Node):
 
         poseToNavigate.header.stamp = time_now.to_msg()
         poseToNavigate.header.frame_id = "map"
-
-        #yaw = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         
 
         qt = quaternion_from_euler(-(yawtf[0]), -(yawtf[1]), -yaw)
@@ -89,17 +87,17 @@ class TurnerFinal(Node):
 
 
         while not self.navigator.isTaskComplete():
-            result = self.navigator.getResult()
-            if result == TaskResult.SUCCEEDED:
-                mess = Bool()
-                mess.data = True
-                self.done.publish(mess)
-                print("Goal Succeded")
-                break
-            else:
-                if result == TaskResult.FAILED:
-                    print("Failed To Reach The Goal")
-                    break
+            continue
+
+        result = self.navigator.getResult()
+        if result == TaskResult.SUCCEEDED:
+            mess = Bool()
+            mess.data = True
+            self.done.publish(mess)
+            print("Goal Succeded")
+        else:
+            if result == TaskResult.FAILED:
+                print("Failed To Reach The Goal")
                 
 
 
