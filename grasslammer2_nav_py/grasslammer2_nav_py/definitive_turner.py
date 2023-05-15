@@ -83,12 +83,12 @@ class TurnerFinal(Node):
             if result == TaskResult.SUCCEEDED:
                 mess = Bool()
                 self.done.publish(mess)
+                break
             else:
                 if result == TaskResult.FAILED:
                     print("Failed To Reach The Goal")
                     break
-                else:
-                    print("Waiting For Goal To Be Reached")
+                
 
 
 
