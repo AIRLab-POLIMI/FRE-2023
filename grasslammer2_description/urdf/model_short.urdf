@@ -168,7 +168,7 @@
         <sensor name="my_imu" type="imu">
             <always_on>true</always_on>
             <!-- Publish at 30 hz -->
-            <update_rate>30</update_rate>
+            <update_rate>100</update_rate>
             <plugin name="my_imu_plugin" filename="libgazebo_ros_imu_sensor.so">
               <ros>
                 <!-- Will publish to /imu/data -->
@@ -176,7 +176,7 @@
                 <remapping>~/out:=data</remapping>
               </ros>
               <!-- frame_name ommited, will be "my_link" -->
-              <frame_name>base_link</frame_name>
+              <frame_name>oakd_base</frame_name>
             </plugin>
         </sensor>
     </gazebo>
@@ -185,7 +185,7 @@
     <!-- ########### Velodyne 32E ############ -->
     <xacro:include filename="$(find velodyne_description)/urdf/HDL-32E.urdf.xacro"/>
     <xacro:HDL-32E parent="base_link" name="velodyne2" topic="/velodyne_points2" organize_cloud="false" hz="10" samples="220" gpu="true">
-        <origin xyz="0 0 0.05" rpy="0 0 0" />
+        <origin xyz="0.215 0 0.05" rpy="0 0 0" />
     </xacro:HDL-32E>
 
 </robot>
