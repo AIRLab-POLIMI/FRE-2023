@@ -3,7 +3,7 @@ from rclpy.node import Node
 from rclpy.duration import Duration
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg._pose_stamped import PoseStamped
-from tf_transformations import euler_from_quaternion, quaternion_from_euler
+from tf_transformations import euler_from_quaternion, quaternion_from_euler, quaternion_inverse
 from rclpy.time import Time
 import math
 from tf2_ros.transform_listener import TransformListener
@@ -66,8 +66,7 @@ class TurnerFinal(Node):
         poseToNavigate.header.frame_id = "map"
         
 
-        qt = quaternion_from_euler(-(yawtf[0]), -(yawtf[1]), -yaw)
-
+        qt = quaternion_from_euler((yawtf[0]), (yawtf[1]), yaw + math.pi)
 
 
         poseToNavigate.pose.position.x = staged_from_bf_to_odom.transform.translation.x + self.lineDimension*float(coeff)*math.cos(      yaw      ) + self.y_movement*math.cos(math.pi/2 - yaw)
