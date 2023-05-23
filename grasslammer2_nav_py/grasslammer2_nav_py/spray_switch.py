@@ -1,5 +1,7 @@
 import rclpy
 from rclpy.node import Node
+import serial
+import time
 
 from sensor_msgs.msg import LaserScan
 
@@ -14,8 +16,10 @@ class SpraySwitch(Node):
 
         self.area = np.array([-0.1, 0.1, 0.5, 0.5]) # rect shape x,y, width, height as the one from mppatches
     
+        self.ser = serial.Serial('/dev/ttyACM0', 9600)
+        self.point_treshold = 10
 
-        self.scan_sub = self.create_subscription(LaserScan, '/scan_mono', self.scan_callback, 1)
+        self.scan_sub = self.create_subscription(LaserScan, '/scan_initial', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
         self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered', 1)
         self.fig, self.ax = plt.subplots()
@@ -40,7 +44,19 @@ class SpraySwitch(Node):
         selected_coord_l = selected_coord_l[~mask_3 & ~mask_4]
 
 
+
         self.visualize(coord, selected_coord_r, selected_coord_l)
+
+        if selected_coord_l.shape[0] > self.point_treshold:
+            self.ser.write('G/l'.encode()+b'\n') 
+        elif selected_coord_l.shape[0] <= self.point_treshold:
+            self.ser.write('b/l'.encode()+b'\n') 
+        if selected_coord_r.shape[0] > self.point_treshold:
+            self.ser.write('G/r'.encode()+b'\n') 
+        elif selected_coord_r.shape[0] <= self.point_treshold:
+            self.ser.write('b/r'.encode()+b'\n') 
+
+
         # if np.any(selected_coord):
 
         #     self.filter_pub.publish(self.points_to_scan(selected_coord, msg))
@@ -49,7 +65,7 @@ class SpraySwitch(Node):
 
     def laser_scan_to_points(self, msg):
         ranges = np.array(msg.ranges) # Converting ranges field into a numpy array 
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=msg.angle_increment) # Return evenly spaced value of angles based on its index 
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max-msg.angle_min)/720)#msg.angle_increment) # Return evenly spaced value of angles based on its index 
 
         x = ranges * np.cos(angles) # array of all the x coordinates in 2D
         y = ranges * np.sin(angles) # array of all the y coordinates in 2D
