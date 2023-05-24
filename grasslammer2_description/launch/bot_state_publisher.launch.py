@@ -24,13 +24,6 @@ def generate_launch_description():
     spawn_yaw_val = '-1.57' #'0.0'#'1.57'
 
     #Create robot state publisher node 
-    params = {'robot_description' : robot_description_config.toxml()}
-    node_robot_state_publisher = Node(
-                package='robot_state_publisher', 
-                executable='robot_state_publisher', 
-                #output='screen',
-                parameters=[params]
-    )
     spawn_entity = Node(package='gazebo_ros', executable='spawn_entity.py',
                         arguments=[ '-topic', 'robot_description',
                                     '-entity', 'grasslammer',

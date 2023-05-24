@@ -311,7 +311,7 @@ class Line():
 ##################################  
 class Prediction():
     # assume type are exponentials
-    def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, window_allowed_outdated_parameters=5,threshold_crop_line = 0.30, threshold_bisectrice_line = 0) :
+    def __init__(self, dimension_queue=8, ma_crop_flag=0, ma_navigation_flag=1, window_allowed_outdated_parameters=8,threshold_crop_line = 0.30, threshold_bisectrice_line = 0) :
         # dimension_queue -> n
         
         # save right/left cluster data
@@ -478,12 +478,12 @@ class InRowNavigation(Node):
             self.publish_goal_pose(x, y, theta)
 
             # display 
-            #self.display_prediction(row_positive_value, row_negative_value, x, y)
+            self.display_prediction(row_positive_value, row_negative_value, x, y)
 
 
     def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/720) 
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/3240) 
 
         x = np.where(ranges == -1, -1, ranges * np.cos(angles))
         y = np.where(ranges == -1, -1, ranges * np.sin(angles))

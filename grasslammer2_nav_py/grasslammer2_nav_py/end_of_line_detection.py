@@ -90,7 +90,7 @@ class EndOfLineDetection(Node):
 
     def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/720) 
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/3240) 
 
         x = np.where(ranges == -1, -1, ranges * np.cos(angles))
         y = np.where(ranges == -1, -1, ranges * np.sin(angles))

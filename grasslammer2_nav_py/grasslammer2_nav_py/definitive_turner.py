@@ -3,7 +3,7 @@ from rclpy.node import Node
 from rclpy.duration import Duration
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg._pose_stamped import PoseStamped
-from tf_transformations import euler_from_quaternion, quaternion_from_euler, quaternion_inverse
+from tf_transformations import euler_from_quaternion, quaternion_from_euler
 from rclpy.time import Time
 import math
 from tf2_ros.transform_listener import TransformListener
@@ -22,7 +22,7 @@ class TurnerFinal(Node):
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self.starting_pose_sub = self.create_subscription(PoseStamped, '/end_of_line_pose', self.elaborate_goal_point, 1)
         self.done = self.create_publisher(Bool, '/end_of_turning', 1)
-        pkg_path = os.path.realpath("grasslammer2_description")
+        pkg_path = os.path.realpath("workspace/ros2/src/grasslammer2/grasslammer2_description")
         with open(pkg_path + "/config/pathTask1.txt") as path:
             self.turningCommands = path.readlines()
         print(self.turningCommands)
@@ -66,7 +66,8 @@ class TurnerFinal(Node):
         poseToNavigate.header.frame_id = "map"
         
 
-        qt = quaternion_from_euler((yawtf[0]), (yawtf[1]), yaw + math.pi)
+        qt = quaternion_from_euler(-(yawtf[0]), -(yawtf[1]), -yaw)
+
 
 
         poseToNavigate.pose.position.x = staged_from_bf_to_odom.transform.translation.x + self.lineDimension*float(coeff)*math.cos(      yaw      ) + self.y_movement*math.cos(math.pi/2 - yaw)

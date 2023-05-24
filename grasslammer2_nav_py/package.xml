@@ -22,6 +22,8 @@
   <exec_depend>moving_avarage_queue</exec_depend>
   <exec_depend>line</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>numpy</exec_depend>
+
   
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

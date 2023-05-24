@@ -15,22 +15,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
-parser = argparse.ArgumentParser(description = "aut_nav")
-parser.add_argument('--a', type =float, default = 1.0)
-parser.add_argument('--b', type =float, default = 0.5)
-args = parser.parse_args()
+#parser = argparse.ArgumentParser(description = "aut_nav")
+#parser.add_argument('--a', type =float, default = 1.0)
+#parser.add_argument('--b', type =float, default = 0.5)
+#args = parser.parse_args()
 
 
 class Navigation(Node):
     def __init__(self):
         super().__init__('navigation')
+        self.a = 5
+        self.b = 0.5
 
         self.goal_point_sub = self.create_subscription(Float64MultiArray, '/goal_position', self.goal_callback, 1)
         self.goal_point_sub #prevent unused variable warning 
 
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_row_nav', 1)
-        self.a = args.a
-        self.b = args.b
+        #self.a = args.a
+        #self.b = args.b
 
     def goal_callback(self, goal):
         #self.a = args.a # proportional gain on angular velocity

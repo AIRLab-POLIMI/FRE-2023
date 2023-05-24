@@ -20,7 +20,6 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 
 #include <stdio.h>
-#include <omp.h>
 
 class map_filter : public rclcpp::Node{
     private:
@@ -45,7 +44,7 @@ class map_filter : public rclcpp::Node{
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/selected", 10, std::bind(&map_filter::callback, this, std::placeholders::_1));
 
-            sub2 = this->create_subscription<sensor_msgs::msg::LaserScan>("/scan_initial", 10, std::bind(&map_filter::populate_scan, this, std::placeholders::_1));
+            sub2 = this->create_subscription<sensor_msgs::msg::LaserScan>("/scan", 10, std::bind(&map_filter::populate_scan, this, std::placeholders::_1));
                         
             pub_filter = this->create_publisher<sensor_msgs::msg::PointCloud2>("/filtered_point_cloud", 1);
 
@@ -113,7 +112,6 @@ class map_filter : public rclcpp::Node{
                 }
                 else cur_threshold = threshold;
                 //for every point in the "input" point cloud
-                #pragma omp parallel for reduction(+:neighbors)
                 for (long unsigned int j=0; j < input->points.size(); j+=5){
                     other=input->points[j];
 

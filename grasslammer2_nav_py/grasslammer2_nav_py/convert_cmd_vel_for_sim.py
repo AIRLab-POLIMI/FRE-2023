@@ -16,7 +16,7 @@ class CMDConverter(Node):
         self.cmd_vel_sub = self.create_subscription(Twist, '/cmd_vel_row_nav', self.callback1, 1)
         self.turningOn = self.create_subscription(PoseStamped, '/end_of_line_pose', self.switchOn, 1)
         self.turningOff = self.create_subscription(Bool, "/end_of_turning", self.switchOff, 1)
-        self.cmd_vel_unstamped_pub = self.create_publisher(Twist, '/grasslammer_velocity_controller/cmd_vel_unstamped', 1)
+        self.cmd_vel_unstamped_pub = self.create_publisher(Twist, '/cmd_vel_autonomous', 1)
         self.turning = False 
 
     
