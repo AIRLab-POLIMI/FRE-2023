@@ -403,8 +403,8 @@ class InRowNavigation(Node):
         self.start_computation = -1
 
         # prefiltering
-        self.prefiltering_threshold = 0.75 
-
+        self.prefiltering_threshold = 0.75
+        self.goal_position_distance = 1.3
         # Prediction obj
         # add parameters
         self.prediction_instance = Prediction()
@@ -478,12 +478,12 @@ class InRowNavigation(Node):
             self.publish_goal_pose(x, y, theta)
 
             # display 
-            #self.display_prediction(row_positive_value, row_negative_value, x, y)
+            self.display_prediction(row_positive_value, row_negative_value, x, y)
 
 
     def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/720) 
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/len(ranges)) 
 
         x = np.where(ranges == -1, -1, ranges * np.cos(angles))
         y = np.where(ranges == -1, -1, ranges * np.sin(angles))
@@ -516,7 +516,7 @@ class InRowNavigation(Node):
         slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
         
         # calculate goal_points
-        tmp_result = pow(slope,2)* pow(intercept,2) - (1+ pow(slope,2))*(pow(intercept,2)-1)
+        tmp_result = pow(slope,2)* pow(intercept,2) - (1+ pow(slope,2))*(pow(intercept,2)-pow(self.goal_position_distance,2))
         
         # safety if-else statement
         if(tmp_result >=0):
@@ -592,7 +592,7 @@ class InRowNavigation(Node):
         plt.scatter(row_negative_value[:, 0], row_negative_value[:, 1], color='blue')
         
         # takes 3 values btw 0/2
-        x = np.linspace(0, 2, 3)
+        x = np.linspace(0, 1.5, 3)
 
         # get proper slope, intercept for each value
         positive_slope, positive_intercept = self.prediction_instance.positive_crop_line.get_most_recent_coefficients()

@@ -15,14 +15,15 @@ class LaserReader(Node):
     def __init__(self):
         super().__init__('laser_reader')
 
-        self.area = np.array([2, 1]) # rect shape x,y
+        self.area = np.array([2, 2.6]) # rect shape x,y
         self.area_end_of_line = np.array([1.2, 0.75]) # rect shape x,y
-        self.scan_sub = self.create_subscription(LaserScan, '/scan_initial', self.scan_callback, 1)
+        # scan_out
+        self.scan_sub = self.create_subscription(LaserScan, '/scan_out', self.scan_callback_extended, 1)
         self.scan_sub # prevent unused variable warning 
         self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered', 1)
         self.filter_pub_end_of_line = self.create_publisher(LaserScan, '/scan/filtered_end_of_line', 1)
         self.cluster1_pub = self.create_publisher(MarkerArray, '/cluster1', 1)
-
+        # sself.extended_area = np.array([1, 0.8]) # rect shape x,y
 
 
     def scan_callback(self, msg): 
@@ -41,9 +42,21 @@ class LaserReader(Node):
         
         #self.visualize_points_2d(selected_coord)
 
+    def scan_callback_extended(self, msg): 
+        coord = self.laser_scan_to_points(msg) # converts laser point to numpy array
+        
+        selected_coord = self.mask_extended(coord) # takes only coordinate inside the area specified by self.area
+        
+        # convert selected coord into a laser scan message and publish them throught our publisher
+        if np.any(selected_coord):
+            self.filter_pub.publish(self.points_to_scan(selected_coord, msg))
+        
+        #self.visualize_points_2d(selected_coord)
+
     def laser_scan_to_points(self, msg):
         ranges = np.array(msg.ranges) # Converting ranges field into a numpy array 
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/720) # Return evenly spaced value of angles based on its index 
+        # print(len(ranges))
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/len(ranges)) # Return evenly spaced value of angles based on its index 
 
         x = ranges * np.cos(angles) # array of all the x coordinates in 2D
         y = ranges * np.sin(angles) # array of all the y coordinates in 2D
@@ -61,7 +74,6 @@ class LaserReader(Node):
         masked_points[mask] = points[mask]
         return masked_points
 
-     
     # mask for end of line
     def mask_end_of_line(self, points: np.ndarray):
         x_mask = (points[:, 0] >= 0) & (points[:, 0] <= self.area_end_of_line[1]) # return a boolean array, after AND 
@@ -72,6 +84,19 @@ class LaserReader(Node):
         masked_points = np.full_like(points, -1)
         masked_points[mask] = points[mask]
         return masked_points
+
+    # mask extended
+    def mask_extended(self, points: np.ndarray):
+        # print((points[:, 0] >= -self.area[1]) & (points[:, 0] <= self.area[1]))
+        x_mask = (points[:, 0] >= -self.area[1]/2) & (points[:, 0] <= self.area[1]/2) # return a boolean array, after AND 
+        y_mask = (points[:, 1] >= -self.area[0]/2) & (points[:, 1] <= self.area[0]/2)#self.area[1])
+        range_mask = points[:,2] >=0
+        mask = x_mask & y_mask & range_mask
+
+        masked_points = np.full_like(points, -1)
+        masked_points[mask] = points[mask]
+        return masked_points
+
 
 
     def points_to_scan(self, points: np.ndarray, msg: LaserScan):

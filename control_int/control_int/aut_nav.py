@@ -33,8 +33,8 @@ class Navigation(Node):
         self.b = args.b
 
     def goal_callback(self, goal):
-        #self.a = args.a # proportional gain on angular velocity
-        #self.b = args.b # proportional gain on linear velocity
+        # self.a = args.a # proportional gain on angular velocity
+        # self.b = args.b # proportional gain on linear velocity
         cmd_msg = Twist()
 
         theta = goal.data[2]

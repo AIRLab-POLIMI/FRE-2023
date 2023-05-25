@@ -23,7 +23,7 @@ class cloud_to_scan : public rclcpp::Node{
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/filtered_point_cloud", 10, std::bind(&cloud_to_scan::callback, this, std::placeholders::_1));
                         
-            pub = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 1);
+            pub = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan_out", 1);
 
         }
 
@@ -45,8 +45,8 @@ class cloud_to_scan : public rclcpp::Node{
             scan_msg->scan_time = pcl_cloud_in->header.stamp;
             scan_msg->range_min = 0.0;
             scan_msg->range_max = std::numeric_limits<double>::infinity();
-
-            scan_msg->ranges.assign(1441, std::numeric_limits<double>::infinity());
+            // modified
+            scan_msg->ranges.assign(3240, std::numeric_limits<double>::infinity());
 
             // Iterate through pointcloud
             pcl::PointXYZ point;
