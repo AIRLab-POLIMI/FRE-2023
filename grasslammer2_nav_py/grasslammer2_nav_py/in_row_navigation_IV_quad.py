@@ -635,6 +635,12 @@ class InRowNavigation(Node):
 
         # move forward
         self.moving_forward = True
+        self.last_valid_crop_west = ''
+        self.last_valid_crop_east = ''
+        self.greatest_point_west = ''
+        self.greatest_point_east = ''
+        self.current_goal = ''
+
   
     def scan_callback(self, scan_msg):
         self.start_computation = time.perf_counter()
@@ -653,16 +659,23 @@ class InRowNavigation(Node):
     def in_row_navigation_forward(self, points_nord_east, points_nord_west, points_south_east, points_south_west):
 
         # get information about emptyness of regions
-        is_nord_east_empty = True if np.size(points_nord_east) < self.min_num_required_points else False
+        is_nord_east_empty = True if np.size(points_nord_east) < self.min_num_reandquired_points else False
         is_nord_west_empty = True if np.size(points_nord_west) < self.min_num_required_points else False
         is_south_east_empty = True if np.size(points_south_east) < self.min_num_required_points else False
         is_south_west_empty = True if np.size(points_south_west) < self.min_num_required_points else False
 
+        if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty!= False or is_south_west_empty!=False):
+            
+            self.last_valid_crop_west = self.prediction_instance.south_east_line.get_most_recent_coefficients()
+            self.last_valid_crop_east = self.prediction_instance.south_west_line.get_most_recent_coefficients()
+            self.greatest_point_east = np.max(points_south_east)
+            self.greatest_point_west = np.max(points_south_west)
+
         if is_nord_east_empty & is_nord_west_empty & is_south_east_empty & is_south_west_empty:
             if (self.is_goal_published==True):
                 # publish last goal pose
-                x, y, theta = self.calculate_goal_point_forward()
-                self.publish_end_of_line_pose(x, y, theta)
+                # x, y, theta = self.calculate_goal_point_forward()
+                self.publish_end_of_line_pose_2()
                 # reset_is_goal_published
                 self.update_turning_status_after_pose_publication()
                 return
@@ -678,6 +691,9 @@ class InRowNavigation(Node):
         # invoke calculate_goal_position
         x, y, theta = self.calculate_goal_point_forward()
 
+        if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty!= False or is_south_west_empty!=False):
+            self.current_goal = [x, y]
+        
         # publish goal pose
         self.publish_goal_pose(x, y, theta)
 
@@ -921,7 +937,7 @@ class InRowNavigation(Node):
         # take euler angle
         theta = math.atan(y/x)
         return x,y,theta
-    
+ 
     def publish_goal_pose(self, x, y, theta):
         # create message Float64MultiArray
         goal_pose = Float64MultiArray()
@@ -985,6 +1001,48 @@ class InRowNavigation(Node):
 
         # get orientation
         quaternion = quaternion_from_euler(0, 0, theta)
+        end_of_line_pose.pose.orientation.x = quaternion[0]
+        end_of_line_pose.pose.orientation.y = quaternion[1]
+        end_of_line_pose.pose.orientation.z = quaternion[2]
+        end_of_line_pose.pose.orientation.w = quaternion[3]
+
+        if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
+            return
+        else:
+            # publish goal pose
+            self.end_of_line_pose_topic.publish(end_of_line_pose)
+
+    def publish_end_of_line_pose_2(self):
+
+        # takes the last m/q value of bisectrice
+        slope_east, intercept_east = self.last_cluster_east
+        slope_west, intercept_west = self.last_valid_crop_west
+        # from last greatest point
+        point_east = self.greatest_point_east
+        point_west = self.greatest_point_west
+        
+        
+        # m from two points
+        m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+        # perpendicular m
+        new_theta = math.tan(math.degrees(math.atan(m)) + 90)
+
+        x, y = self.current_goal[0], self.current_goal[1]
+
+        # create message Pose
+        end_of_line_pose = PoseStamped()
+        
+        # update timestamp and frame
+        time_now = Time()
+        end_of_line_pose.header.stamp = time_now.to_msg()
+        end_of_line_pose.header.frame_id = "base_footprint"
+
+        # get x,y
+        end_of_line_pose.pose.position.x = float(x)
+        end_of_line_pose.pose.position.y = float(y)
+
+        # get orientation
+        quaternion = quaternion_from_euler(0, 0, new_theta)
         end_of_line_pose.pose.orientation.x = quaternion[0]
         end_of_line_pose.pose.orientation.y = quaternion[1]
         end_of_line_pose.pose.orientation.z = quaternion[2]
