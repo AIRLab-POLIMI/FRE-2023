@@ -46,18 +46,18 @@ class map_filter_sectors : public rclcpp::Node{
     public:
         map_filter_sectors() : Node("map_filter_sectors"){
 
-            this->declare_parameter("radius", 0.08); //radius for calculate local density
+            this->declare_parameter("radius", 0.10); //radius for calculate local density
 
-            this->declare_parameter("height_threshold", 0.07); //height of the considered area of the pointcloud
+            this->declare_parameter("height_threshold", 0.08); //height of the considered area of the pointcloud
 
-            this->declare_parameter("scanner_height", -0.15); //height of the considered area of the pointcloud
+            this->declare_parameter("scanner_height", -0.17); //height of the considered area of the pointcloud
 
 
-            this->declare_parameter("threshold", 55); //minimum number of neighbors
+            this->declare_parameter("threshold", 60); //minimum number of neighbors
 
-            this->declare_parameter("dynamic_range", 10.0); //maximum scaling factor due to distance
+            this->declare_parameter("dynamic_range", 15.0); //maximum scaling factor due to distance
 
-            this->declare_parameter("laserscan_range", 1.5); //range in which points from monoplanar lidar are added
+            this->declare_parameter("laserscan_range", 0.8); //range in which points from monoplanar lidar are added
 
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/selected", 10, std::bind(&map_filter_sectors::callback, this, std::placeholders::_1));
@@ -106,7 +106,7 @@ class map_filter_sectors : public rclcpp::Node{
             density_filter(ordered_points, pcl_cloud_out, size);
 
             //add point from monoplanar lidar
-            //add_scan_points(pcl_cloud_out);
+            add_scan_points(pcl_cloud_out);
 
             //transform pcl_cloud_out to a PCLPointCloud2 and then publish it
             publish_point_cloud(pcl_cloud_out);
@@ -132,7 +132,7 @@ class map_filter_sectors : public rclcpp::Node{
                 //remove the points belonging to the robot itself
                 if(r > 0.7 || (alpha > 30 && alpha < 330)){
                     //consider only the point near the ground plane
-                    double d = plane[3]*(plane[0]*cur.x + plane[1]*cur.y + plane[2]*cur.z);
+                    double d = (std::abs(plane[0])/plane[0])*(plane[0]*cur.x + plane[1]*cur.y + plane[2]*cur.z);
                     if(d < height + height_threshold && d > height - height_threshold){
                         output[alpha].push_back(converted);
                     }

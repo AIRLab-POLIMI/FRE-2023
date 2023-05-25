@@ -158,7 +158,7 @@ class plane_filter : public rclcpp::Node{
                 plane[0] = coefficients(0);
                 plane[1] = coefficients(1);
                 plane[2] = coefficients(2);
-                plane[3] = coefficients(2);
+                plane[3] = coefficients(3);
             }
 
             //Conversion from PCLPointCloud<T> to PCLPointCloud2 and from PCLPointCloud2 to sensor_msgs::msg::PointCloud2
