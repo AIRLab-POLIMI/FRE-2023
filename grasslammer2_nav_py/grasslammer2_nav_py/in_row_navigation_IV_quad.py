@@ -582,6 +582,8 @@ class InRowNavigation(Node):
         self.end_of_line_pose_topic # prevent unused variable warning
         self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
         self.area = np.array([2, 2.6]) 
+        self.threshold_south = 0.8
+        self.threshold_nord = 1.3
 
         self.goal_pose_pub # prevent unused variable warning
 
@@ -800,8 +802,8 @@ class InRowNavigation(Node):
        
         # if number of points 
         if(np.size(points_filtered) < self.min_num_build_quadrants):
-            x_nord = np.where(((0 <= x) & (x <= self.area[1]/2)),x, -1)
-            x_south = np.where(((-self.area[1]/2 <= x)&(x <= 0)), x, -1)
+            x_nord = np.where(((0 <= x) & (x <= self.threshold_nord)),x, -1)
+            x_south = np.where(((-self.threshold_south <= x)&(x <= 0)), x, -1)
 
             y_west = np.where(((0 <= y)&(y<= self.area[0]/2)),y, -1)
             y_east = np.where(((-self.area[0]/2 <= y)&(y <= 0)),y, -1)
@@ -821,8 +823,8 @@ class InRowNavigation(Node):
             slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
 
             if(slope==0 and intercept==0):
-                x_nord = np.where(((0 <= x) & (x <= self.area[1]/2)),x, -1)
-                x_south = np.where(((-self.area[1]/2 <= x)&(x <= 0)), x, -1)
+                x_nord = np.where(((0 <= x) & (x <= self.threshold_nord),x, -1))
+                x_south = np.where(((-(self.threshold_south) <= x)&(x <= 0)), x, -1)
                 y_west = np.where(((0 <= y)&(y<= self.line_width)),y, -1)
                 y_east = np.where(((-self.line_width <= y)&(y <= 0)),y, -1)
 
@@ -867,8 +869,8 @@ class InRowNavigation(Node):
                 # mask_south_east = ((point_south_east[:, 1] < slope*point_south_east[:, 0]+ intercept) & (point_south_east[:, 1] > ((slope*point_south_east[:, 0]+ intercept) + self.prefiltering_threshold)))
                 # mask_south_west = ((point_south_west[:, 1] > slope*point_south_west[:, 0]+ intercept) & (point_south_west[:, 1] < ((slope*point_south_west[:, 0]+ intercept) + self.prefiltering_threshold)))
                 
-                threshold_nord = np.full_like(x, intercept*slope + self.area[1]/2)
-                threshold_south = np.full_like(x, intercept*slope - self.area[1]/2)
+                threshold_nord = np.full_like(x, intercept*slope + self.threshold_nord)
+                threshold_south = np.full_like(x, intercept*slope - self.threshold_south)
 
                 m_q = np.full_like(x, slope*intercept)
 
@@ -961,7 +963,6 @@ class InRowNavigation(Node):
     
     def callback_update_bool(self, msg):
         self.publish_goal_position = True
-
     # update turning status: make switch work
     def update_turning_status_after_pose_publication(self):
         self.publish_goal_position = False
