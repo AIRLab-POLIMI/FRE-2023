@@ -5,7 +5,7 @@ from rclpy.time import Time
 from sensor_msgs.msg import LaserScan, Joy
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Float64MultiArray,Bool
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
 import time
@@ -580,7 +580,7 @@ class InRowNavigation(Node):
         self.goal_pose_pub # prevent unused variable warning
         self.end_of_line_pose_topic = self.create_publisher(PoseStamped, '/end_of_line_pose', 1)
         self.end_of_line_pose_topic # prevent unused variable warning
-
+        self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
         self.area = np.array([2, 2.6]) 
 
         self.goal_pose_pub # prevent unused variable warning
@@ -662,7 +662,7 @@ class InRowNavigation(Node):
                 x, y, theta = self.calculate_goal_point_forward()
                 self.publish_end_of_line_pose(x, y, theta)
                 # reset_is_goal_published
-                self.is_goal_published = False
+                self.update_turning_status_after_pose_publication()
                 return
 
         elif (is_nord_east_empty == False | is_nord_west_empty == False) & is_south_east_empty & is_south_west_empty:
@@ -961,6 +961,13 @@ class InRowNavigation(Node):
     
     def callback_update_bool(self, msg):
         self.publish_goal_position = True
+
+    # update turning status: make switch work
+    def update_turning_status_after_pose_publication(self):
+        self.publish_goal_position = False
+        # msg = Bool()
+        # msg.data = self.publish_goal_position
+        # self.pub_turning_status(msg)
 
     def publish_end_of_line_pose(self, x, y, theta):
         # create message Pose
