@@ -35,14 +35,14 @@ class LaserScanTransform(Node):
         # Concatenate the last elements at the beginning
         shifted_arr = np.concatenate((remaining_elements, last_elements))
 
-        number_increments = 410
+        number_increments = 820
 
         r_indexes = np.arange(0, int(number_increments/2))
         l_indexes = np.arange(3240-int(number_increments/2), 3240)
         shifted_arr[r_indexes] = 'nan'
         shifted_arr[l_indexes] = 'nan'
 
-        mask = (shifted_arr[:] < 0.22)
+        mask = (shifted_arr[:] < 0.23)
         shifted_arr[mask] = 'nan'
 
 

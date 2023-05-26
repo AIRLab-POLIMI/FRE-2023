@@ -46,7 +46,7 @@ def generate_launch_description():
     return LaunchDescription([
         laser_reader, 
         in_row_navigation,
-        end_of_line_detection,
+        #end_of_line_detection,
         aut_nav_cmd, 
 
         

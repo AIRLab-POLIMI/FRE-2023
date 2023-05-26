@@ -24,7 +24,7 @@ import argparse
 class Navigation(Node):
     def __init__(self):
         super().__init__('navigation')
-        self.a = 5
+        self.a = 7
         self.b = 0.5
 
         self.goal_point_sub = self.create_subscription(Float64MultiArray, '/goal_position', self.goal_callback, 1)

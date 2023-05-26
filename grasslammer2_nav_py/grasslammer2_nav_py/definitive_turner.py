@@ -16,7 +16,7 @@ class TurnerFinal(Node):
     def __init__(self):
         super().__init__('turner_final')
         self.lineDimension = 0.70
-        self.y_movement = -1.0
+        self.y_movement = -0.75
         self.turnNum = 0;
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)

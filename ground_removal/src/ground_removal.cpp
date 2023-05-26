@@ -18,6 +18,8 @@
 #include <tf2/transform_datatypes.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 class plane_filter : public rclcpp::Node{
     private:
@@ -25,26 +27,35 @@ class plane_filter : public rclcpp::Node{
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr sub2;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_filter;
+        rclcpp::Publisher<geometry_msgs::msg::Quaternion>::SharedPtr pub_plane;
+
         double roll, pitch, yaw, init_roll, init_pitch, init_yaw;
         bool flag = false; //flag for initializing Imu data
         Eigen::VectorXf coefficients; //found coefficient of the plane
         pcl::Indices inliers; //inliers for the found plane
+
+        tf2::Quaternion plane;
+        
         
     public:
         plane_filter() : Node("plane_filter"){
             //n = rclcpp::Node::make_shared("plane_filter");
-            this->declare_parameter("eps_angle", 8.0); //maximum deviation from the axis specified in perpendicular plane
-            this->declare_parameter("threshold", 0.12); //distance threshold for selecting the points near the plane
+            this->declare_parameter("eps_angle", 10.0); //maximum deviation from the axis specified in perpendicular plane
+            this->declare_parameter("model_threshold",0.3); //distance threshold for consider a point in the alghoritm
+            this->declare_parameter("threshold", 0.05); //distance threshold for selecting the points near the plane
             
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/velodyne_points", 10, std::bind(&plane_filter::callback_lidar, this, std::placeholders::_1));
             
-            sub2 = this->create_subscription<sensor_msgs::msg::Imu>("/imu/data", 10, std::bind(&plane_filter::callback_imu, this, std::placeholders::_1));
+            //sub2 = this->create_subscription<sensor_msgs::msg::Imu>("/imu/data", 10, std::bind(&plane_filter::callback_imu, this, std::placeholders::_1));
             
             pub_filter = this->create_publisher<sensor_msgs::msg::PointCloud2>("/selected", 1);
+
+            pub_plane = this->create_publisher<geometry_msgs::msg::Quaternion>("/plane", 1);
     }
 
         void callback_lidar(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& input){
             double eps_angle = this->get_parameter("eps_angle").as_double(); 
+            double model_threshold = this->get_parameter("model_threshold").as_double();
             double threshold = this->get_parameter("threshold").as_double(); 
             sensor_msgs::msg::PointCloud2 cloud_msg; //Message for containing the pointcloud to be published
             pcl::PCLPointCloud2 pc2, pc2_out;
@@ -56,8 +67,8 @@ class plane_filter : public rclcpp::Node{
 
             //Minimum and maximum values for the cropbox filter.
             //x, y, z and intensity
-            Eigen::Vector4f min_pt (-3.0f, -3.0f, -1.0f, -1.0f);
-            Eigen::Vector4f max_pt (4.0f, 4.0f,  1.0f, 1.0f);
+            Eigen::Vector4f min_pt (-4.0f, -4.0f, -0.5f, -1.0f);
+            Eigen::Vector4f max_pt (4.0f, 4.0f,  0.5f, 1.0f);
             //Define the matrix to rotate the pointcloud using pitch data from the imu
             Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
             Eigen::Matrix3f m;
@@ -89,7 +100,7 @@ class plane_filter : public rclcpp::Node{
             if (inliers.size()) {
                 //selects the points near the latest coefficients (plane of iteration t-1)
                 //and stores them in new_inliers
-                model_p->selectWithinDistance(coefficients, threshold, *new_inliers);
+                model_p->selectWithinDistance(coefficients, model_threshold, *new_inliers);
 
                 //Extracts the part of the pointcloud previously selected
                 pcl::ExtractIndices<pcl::PointXYZ> extract;
@@ -111,12 +122,13 @@ class plane_filter : public rclcpp::Node{
                 //Defines ransac over the perpendicular plane model. 
                 pcl::RandomSampleConsensus<pcl::PointXYZ> ransac (model_p2);
                 ransac.setDistanceThreshold (threshold);
+                ransac.setMaxIterations(20000);
                 ransac.computeModel();
                 coefficients.conservativeResize(4);
                 ransac.getModelCoefficients(coefficients); //store new coefficients
                 //uses the new coefficients to select the points of the pointcloud at time t
                 //belonging to the plane
-                model_p->selectWithinDistance(coefficients, threshold, *new_inliers);
+                model_p->selectWithinDistance(coefficients, 2*threshold, *new_inliers);
                 inliers = *new_inliers;
             }
             else {
@@ -143,12 +155,17 @@ class plane_filter : public rclcpp::Node{
                 extract.setIndices(new_inliers);
                 extract.setNegative(true); //true to remove the plane, false to see the plane
                 extract.filter(*output_cloud);
+                plane[0] = coefficients(0);
+                plane[1] = coefficients(1);
+                plane[2] = coefficients(2);
+                plane[3] = coefficients(3);
             }
 
             //Conversion from PCLPointCloud<T> to PCLPointCloud2 and from PCLPointCloud2 to sensor_msgs::msg::PointCloud2
             pcl::toPCLPointCloud2(*output_cloud, pc2_out);
             pcl_conversions::fromPCL(pc2_out, cloud_msg);
             pub_filter->publish(cloud_msg);
+            pub_plane->publish(tf2::toMsg(plane));
         }
 
         void callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr& input){
@@ -176,8 +193,8 @@ int main(int argc, char **argv)
 {
     //ros::init(argc, argv, "talker");
     rclcpp::init(argc, argv);
- 	//plane_filter plane_filter;
- 	rclcpp::spin(std::make_shared<plane_filter>());
+    //plane_filter plane_filter;
+    rclcpp::spin(std::make_shared<plane_filter>());
     
- 	return 0;
+    return 0;
 }

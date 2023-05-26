@@ -8,12 +8,19 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 
-find_package(ament_cmake REQUIRED)	
+find_package(ament_cmake REQUIRED)  
 find_package(rclcpp REQUIRED)#
 find_package(pcl_ros REQUIRED)#
 find_package(pcl_conversions REQUIRED)#
 find_package(sensor_msgs REQUIRED)#
 find_package(geometry_msgs REQUIRED)#
+#openMP
+find_package(OpenMP REQUIRED)
+if(OPENMP_FOUND)
+  message(STATUS "OPENMP FOUND")
+  set(OpenMP_FLAGS ${OpenMP_CXX_FLAGS})
+  set(OpenMP_LIBS gomp)
+endif()
 
 ## pcl install
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
@@ -29,6 +36,7 @@ target_link_libraries(map_filter
 
 ament_target_dependencies(
   map_filter
+  OpenMP
   geometry_msgs #
   pcl_conversions#
   rcl_interfaces#
@@ -86,6 +94,28 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}/
 )
 
+add_executable(map_filter_sectors src/map_filter_sectors.cpp)
+target_link_libraries(map_filter_sectors ${PCL_LIBRARIES})
+target_link_libraries(map_filter_sectors
+  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
+)
+ament_target_dependencies(
+  map_filter_sectors
+  OpenMP
+  geometry_msgs #
+  pcl_conversions#
+  rcl_interfaces#
+  pcl_ros#
+  rclcpp #
+  rcutils
+  sensor_msgs#
+  std_msgs
+)
+install(TARGETS
+  map_filter_sectors
+  DESTINATION lib/${PROJECT_NAME}/
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -99,5 +129,10 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_dependencies(libpcl-all-dev pcl_ros pcl_conversions sensor_msgs)
+
+target_compile_options(map_filter PRIVATE ${OpenMP_FLAGS})
+target_link_libraries(map_filter ${OpenMP_LIBS})
+target_compile_options(map_filter_sectors PRIVATE ${OpenMP_FLAGS})
+target_link_libraries(map_filter_sectors ${OpenMP_LIBS})
 
 ament_package()
