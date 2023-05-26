@@ -1048,8 +1048,10 @@ class InRowNavigation(Node):
         # new_theta = math.tan(math.degrees(math.atan(m)) + 90)
 
         # take previous goal position
-        x,y = self.previous_forward_goal[0], self.previous_forward_goal[1]
-
+        # x,y = self.previous_forward_goal[0], self.previous_forward_goal[1]
+        
+        x = point_west[0] - point_east[0]
+        y = math.max(point_east[1], point_west[1])
         # create message Pose
         end_of_line_pose = PoseStamped()
         
