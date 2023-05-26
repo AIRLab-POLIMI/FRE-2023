@@ -1050,8 +1050,8 @@ class InRowNavigation(Node):
         # take previous goal position
         # x,y = self.previous_forward_goal[0], self.previous_forward_goal[1]
         
-        x = point_west[0] - point_east[0]
-        y = math.max(point_east[1], point_west[1])
+        x = (point_west[1] - point_east[1])/2
+        y = math.max(point_east[0], point_west[0])
         # create message Pose
         end_of_line_pose = PoseStamped()
         
