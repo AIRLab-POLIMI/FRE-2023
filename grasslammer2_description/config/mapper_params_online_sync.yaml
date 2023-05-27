@@ -13,7 +13,7 @@ slam_toolbox:
     odom_frame: odom
     map_frame: map
     base_frame: base_footprint
-    scan_topic: /scan
+    scan_topic: /scan_final
     mode: mapping #localization
 
     # if you'd like to immediately start continuing a map at a given pose
@@ -27,15 +27,15 @@ slam_toolbox:
     throttle_scans: 1
     transform_publish_period: 0.02 #if 0 never publishes odometry
     map_update_interval: 1.0
-    resolution: 0.08
-    max_laser_range: 100.0 #for rastering images
+    resolution: 0.04
+    max_laser_range: 10.0 #for rastering images
     minimum_time_interval: 0.1
     transform_timeout: 0.2
     tf_buffer_duration: 30.
     stack_size_to_use: 40000000 # program needs a larger stack size to serialize large maps
     enable_interactive_mode: true
-    position_covariance_scale: 1.0
-    yaw_covariance_scale: 0.05
+    #position_covariance_scale: 1.0
+    #yaw_covariance_scale: 0.05
 
     # General Parameters
     use_scan_matching: true

@@ -21,12 +21,8 @@ def generate_launch_description():
 
     remove_ground_node = Node(package='ground_removal', executable='plane_filter',)
 
-    density_filter = Node(package='map_filter', executable='map_filter',)
+    density_filter = Node(package='map_filter', executable='map_filter_approx',)
 
-    """pointcloud_converter = Node(package='pointcloud_to_laserscan',
-                                executable='pointcloud_to_laserscan_node',
-                                remappings=[('cloud_in', '/filtered_point_cloud')]
-                                )"""
     pointcloud_converter = Node(package='map_filter',
                                 executable='cloud_to_scan',
                                 )
@@ -43,7 +39,7 @@ def generate_launch_description():
                 )"""
 
     return LaunchDescription([
-        start_simulation,
+        #start_simulation,
         remove_ground_node, 
         density_filter,
         pointcloud_converter,
