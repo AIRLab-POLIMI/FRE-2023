@@ -22,9 +22,10 @@ from sklearn.linear_model import RANSACRegressor
 from numpy import float64
 import json
 # modified robots
-string_from_folder = 'src/FRE-2023'
-absolute_path = os.path.abspath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
-# print(absolute_path)
+# string_from_folder = 'ros2_humble/src/FRE-2023'
+#absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
+absolute_path = '/home/bido/ros2_humble/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+print(absolute_path)
 config_file = open(absolute_path, 'r')
 # dict_config = config_file.read()
 config_json = json.loads(config_file.read())
@@ -751,11 +752,12 @@ class InRowNavigation(Node):
         is_south_east_empty = True if np.size(points_south_east) < self.min_num_required_points else False
         is_south_west_empty = True if np.size(points_south_west) < self.min_num_required_points else False
 
-        # print(len(points_nord_east), len(points_nord_west), len(points_south_east), len(points_south_west))
+        print(len(points_nord_east), len(points_nord_west), len(points_south_east), len(points_south_west))
         # needed to save the last point to calculate the perpendicular angle
         #if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):
         # IDEA -> anticipate it beforehand
-        if (is_nord_east_empty == True & is_nord_west_empty == True) & (is_south_east_empty == False & is_south_west_empty==False) & self.is_goal_published==True:
+        
+        if (is_nord_east_empty == True & is_nord_west_empty == True) & (is_south_east_empty == False & is_south_west_empty== False) & self.is_goal_published==True:
             tmp_south_east = points_south_east.max(axis=0)
             tmp_south_west = points_south_west.max(axis=0)
             # get the highest values

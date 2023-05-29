@@ -118,26 +118,26 @@ install(TARGETS
 )
 
 
-add_executable(end_row_linear_model src/end_row_linear_model.cpp)
-target_link_libraries(end_row_linear_model ${PCL_LIBRARIES})
-target_link_libraries(end_row_linear_model
-  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
-)
-ament_target_dependencies(
-  end_row_linear_model
-  geometry_msgs #
-  pcl_conversions#
-  rcl_interfaces#
-  pcl_ros#
-  rclcpp #
-  rcutils
-  sensor_msgs#
-  std_msgs
-)
-install(TARGETS
-  end_row_linear_model
-  DESTINATION lib/${PROJECT_NAME}/
-)
+#add_executable(end_row_linear_model src/end_row_linear_model.cpp)
+#target_link_libraries(end_row_linear_model ${PCL_LIBRARIES})
+#target_link_libraries(end_row_linear_model
+#  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
+#)
+# end_row_linear_model
+#ament_target_dependencies(
+#  geometry_msgs #
+#  pcl_conversions#
+#  rcl_interfaces#
+#  pcl_ros#
+#  rclcpp #
+#  rcutils
+#  sensor_msgs#
+#  std_msgs
+#)
+#install(TARGETS
+#  end_row_linear_model
+#  DESTINATION lib/${PROJECT_NAME}/
+#)
 
 add_executable(map_filter_approx src/map_filter_approx.cpp)
 target_link_libraries(map_filter_approx ${PCL_LIBRARIES})

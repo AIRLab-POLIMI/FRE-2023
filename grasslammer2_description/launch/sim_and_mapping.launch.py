@@ -39,7 +39,7 @@ def generate_launch_description():
                 )"""
 
     return LaunchDescription([
-        #start_simulation,
+        start_simulation,
         remove_ground_node, 
         density_filter,
         pointcloud_converter,

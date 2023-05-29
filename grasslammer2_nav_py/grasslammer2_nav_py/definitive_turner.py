@@ -22,7 +22,7 @@ class TurnerFinal(Node):
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self.starting_pose_sub = self.create_subscription(PoseStamped, '/end_of_line_pose', self.elaborate_goal_point, 1)
         self.done = self.create_publisher(Bool, '/end_of_turning', 1)
-        pkg_path = os.path.realpath("grasslammer2_description")
+        pkg_path = os.path.realpath("src/FRE-2023/grasslammer2_description")
         with open(pkg_path + "/config/pathTask1.txt") as path:
             self.turningCommands = path.readlines()
         print(self.turningCommands)
