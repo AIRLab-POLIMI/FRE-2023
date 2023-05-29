@@ -61,25 +61,19 @@ class EndOfLineDetection(Node):
         self.queue_coefficient = CustomQueue(5)
         # goal position elements
         self.queue_goal_position = CustomQueue(5)
-        # get data from bisectrice
-        self.scan_sub_goal_position = self.create_subscription(Float64MultiArray, '/bisectrice_coefficient', self.callback_line_coefficient, 1)
         # get data from laserscan
-        self.scan_sub_end_of_line = self.create_subscription(LaserScan, '/scan/filtered_end_of_line', self.scan_callback_ROI, 1)
-        # store goal position in queue
-        self.goal_pose_sub = self.create_subscription(PoseStamped, '/goal_position',self.callback_update_goal_position, 1)
+        self.scan_sub_end_of_line = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback_ROI, 1)
         
         # publish once end of line pose
         self.end_of_line_pose_topic_pub = self.create_publisher(PoseStamped, '/end_of_line_pose', 1)
-        
-        # min points
-        self.min_number_points = 0
 
-        # divide into three regions
-        self.area = np.array([1.2, 0.5]) # rect shape x,y
-
-        # needed trigger turning
         # subscribe topic end of turning to understand publish/not
         self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
+        
+
+        # divide into three regions
+        self.area = np.array([2, 2]) # rect shape x,y
+        # needed trigger turning
         # publish topic end of turning after first publication
         # self.pub_turning_status = self.create_publisher(Bool, '/end_of_turning', 1)
         # initialize value. Local variable.
@@ -90,115 +84,114 @@ class EndOfLineDetection(Node):
 
     def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/3240) 
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/len(ranges)) 
 
         x = np.where(ranges == -1, -1, ranges * np.cos(angles))
         y = np.where(ranges == -1, -1, ranges * np.sin(angles))
-        
+
         points = np.vstack((x, y)).T
         points_filtered = points[y != -1]
-    
-        return points_filtered
 
-    # returns the three regions
-    def split_points_into_regions(self, points):
-        # print(points)
-        # area width
-        width = self.area[1]/6
-        # left
-        x_mask_left = (points[:, 0] >= 0) & (points[:, 0] <= self.area[1]) # return a boolean array, after AND 
-        y_mask_left = (points[:, 1] >= -width*3) & (points[:, 1] < -width)#self.area[1])
-        # middle
-        x_mask_middle = (points[:, 0] >= 0) & (points[:, 0] <= self.area[1]) # return a boolean array, after AND 
-        y_mask_middle = (points[:, 1] >= -width) & (points[:, 1] < width)#self.area[1])
-        # rigth
-        x_mask_rigth = (points[:, 0] >= 0) & (points[:, 0] <= self.area[1]) # return a boolean array, after AND 
-        y_mask_rigth = (points[:, 1] >= width) & (points[:, 1] <= width*3)#self.area[1])
+       
+        # if number of points 
+        if(np.size(points_filtered) < self.min_num_build_quadrants):
+            x_nord = np.where(((0 <= x) & (x <= self.nord_treshold)),x, -1)
+            x_south = np.where(((-self.south_treshold <= x)&(x <= 0)), x, -1)
 
+            y_west = np.where(((0 <= y)&(y<= self.area[0]/2)),y, -1)
+            y_east = np.where(((-self.area[0]/2 <= y)&(y <= 0)),y, -1)
 
-        # apply mask
-        # range_mask = points[:,2] >=0
-        mask_left = x_mask_left & y_mask_left # & range_mask
-        mask_middle = x_mask_middle & y_mask_middle # & range_mask
-        mask_rigth = x_mask_rigth & y_mask_rigth # & range_mask
+            points_nord_east = np.vstack((x_nord, y_east)).T
+            points_nord_west = np.vstack((x_nord, y_west)).T
+            points_south_east = np.vstack((x_south, y_east)).T
+            points_south_west = np.vstack((x_south, y_west)).T
 
-        # remove empty points
-        masked_points_left = np.full_like(points, -1)
-        masked_points_left[mask_left] = points[mask_left]
-        masked_points_middle = np.full_like(points, -1)
-        masked_points_middle[mask_middle] = points[mask_middle]
-        masked_points_rigth = np.full_like(points, -1)
-        masked_points_rigth[mask_rigth] = points[mask_rigth]
+            points_nord_east = points_nord_east[y_east != -1]
+            points_nord_west = points_nord_west[y_west != -1]
+            points_south_east = points_south_east[y_east != -1]
+            points_south_west = points_south_west[y_west != -1]
 
-        return masked_points_left, masked_points_middle, masked_points_rigth
-    
-    def calculate_goal_point(self):
-        # takes the last m/q value of bisectrice
-        recent_coefficient_value = self.queue_coefficient.return_element_time_t()
-        if(recent_coefficient_value != False):
-            m, q = recent_coefficient_value[0], recent_coefficient_value[1]
-            # calculate goal_points
-            tmp_result = pow(m,2)* pow(q,2) - (pow(self.distance_goal_position, 2) + pow(m,2))*(pow(q,2)-1)
-        
-            # safety if-else statement
-            if(tmp_result >=0):
-                x_1 = (-m*q + math.sqrt(tmp_result))/(1+m**2)
-                x_2 = (-m*q - math.sqrt(tmp_result))/(1+m**2)
-            else:
-                x_1 = 0
-                x_2 = 0
-                print("ERROR QUADRATIC")
-
-            # take greatest value
-            if x_1 >= x_2:
-                x = x_1
-            else:
-                x = x_2
-            
-            # solve equation
-            y = m*x + q
-
-            # take euler angle
-            theta = math.atan(y/x)
-
-
-            return x,y,theta
-        
         else:
-            return False, False, False
+            
+            slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
+
+            if(slope==0 and intercept==0):
+                x_nord = np.where(((0 <= x) & (x <= self.nord_treshold)),x, -1)
+                x_south = np.where(((-self.south_treshold <= x)&(x <= 0)), x, -1)
+                y_west = np.where(((0 <= y)&(y<= self.line_width)),y, -1)
+                y_east = np.where(((-self.line_width <= y)&(y <= 0)),y, -1)
+
+                points_nord_east = np.vstack((x_nord, y_east)).T
+                points_nord_west = np.vstack((x_nord, y_west)).T
+                points_south_east = np.vstack((x_south, y_east)).T
+                points_south_west = np.vstack((x_south, y_west)).T
+
+                points_nord_east = points_nord_east[y_east != -1]
+                points_nord_west = points_nord_west[y_west != -1]
+                points_south_east = points_south_east[y_east != -1]
+                points_south_west = points_south_west[y_west != -1]
+
+            else:
+                # distance_from_goal +/- distance_from_bisectrice
+                # self.distance_from_bisectrice = 0.3
+                # self.tolerance_crop_distance = 0.5
+                # take x point and make division east/west
+
+                distance_east_above = intercept - self.distance_from_bisectrice + self.tolerance_crop_distance
+                distance_east_below = intercept - self.distance_from_bisectrice - self.tolerance_crop_distance
+                distance_west_above = intercept + self.distance_from_bisectrice + self.tolerance_crop_distance
+                distance_west_below = intercept + self.distance_from_bisectrice - self.tolerance_crop_distance
+                
+                threshold_east_above = np.full_like(y, distance_east_above)
+                threshold_east_below = np.full_like(y, distance_east_below)
+                threshold_west_above = np.full_like(y, distance_west_above)
+                threshold_west_below = np.full_like(y, distance_west_below)
+
+                # print(np.size(threshold_west_above), np.size(threshold_west_below))
+
+                # y east -> <=0
+                # y_west -> >0
+
+                y_west = np.where((y > np.add(slope*x, threshold_west_below))&(y < np.add(slope*x, threshold_west_above)),y, -1)
+                y_east = np.where((y > np.add(slope*x, threshold_east_below))&(y < np.add(slope*x,threshold_east_above)),y, -1)
+                
+                # print(y_south_east, y_nord_east)
+                # print(mask_nord_west, mask_nord_east)
+                # mask_nord_east = ((point_nord_east[:, 1] < slope*point_nord_east[:, 0]+ intercept) & (point_nord_east[:, 1] > ((slope*point_nord_east[:, 0]+ intercept) + self.prefiltering_threshold)))
+                # mask_nord_west = ((point_nord_west[:, 1] > slope*point_nord_west[:, 0]+ intercept) & (point_nord_west[:, 1] < ((slope*point_nord_west[:, 0]+ intercept) + self.prefiltering_threshold)))
+                # mask_south_east = ((point_south_east[:, 1] < slope*point_south_east[:, 0]+ intercept) & (point_south_east[:, 1] > ((slope*point_south_east[:, 0]+ intercept) + self.prefiltering_threshold)))
+                # mask_south_west = ((point_south_west[:, 1] > slope*point_south_west[:, 0]+ intercept) & (point_south_west[:, 1] < ((slope*point_south_west[:, 0]+ intercept) + self.prefiltering_threshold)))
+                
+                threshold_nord = np.full_like(x, intercept*slope + self.nord_treshold)
+                threshold_south = np.full_like(x, intercept*slope - self.south_treshold)
+
+                m_q = np.full_like(x, slope*intercept)
+
+                # x = -m*y + m*q
+                x_nord_east = np.where((x > np.add(-slope*y_east, m_q))&(x < np.add(-slope*y_east, threshold_nord)),x, -1)
+                x_nord_west = np.where((x > np.add(-slope*y_west, m_q))&(x < np.add(-slope*y_west,threshold_nord)),x, -1)
+                x_south_east = np.where((x < np.add(-slope*y_east, m_q))&(x > np.add(-slope*y_east, threshold_south)),x, -1)
+                x_south_west = np.where((x < np.add(-slope*y_west, m_q))&(x > np.add(-slope*y_west,threshold_south)),x, -1)
+                    
+                points_nord_east = np.vstack((x_nord_east, y_east)).T
+                points_nord_west = np.vstack((x_nord_west, y_west)).T
+                points_south_east = np.vstack((x_south_east, y_east)).T
+                points_south_west = np.vstack((x_south_west, y_west)).T
+
+                points_nord_east = points_nord_east[y_east != -1]
+                points_nord_west = points_nord_west[y_west != -1]
+                points_south_east = points_south_east[y_east != -1]
+                points_south_west = points_south_west[y_west != -1]
+                
+            
+        return points_nord_east, points_nord_west, points_south_east, points_south_west
+
     
     # understand empty region
     def scan_callback_ROI(self, scan_msg):
         self.start_computation = time.perf_counter()
-        points_2d = self.laser_scan_to_cartesian(scan_msg)
-        # divide the region in 3 spaces: middle, left, right
-        mask_left, mask_middle, mask_rigth = self.split_points_into_regions(points_2d)
-        # not have enough points and flag = true -> publish
-        if self.publish_goal_position == True:
-            if len(mask_left)<= self.min_number_points and len(mask_rigth)<= self.min_number_points : 
-                # can publish
-                # calculate goal point
-                x, y, theta = self.calculate_goal_point()
-                # print(x)
-                # valuable data
-                if x != False:
-                    # TODO verify if has greater coordinates last goal
-                    # print("INSIDE")
-                    self.publish_end_of_line_pose(x, y , theta)
-                    self.update_turning_status_after_pose_publication()
-                # publish last pose, grater most recent pose
-                # set variable to false
-            # else:
-                # print("ROI NOT EMPTY")
-        #else:
-            #if(self.first_in_row_navigation == True):
-            #    self.publish_goal_position = True
-            #    self.first_in_row_navigation = False
-            # print("ROI HAS POINTS")
-        # understand empty/not
-        # all empty publish the end_of_line_pose
-        # two ways: with/without goal pose
-        # TODO how take perpendicular pose line
+        points_nord_east, points_nord_west, points_south_east, points_south_west = self.laser_scan_to_cartesian(scan_msg)
+        
     
     # update bool value
     def callback_update_bool(self, msg):

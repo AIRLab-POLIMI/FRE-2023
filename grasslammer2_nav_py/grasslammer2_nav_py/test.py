@@ -1,9 +1,10 @@
 import numpy as np
 from collections import deque
 import os
+import json
 import math
 import matplotlib.pyplot as plt
-import line
+import numpy.ma as ma
 
 number_points = 3
 start=0
@@ -103,5 +104,33 @@ def test_line_ma():
         for i in range(10):
                 line_test.update_line_parameters_checking_threshold(i,i**2)
                 #print(line_test)
+
+
+def test_atan():
+        #print(math.atan(0/1))
+        print(math.atan2(0,0))
+
+def test_delete():
+        array = np.array([[-1,np.inf],[0,0],[-1,1],[1, np.inf]])
+        array = array[~np.isinf(array).any(axis=1)]
+        print(array)
+        # rows, cols = np.where(array == -1)
+        # print(rows, cols)
+        # print(array[rows,cols])
+        # print(array[ma.mask_rows(a).mask])
+        # print(a, array)
+
+def get_parameters():
+        absolute_path = os.path.abspath('in_row_navigation_config/cornaredo.json')
+        # print(absolute_path)
+        config_file = open(absolute_path, 'r')
+        # dict_config = config_file.read()
+        test_json = json.loads(config_file.read())
+        #print(dict_config)
+        # print(test_json)
+        #print(dict_config["in_row_navigation"], dict_config['prediction'], dict_config['moving_avarage'])
+        print(test_json['in_row_navigation'])
 # calculate_weigths()
-test_line_ma()
+# test_atan()
+#test_delete()
+get_parameters()
