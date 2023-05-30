@@ -3,7 +3,6 @@ from collections import deque
 import os
 import math
 import matplotlib.pyplot as plt
-import line
 
 number_points = 3
 start=0
@@ -103,5 +102,18 @@ def test_line_ma():
         for i in range(10):
                 line_test.update_line_parameters_checking_threshold(i,i**2)
                 #print(line_test)
+
+def test():
+        point_east = [0,1]
+        point_west = [1,1]
+        print(point_east, point_west)
+        # m equationfrom two points
+        print(point_west[1]- point_east[1], point_west[0]- point_east[0])
+        # m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+        # m_perpendicular
+        # m_perp = -1/m
+        print(math.tan(math.radians(90)))
+        #print(m, m_perp)
 # calculate_weigths()
-test_line_ma()
+# test_line_ma()
+test()

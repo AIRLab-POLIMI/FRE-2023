@@ -25,6 +25,8 @@ import json
 # string_from_folder = 'ros2_humble/src/FRE-2023'
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
 absolute_path = '/home/bido/ros2_humble/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+# absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+
 print(absolute_path)
 config_file = open(absolute_path, 'r')
 # dict_config = config_file.read()
@@ -757,7 +759,7 @@ class InRowNavigation(Node):
         #if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):
         # IDEA -> anticipate it beforehand
         
-        if (is_nord_east_empty == True & is_nord_west_empty == True) & (is_south_east_empty == False & is_south_west_empty== False) & self.is_goal_published==True:
+        if (is_nord_east_empty == True & is_nord_west_empty == True) & (is_south_east_empty == False & is_south_west_empty        == False) & self.is_goal_published==True:
             tmp_south_east = points_south_east.max(axis=0)
             tmp_south_west = points_south_west.max(axis=0)
             # get the highest values
@@ -1091,21 +1093,25 @@ class InRowNavigation(Node):
         
         print(point_east, point_west)
         # m equationfrom two points
-        m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
-
-        # m_perpendicular
-        m_perp = -1/m
-
-        # atan of the new theta
-        new_theta = math.atan(m_perp)
-        # perpendicular m
-        # new_theta = math.tan(math.degrees(math.atan(m)) + 90)
+        if(point_west[1] - point_east[1] == 0):
+            new_theta = math.radians(90)
+        elif (point_west[0] - point_east[0] == 0):
+            new_theta = math.radians(180)
+        else:
+            m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+            # m_perpendicular
+            m_perp = -1/m
+            # atan of the new theta
+            # Return the arc tangent of x, in radians
+            new_theta = math.atan(m_perp)
+            # perpendicular m
+            # new_theta = math.tan(math.degrees(math.atan(m)) + 90)
 
         # take previous goal position
         # x,y = self.previous_forward_goal[0], self.previous_forward_goal[1]
         
-        x = (point_west[1] - point_east[1])/2
-        y = max(point_east[0], point_west[0])
+        y = (point_west[1] - point_east[1])/2
+        x = max(point_east[0], point_west[0])
 
         print("POINT ", x, y,new_theta)
         # create message Pose
