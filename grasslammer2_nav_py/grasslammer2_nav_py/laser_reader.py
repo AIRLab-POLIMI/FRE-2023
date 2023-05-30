@@ -18,7 +18,8 @@ class LaserReader(Node):
         self.area = np.array([2,2]) # rect shape x,y
         self.area_end_of_line = np.array([1.2, 0.75]) # rect shape x,y
         # scan_out
-        self.scan_sub = self.create_subscription(LaserScan, '/scan_out', self.scan_callback_extended, 1)
+        # scan final
+        self.scan_sub = self.create_subscription(LaserScan, '/scan_final', self.scan_callback_extended, 1)
         self.scan_sub # prevent unused variable warning 
         self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered', 1)
         self.filter_pub_end_of_line = self.create_publisher(LaserScan, '/scan/filtered_end_of_line', 1)
