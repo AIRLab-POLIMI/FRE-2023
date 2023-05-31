@@ -20,6 +20,7 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 
 #include <stdio.h>
+#include <omp.h>
 
 class map_filter : public rclcpp::Node{
     private:
@@ -103,7 +104,7 @@ class map_filter : public rclcpp::Node{
 
             int cur_threshold;
             //for every point in the "input" point cloud
-            for (long unsigned int i=0; i < input->points.size(); i++) {
+            for (long unsigned int i=0; i < input->points.size(); i+=50) {
                 point=input->points[i];
                 neighbors=0;
                 if(pow(point.x,2) + pow(point.y, 2) < 3) {
@@ -112,7 +113,8 @@ class map_filter : public rclcpp::Node{
                 }
                 else cur_threshold = threshold;
                 //for every point in the "input" point cloud
-                for (long unsigned int j=0; j < input->points.size(); j++){
+                #pragma omp parallel for reduction(+:neighbors)
+                for (long unsigned int j=0; j < input->points.size(); j+=5){
                     other=input->points[j];
 
                     //we compute the squared distance from the "other" point to "point"
