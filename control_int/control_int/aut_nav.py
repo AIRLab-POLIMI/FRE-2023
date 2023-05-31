@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import argparse
 
 parser = argparse.ArgumentParser(description = "aut_nav")
-parser.add_argument('--a', type =float, default = 1.0)
+parser.add_argument('--a', type =float, default = 5.0)
 parser.add_argument('--b', type =float, default = 0.5)
 args = parser.parse_args()
 
@@ -38,8 +38,17 @@ class Navigation(Node):
         cmd_msg = Twist()
 
         theta = goal.data[2]
-        cmd_msg.linear.x = self.b * math.cos(2*theta)
-        cmd_msg.angular.z = self.a * theta
+        if(theta > math.pi/2 or theta < -math.pi/2):
+            if(theta > 0):
+                theta = theta - math.pi
+            else:
+                theta = theta + math.pi
+            coef = -1
+        else:
+            coef = 1
+
+        cmd_msg.linear.x = coef * self.b * math.cos(theta)
+        cmd_msg.angular.z = self.a * math.sin(theta)
 
         self.cmd_pub.publish(cmd_msg)
   

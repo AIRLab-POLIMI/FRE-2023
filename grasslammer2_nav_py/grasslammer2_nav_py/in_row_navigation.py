@@ -24,7 +24,7 @@ import json
 # modified robots
 # string_from_folder = 'ros2_humble/src/FRE-2023'
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
-absolute_path = '/home/bido/ros2_humble/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
 # absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
 
 print(absolute_path)
@@ -616,6 +616,7 @@ class InRowNavigation(Node):
         self.goal_pose_pub = self.create_publisher(Float64MultiArray, '/goal_position', 1)
         self.goal_pose_pub # prevent unused variable warning
         self.end_of_line_pose_topic = self.create_publisher(PoseStamped, '/end_of_line_pose', 1)
+        self.pub_goal_pose_rviz = self.create_publisher(PoseStamped, '/goal_pose_rviz', 1)
         self.end_of_line_pose_topic # prevent unused variable warning
         self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
 
@@ -1069,8 +1070,35 @@ class InRowNavigation(Node):
         theta = math.atan2(y,x)
         # turn orientation 180 degrees -> negative velocity
         # theta = math.radians(math.degrees(theta_forward) + 180)
+        self.publication_goal_pose_rviz(x,y,theta)
         return x,y,theta
 
+    def publication_goal_pose_rviz(self, x, y, theta):
+        # create message Pose
+        goal_pose_rviz_msg = PoseStamped()
+        
+        # update timestamp and frame
+        time_now = Time()
+        goal_pose_rviz_msg.header.stamp = time_now.to_msg()
+        goal_pose_rviz_msg.header.frame_id = "base_footprint"
+
+        # get x,y
+        goal_pose_rviz_msg.pose.position.x = float(x)
+        goal_pose_rviz_msg.pose.position.y = float(y)
+
+        # get orientation
+        quaternion = quaternion_from_euler(0, 0, theta)
+        goal_pose_rviz_msg.pose.orientation.x = quaternion[0]
+        goal_pose_rviz_msg.pose.orientation.y = quaternion[1]
+        goal_pose_rviz_msg.pose.orientation.z = quaternion[2]
+        goal_pose_rviz_msg.pose.orientation.w = quaternion[3]
+
+        #if(goal_pose_rviz_msg.pose.position.x == 1) and (goal_pose_rviz_msg.pose.orientation.w == 1):
+            #return
+        #else:
+            # publish goal pose
+        self.pub_goal_pose_rviz.publish(goal_pose_rviz_msg)
+        
      # update bool value
     
     def callback_update_bool(self, msg):

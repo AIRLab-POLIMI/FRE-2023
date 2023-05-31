@@ -44,7 +44,7 @@ class plane_filter : public rclcpp::Node{
             this->declare_parameter("model_threshold",0.3); //distance threshold for consider a point in the alghoritm
             this->declare_parameter("threshold", 0.05); //distance threshold for selecting the points near the plane
             
-            sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/velodyne_points", 10, std::bind(&plane_filter::callback_lidar, this, std::placeholders::_1));
+            sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/velodyne_points2", 10, std::bind(&plane_filter::callback_lidar, this, std::placeholders::_1));
             
             //sub2 = this->create_subscription<sensor_msgs::msg::Imu>("/imu/data", 10, std::bind(&plane_filter::callback_imu, this, std::placeholders::_1));
             
@@ -67,8 +67,8 @@ class plane_filter : public rclcpp::Node{
 
             //Minimum and maximum values for the cropbox filter.
             //x, y, z and intensity
-            Eigen::Vector4f min_pt (-4.0f, -4.0f, -0.5f, -1.0f);
-            Eigen::Vector4f max_pt (4.0f, 4.0f,  0.5f, 1.0f);
+            Eigen::Vector4f min_pt (-4.0f, -3.0f, -0.5f, -1.0f);
+            Eigen::Vector4f max_pt (4.0f, 3.0f,  0.5f, 1.0f);
             //Define the matrix to rotate the pointcloud using pitch data from the imu
             Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
             Eigen::Matrix3f m;

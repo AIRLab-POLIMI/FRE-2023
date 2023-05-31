@@ -31,7 +31,7 @@ class map_filter_approx : public rclcpp::Node{
 
             this->declare_parameter("scanner_height", 0.0); //height of the considered area of the pointcloud <--now is useless, may be used to crop the cloud at certain height
 
-            this->declare_parameter("threshold", 120); //minimum number of neighbors
+            this->declare_parameter("threshold", 25); //minimum number of neighbors
 
             this->declare_parameter("dynamic_range", 50.0); //maximum scaling factor due to distance
 
@@ -50,7 +50,7 @@ class map_filter_approx : public rclcpp::Node{
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/selected", 10, std::bind(&map_filter_approx::callback, this, std::placeholders::_1));
 
-            sub_scanner = this->create_subscription<sensor_msgs::msg::LaserScan>("/scan", 10, std::bind(&map_filter_approx::populate_scan, this, std::placeholders::_1));
+            sub_scanner = this->create_subscription<sensor_msgs::msg::LaserScan>("/scan_initial", 10, std::bind(&map_filter_approx::populate_scan, this, std::placeholders::_1));
                         
             pub_filter = this->create_publisher<sensor_msgs::msg::PointCloud2>("/filtered_point_cloud", 1);
 
