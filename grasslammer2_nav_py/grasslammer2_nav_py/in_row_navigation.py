@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
+from rclpy.duration import Duration
 
 from sensor_msgs.msg import LaserScan, Joy
 from geometry_msgs.msg import Twist
@@ -24,8 +25,8 @@ import json
 # modified robots
 # string_from_folder = 'ros2_humble/src/FRE-2023'
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
-absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
-# absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+# absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
 
 print(absolute_path)
 config_file = open(absolute_path, 'r')
@@ -1103,6 +1104,7 @@ class InRowNavigation(Node):
     
     def callback_update_bool(self, msg):
         self.publish_goal_position = True
+        
     # update turning status: make switch work
     def update_turning_status_after_pose_publication(self):
         self.is_goal_published = False
@@ -1196,11 +1198,25 @@ class InRowNavigation(Node):
         end_of_line_pose.pose.orientation.z = quaternion[2]
         end_of_line_pose.pose.orientation.w = quaternion[3]
 
+        #transform from of the received odom to the current map
+        transform = self._tf_buffer.lookup_transform('odom', end_of_line_pose.header.frame_id, end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
+        goal_pose_final = PoseStamped()
+        goal_pose_final.header.stamp = time_now.to_msg()
+        goal_pose_final.header.frame_id = "odom"
+
+        goal_pose_final.pose.position.x = end_of_line_pose.pose.position.x + transform.transform.translation.x
+        goal_pose_final.pose.position.y = end_of_line_pose.pose.position.y + transform.transform.translation.y
+        goal_pose_final.pose.position.z = end_of_line_pose.pose.position.z + transform.transform.translation.z
+        goal_pose_final.pose.orientation.z = 0.0
+        goal_pose_final.pose.orientation.w = 1.0
+        goal_pose_final.pose.orientation.y = 0.0
+        goal_pose_final.pose.orientation.x = end_of_line_pose.pose.orientation.x + transform.transform.rotation.x
+
         if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
             return
         else:
             # publish goal pose
-            self.end_of_line_pose_topic.publish(end_of_line_pose)
+            self.end_of_line_pose_topic.publish(goal_pose_final)
 
     def publish_end_of_line_pose_perpendicular_crop_backward(self):
         # from last greatest point
