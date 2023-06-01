@@ -8,6 +8,10 @@ from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Float64MultiArray,Bool
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
+from tf2_ros.transform_listener import TransformListener
+from tf2_ros.buffer import Buffer
+from tf2_geometry_msgs import do_transform_pose_stamped
+
 
 import time
 import numpy as np
@@ -25,8 +29,8 @@ import json
 # modified robots
 # string_from_folder = 'ros2_humble/src/FRE-2023'
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
-# absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
-absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+# absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
 
 print(absolute_path)
 config_file = open(absolute_path, 'r')
@@ -611,6 +615,10 @@ class InRowNavigation(Node):
     # assume type are exponentials
     def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, num_skip = 5,threshold_crop_line = 0.5, threshold_bisectrice_line = 0.5, min_num_required_points=20, num_points_traverse_line=30) :
         super().__init__('in_row_navigation')
+
+        self._tf_buffer = Buffer()
+        self._tf_listener = TransformListener(self._tf_buffer, self)
+
         # topics where the data are published
         self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
@@ -709,6 +717,11 @@ class InRowNavigation(Node):
 
         # move forward
         self.moving_forward = True
+
+        # save last goal position
+        self.end_of_line_pose_message = ''
+        self.line_entered = False
+
   
     def get_parameters_from_config_file(self):
         area = config_json["in_row_navigation"]['area']
@@ -748,21 +761,25 @@ class InRowNavigation(Node):
         #if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):
         # IDEA -> anticipate it beforehand
         
-        if (is_nord_east_empty == True & is_nord_west_empty == True) & (is_south_east_empty == False & is_south_west_empty        == False) & self.is_goal_published==True:
-            tmp_south_east = points_south_east.max(axis=0)
-            tmp_south_west = points_south_west.max(axis=0)
-            # get the highest values
-            if(tmp_south_east[0] > self.greatest_point_south_east_forward[0]):
-                self.greatest_point_south_east_forward = tmp_south_east
-            if(tmp_south_west[0] > self.greatest_point_south_west_forward[0]):
-                self.greatest_point_south_west_forward = tmp_south_west
+        if (is_nord_east_empty == True & is_nord_west_empty == True) & (is_south_east_empty == False & is_south_west_empty == False) & self.is_goal_published==True:
+            if is_south_east_empty != True and is_south_west_empty != True:
+                tmp_south_east = points_south_east.max(axis=0)
+                tmp_south_west = points_south_west.max(axis=0)
+                 # get the highest values
+                if(tmp_south_east[0] > self.greatest_point_south_east_forward[0]) and (tmp_south_west[0] > self.greatest_point_south_west_forward[0]) and self.line_entered == True:
+                    self.greatest_point_south_east_forward = tmp_south_east
+                    self.greatest_point_south_west_forward = tmp_south_west
+                    # compute pose and save 
+                    self.calculate_end_of_line_pose_perpendicular_crop_forward()
             print(self.greatest_point_south_east_forward, self.greatest_point_south_west_forward)
 
             # self.greatest_point_nord_east_backward = points_nord_east.max(axis=0)
             # self.greatest_point_nord_west_backward = points_nord_west.max(axis=0)
-        
+        if (is_nord_east_empty == False & is_nord_west_empty == False) & (is_south_east_empty == False & is_south_west_empty == False) & self.is_goal_published==True & self.line_entered==False:
+            self.line_entered = True
+
         if is_nord_east_empty & is_nord_west_empty & is_south_east_empty & is_south_west_empty:
-            if (self.is_goal_published==True):
+            if (self.is_goal_published==True) and (self.line_entered ==True):
                 # self.distance_goal_point_forward = 0.1
                 # publish last goal pose    
                 # x, y, theta = self.calculate_goal_point_forward()
@@ -820,7 +837,7 @@ class InRowNavigation(Node):
             # self.greatest_point_nord_west_backward = points_nord_west.max(axis=0)
         
         if is_nord_east_empty & is_nord_west_empty & is_south_east_empty & is_south_west_empty:
-            if (self.is_goal_published==True):
+            if (self.is_goal_published==True) and (self.end_of_line_pose_message !=''):
                 # self.distance_goal_point_forward = 0.1
                 # publish last goal pose    
                 # x, y, theta = self.calculate_goal_point_forward()
@@ -1103,11 +1120,13 @@ class InRowNavigation(Node):
      # update bool value
     
     def callback_update_bool(self, msg):
-        self.publish_goal_position = True
+        self.is_goal_published = msg.data
         
     # update turning status: make switch work
     def update_turning_status_after_pose_publication(self):
         self.is_goal_published = False
+        self.end_of_line_pose_message = ''
+        self.line_entered=False
         self.initialize_parameters_end_of_line()
         # msg = Bool()
         # msg.data = self.publish_goal_position
@@ -1119,33 +1138,7 @@ class InRowNavigation(Node):
         self.greatest_point_nord_west_backward = [-10,-10]
         self.greatest_point_nord_east_backward = [-10,-10]
 
-    def publish_end_of_line_pose(self, x, y, theta):
-        # create message Pose
-        end_of_line_pose = PoseStamped()
-        
-        # update timestamp and frame
-        time_now = Time()
-        end_of_line_pose.header.stamp = time_now.to_msg()
-        end_of_line_pose.header.frame_id = "base_footprint"
-
-        # get x,y
-        end_of_line_pose.pose.position.x = float(x)
-        end_of_line_pose.pose.position.y = float(y)
-
-        # get orientation
-        quaternion = quaternion_from_euler(0, 0, theta)
-        end_of_line_pose.pose.orientation.x = quaternion[0]
-        end_of_line_pose.pose.orientation.y = quaternion[1]
-        end_of_line_pose.pose.orientation.z = quaternion[2]
-        end_of_line_pose.pose.orientation.w = quaternion[3]
-
-        #if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
-            #return
-        #else:
-            # publish goal pose
-        self.end_of_line_pose_topic.publish(end_of_line_pose)
-
-    def publish_end_of_line_pose_perpendicular_crop_forward(self):
+    def calculate_end_of_line_pose_perpendicular_crop_forward(self):
         # from last greatest point
         # if(self.greatest_point_south_east_forward != '') & (self.greatest_point_south_west_forward!= ''):
         point_east = self.greatest_point_south_east_forward
@@ -1175,8 +1168,8 @@ class InRowNavigation(Node):
         # take previous goal position
         # x,y = self.previous_forward_goal[0], self.previous_forward_goal[1]
         
-        y = (point_west[1] - point_east[1])/2
-        x = max(point_east[0], point_west[0])
+        y = 0#(point_west[1] - point_east[1])/2
+        x = 0#max(point_east[0], point_west[0])
 
         print("POINT ", x, y,new_theta)
         # create message Pose
@@ -1185,11 +1178,11 @@ class InRowNavigation(Node):
         # update timestamp and frame
         time_now = Time()
         end_of_line_pose.header.stamp = time_now.to_msg()
-        end_of_line_pose.header.frame_id = "base_footprint"
+        end_of_line_pose.header.frame_id = "velodyne2"
 
         # get x,y
-        end_of_line_pose.pose.position.x = float(x)
-        end_of_line_pose.pose.position.y = float(y)
+        end_of_line_pose.pose.position.x = float(y)
+        end_of_line_pose.pose.position.y = float(x)
 
         # get orientation
         quaternion = quaternion_from_euler(0, 0, new_theta)
@@ -1197,26 +1190,15 @@ class InRowNavigation(Node):
         end_of_line_pose.pose.orientation.y = quaternion[1]
         end_of_line_pose.pose.orientation.z = quaternion[2]
         end_of_line_pose.pose.orientation.w = quaternion[3]
+        print(end_of_line_pose)
 
         #transform from of the received odom to the current map
-        transform = self._tf_buffer.lookup_transform('odom', end_of_line_pose.header.frame_id, end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
-        goal_pose_final = PoseStamped()
-        goal_pose_final.header.stamp = time_now.to_msg()
-        goal_pose_final.header.frame_id = "odom"
-
-        goal_pose_final.pose.position.x = end_of_line_pose.pose.position.x + transform.transform.translation.x
-        goal_pose_final.pose.position.y = end_of_line_pose.pose.position.y + transform.transform.translation.y
-        goal_pose_final.pose.position.z = end_of_line_pose.pose.position.z + transform.transform.translation.z
-        goal_pose_final.pose.orientation.z = 0.0
-        goal_pose_final.pose.orientation.w = 1.0
-        goal_pose_final.pose.orientation.y = 0.0
-        goal_pose_final.pose.orientation.x = end_of_line_pose.pose.orientation.x + transform.transform.rotation.x
-
-        if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
-            return
-        else:
-            # publish goal pose
-            self.end_of_line_pose_topic.publish(goal_pose_final)
+        transform = self._tf_buffer.lookup_transform('odom', 'velodyne2', end_of_line_pose.header.stamp, Duration(seconds=1, nanoseconds=0))
+        self.end_of_line_pose_message = do_transform_pose_stamped(end_of_line_pose, transform)
+        
+    def publish_end_of_line_pose_perpendicular_crop_forward(self):
+        self.end_of_line_pose_message.header.stamp = Time().to_msg()
+        self.end_of_line_pose_topic.publish(self.end_of_line_pose_message)
 
     def publish_end_of_line_pose_perpendicular_crop_backward(self):
         # from last greatest point
@@ -1258,11 +1240,12 @@ class InRowNavigation(Node):
         # update timestamp and frame
         time_now = Time()
         end_of_line_pose.header.stamp = time_now.to_msg()
-        end_of_line_pose.header.frame_id = "base_footprint"
+        end_of_line_pose.header.frame_id = "velodyne"
 
         # get x,y
         end_of_line_pose.pose.position.x = float(x)
         end_of_line_pose.pose.position.y = float(y)
+        end_of_line_pose.pose.position.z = 0
 
         # get orientation
         quaternion = quaternion_from_euler(0, 0, new_theta)
