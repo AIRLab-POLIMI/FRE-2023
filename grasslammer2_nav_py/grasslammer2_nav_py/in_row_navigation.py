@@ -1199,24 +1199,24 @@ class InRowNavigation(Node):
         end_of_line_pose.pose.orientation.w = quaternion[3]
 
         #transform from of the received odom to the current map
-        transform = self._tf_buffer.lookup_transform('odom', end_of_line_pose.header.frame_id, end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
-        goal_pose_final = PoseStamped()
-        goal_pose_final.header.stamp = time_now.to_msg()
-        goal_pose_final.header.frame_id = "odom"
-
-        goal_pose_final.pose.position.x = end_of_line_pose.pose.position.x + transform.transform.translation.x
-        goal_pose_final.pose.position.y = end_of_line_pose.pose.position.y + transform.transform.translation.y
-        goal_pose_final.pose.position.z = end_of_line_pose.pose.position.z + transform.transform.translation.z
-        goal_pose_final.pose.orientation.z = 0.0
-        goal_pose_final.pose.orientation.w = 1.0
-        goal_pose_final.pose.orientation.y = 0.0
-        goal_pose_final.pose.orientation.x = end_of_line_pose.pose.orientation.x + transform.transform.rotation.x
+        #transform = self._tf_buffer.lookup_transform('odom', end_of_line_pose.header.frame_id, end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
+        #goal_pose_final = PoseStamped()
+        #goal_pose_final.header.stamp = time_now.to_msg()
+        #goal_pose_final.header.frame_id = "odom"
+#
+        #goal_pose_final.pose.position.x = end_of_line_pose.pose.position.x + transform.transform.translation.x
+        #goal_pose_final.pose.position.y = end_of_line_pose.pose.position.y + transform.transform.translation.y
+        #goal_pose_final.pose.position.z = end_of_line_pose.pose.position.z + transform.transform.translation.z
+        #goal_pose_final.pose.orientation.z = 0.0
+        #goal_pose_final.pose.orientation.w = 1.0
+        #goal_pose_final.pose.orientation.y = 0.0
+        #goal_pose_final.pose.orientation.x = end_of_line_pose.pose.orientation.x + transform.transform.rotation.x
 
         if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
             return
         else:
             # publish goal pose
-            self.end_of_line_pose_topic.publish(goal_pose_final)
+            self.end_of_line_pose_topic.publish(end_of_line_pose)
 
     def publish_end_of_line_pose_perpendicular_crop_backward(self):
         # from last greatest point
