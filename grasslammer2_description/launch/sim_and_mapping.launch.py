@@ -27,11 +27,12 @@ def generate_launch_description():
                                 executable='cloud_to_scan',
                                 )
 
-    """start_slam = IncludeLaunchDescription(
+    start_slam = IncludeLaunchDescription(
                             PythonLaunchDescriptionSource(
                                 os.path.join(pkg_path, 'launch', 'online_sync_launch.py')
                             ),
                 )
+    """
     start_nav2 = IncludeLaunchDescription(
                             PythonLaunchDescriptionSource(
                                 os.path.join(pkg_path, 'launch', 'navigation_launch.py')
@@ -39,10 +40,10 @@ def generate_launch_description():
                 )"""
 
     return LaunchDescription([
-        #start_simulation,
+        start_simulation,
         remove_ground_node, 
-         #density_filter,
-        #pointcloud_converter,
-        #start_slam,
+        density_filter,
+        pointcloud_converter,
+        start_slam,
         #start_nav2,
     ])

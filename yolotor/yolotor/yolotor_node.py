@@ -6,7 +6,7 @@ from yolotor.yolotor import Yolotor
 
 rclpy.init()
 
-with open("src/yolotor/yolotor/yolotor_config.json") as f:
+with open("src/FRE-2023/yolotor/yolotor/yolotor_config.json") as f:
     param = json.load(f)
 
 yolotor = Yolotor(

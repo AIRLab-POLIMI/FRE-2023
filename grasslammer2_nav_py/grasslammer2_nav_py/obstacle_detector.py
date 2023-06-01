@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
-from std_msgs.msg import Bool
+from std_msgs.msg import Char, String
 import numpy as np
 
 
@@ -14,7 +14,10 @@ class ObstacleDetector(Node):
         self.offset = 50
         self.oakd_sub = self.create_subscription(Image, "/oakd_depth/depth/image_raw", self.detection, 1)
         self.pub = self.create_publisher(Float32, "/to_plot", 1)
-        self.Obstacle_detection_pub = self.create_publisher(Bool, "/obstacle_detection", 1)
+        self.Obstacle_detection_pub = self.create_publisher(Char, "/obstacle_detection", 1)
+        self.yolo_sub = self.create_subscription(String, "/yolotor", self.saveData, 1)
+        self.detectionData = ""
+        self.errorTreshold = 20
 
     def detection(self, message):
         #message = (Image)(msg)
@@ -23,7 +26,7 @@ class ObstacleDetector(Node):
         width = message.width
         values = np.asarray(message.data, dtype=np.int8)
         pixels = values.reshape(-1, 4)
-        points = pixels.view(dtype=np.uin)
+        points = pixels.view(dtype=np.float32)
         depths = points.reshape((height, width))
         up = (int)((height/2 - self.offset))
         down = (int)((height/2 + self.offset))
@@ -33,10 +36,13 @@ class ObstacleDetector(Node):
         #self.send_to_plotter(subdepths)
         near = lambda x: x <= self.depthTrashold
         if(self.subset_exists(subdepths, near, self.consistencyTrashold)):
-            ppb = Bool()
-            ppb.data = True
-            print("Obstacle Detected: UAU")
-            self.Obstacle_detection_pub.publish(ppb)
+            if(self.errorTreshold >= 0):
+                self.errorTreshold -= 1
+            else:
+                self.errorTreshold = 20
+                msg = Char()
+                msg.data = self.detectionData[0]
+                self.Obstacle_detection_pub.publish(msg)
 
     def subset_exists(self, arr, condition, threshold):
         # Apply the condition to the array and check if any group of elements satisfies it and is bigger than the threshold
@@ -51,6 +57,9 @@ class ObstacleDetector(Node):
             #data = Float32()
             #data.data = (float)(point)
             #self.pub.publish(data)
+    
+    def saveData(self, msg):
+        self.detectionData = msg.data
 
 
 
