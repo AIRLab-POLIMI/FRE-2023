@@ -76,7 +76,7 @@ def generate_launch_description():
 
     remove_ground_node = Node(package='ground_removal', executable='plane_filter',)
 
-    density_filter = Node(package='map_filter', executable='map_filter_sectors',)
+    density_filter = Node(package='map_filter', executable='map_filter',)
 
     pointcloud_converter = Node(package='map_filter',
                                 executable='cloud_to_scan',
@@ -99,8 +99,8 @@ def generate_launch_description():
         velodyne_launch, 
         #oak_d_launch, 
         scan_rotation,
-        remove_ground_node,
-        density_filter,
-        pointcloud_converter,
+        #remove_ground_node,
+        #density_filter,
+        #pointcloud_converter,
 
     ])

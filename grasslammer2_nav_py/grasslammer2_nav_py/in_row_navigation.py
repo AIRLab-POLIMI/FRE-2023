@@ -232,7 +232,7 @@ class Line():
 
         # TO DO add consistency num_trials and min sample
         # min_samples=20, 
-        self.ransac = RANSACRegressor(random_state=42)
+        self.ransac = RANSACRegressor(min_samples=2, random_state=42)
     
     # initialization of queues
     def initialize_line(self):
@@ -327,7 +327,7 @@ class Prediction():
         self.south_west_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, -0.375)
         
         # min_point_for_predition + threshold
-        self.num_min_points_required_for_fitting = 20
+        self.num_min_points_required_for_fitting = 7
         self.angle_added = 5
         self.angle_removed = 5
         self.dividend_factor_bisectrice_and_crop = 50    # 15 degree
@@ -406,8 +406,7 @@ class Prediction():
             local_line.update_line_parameters_checking_threshold(slope, intercept)
 
     def compute_bisectrice_coefficients_forward_old(self, nord_east_points, nord_west_points, south_east_points, south_west_points):
-                                                                                        
-
+        
         nord_west_slope, nord_west_intercept = self.nord_west_line.get_most_recent_coefficients() 
         nord_east_slope, nord_east_intercept = self.nord_east_line.get_most_recent_coefficients() 
 
@@ -581,7 +580,7 @@ class InRowNavigation(Node):
         self.end_of_line_pose_topic = self.create_publisher(PoseStamped, '/end_of_line_pose', 1)
         self.end_of_line_pose_topic # prevent unused variable warning
         self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
-        self.area = np.array([2, 2]) 
+        self.area = np.array([2.6, 2]) 
         self.nord_treshold = 1.0
         self.south_treshold = 0.7
 
@@ -596,10 +595,10 @@ class InRowNavigation(Node):
         self.start_computation = -1
 
         # prefiltering
-        self.line_width = 0.75
+        self.line_width = 0.70
         # distance_from_goal +/- distance_from_bisectrice
-        self.distance_from_bisectrice = self.line_width/2
-        self.tolerance_crop_distance = 0.30 
+        self.distance_from_bisectrice = self.line_width/2 #+ 0.2
+        self.tolerance_crop_distance = 0.15
         self.prefiltering_threshold = self.line_width
         self.filtering_from_crop = self.line_width
 
@@ -621,7 +620,7 @@ class InRowNavigation(Node):
         self.last_cluster_left = 0
 
         # distance_goal_point
-        self.distance_goal_point_forward = self.area[1]/2 - 0.5 # 0.8
+        self.distance_goal_point_forward = self.area[1]/2 - 0.5# 0.5
         self.distance_goal_point_backward = (-self.area[1]/2) - 0.15 # -0.5
         
         # needed for goal publication
@@ -659,7 +658,7 @@ class InRowNavigation(Node):
 
         # print(points_2d)
         # if going forward/backward 
-        print(len(points_nord_east), len(points_nord_west), len(points_south_east), len(points_south_west))
+        # print(len(points_nord_east), len(points_nord_west), len(points_south_east), len(points_south_west))
 
         if(self.moving_forward):
             self.in_row_navigation_forward(points_nord_east, points_nord_west, points_south_east, points_south_west)
@@ -675,21 +674,22 @@ class InRowNavigation(Node):
         is_south_west_empty = True if np.size(points_south_west) < self.min_num_required_points else False
 
         # needed to save the last point to calculate the perpendicular angle
-        if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):
-            
-            self.last_valid_crop_west = self.prediction_instance.south_east_line.get_most_recent_coefficients()
-            self.last_valid_crop_east = self.prediction_instance.south_west_line.get_most_recent_coefficients()
-            self.greatest_point_east = points_south_east.max(axis=0)
-            self.greatest_point_west = points_south_west.max(axis=0)
+        if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):  
+            # self.last_valid_crop_west = self.prediction_instance.south_east_line.get_most_recent_coefficients()
+            # self.last_valid_crop_east = self.prediction_instance.south_west_line.get_most_recent_coefficients()
+            print("TEST OK")
+            self.greatest_point_nord_east = points_south_east.max(axis=0)
+            self.greatest_point_nord_west = points_south_west.max(axis=0)
+            print(greatest_point_nord_east, greatest_point_nord_west)
         
         if is_nord_east_empty & is_nord_west_empty & is_south_east_empty & is_south_west_empty:
             if (self.is_goal_published==True):
-                self.distance_goal_point_forward = 0.1
+                # self.distance_goal_point_forward = 0.1
                 # publish last goal pose
-                x, y, theta = self.calculate_goal_point_forward()
-                self.publish_end_of_line_pose_perpendicular_crop(x, y, theta)
+                # x, y, theta = self.calculate_goal_point_forward()
+                self.publish_end_of_line_pose_perpendicular_crop()
                 # reset_is_goal_published
-                self.distance_goal_point_forward = self.area[1]/2
+                # self.distance_goal_point_forward = self.area[1]/2
                 self.update_turning_status_after_pose_publication()
                 return
 
@@ -855,8 +855,8 @@ class InRowNavigation(Node):
             if(slope==0 and intercept==0):
                 x_nord = np.where(((0 <= x) & (x <= self.nord_treshold)),x, -1)
                 x_south = np.where(((-self.south_treshold <= x)&(x <= 0)), x, -1)
-                y_west = np.where(((0 <= y)&(y<= self.line_width)),y, -1)
-                y_east = np.where(((-self.line_width <= y)&(y <= 0)),y, -1)
+                y_west = np.where(((0 <= y)&(y<= self.area[0]/2)),y, -1)
+                y_east = np.where(((-self.area[0]/2 <= y)&(y <= 0)),y, -1)
 
                 points_nord_east = np.vstack((x_nord, y_east)).T
                 points_nord_west = np.vstack((x_nord, y_west)).T
@@ -1030,14 +1030,18 @@ class InRowNavigation(Node):
     def publish_end_of_line_pose_perpendicular_crop(self):
 
         # takes the last m/q value of bisectrice
-        slope_east, intercept_east = self.last_cluster_east
-        slope_west, intercept_west = self.last_valid_crop_west
+       
+        # slope_east, intercept_east = self.last_cluster_east
+        # slope_west, intercept_west = self.last_valid_crop_west
         # from last greatest point
-        point_east = self.greatest_point_east
-        point_west = self.greatest_point_west
+        point_east = self.greatest_point_nord_east
+        point_west = self.greatest_point_nord_west
         
         # m equationfrom two points
-        m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+        if m ==  '':
+            m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+        else:
+            print("updated")
 
         # m_perpendicular
         m_perp = -1/m

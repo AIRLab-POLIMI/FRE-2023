@@ -103,7 +103,7 @@ class map_filter : public rclcpp::Node{
 
             int cur_threshold;
             //for every point in the "input" point cloud
-            for (long unsigned int i=0; i < input->points.size(); i+=50) {
+            for (long unsigned int i=0; i < input->points.size(); i+=100) {
                 point=input->points[i];
                 neighbors=0;
                 if(pow(point.x,2) + pow(point.y, 2) < 3) {

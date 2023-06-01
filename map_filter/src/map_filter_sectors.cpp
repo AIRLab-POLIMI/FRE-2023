@@ -53,7 +53,7 @@ class map_filter_sectors : public rclcpp::Node{
             this->declare_parameter("scanner_height", -0.17); //height of the considered area of the pointcloud
 
 
-            this->declare_parameter("threshold", 40); //minimum number of neighbors
+            this->declare_parameter("threshold", 30); //minimum number of neighbors
 
             this->declare_parameter("dynamic_range", 15.0); //maximum scaling factor due to distance
 
@@ -121,7 +121,7 @@ class map_filter_sectors : public rclcpp::Node{
             double height = this->get_parameter("scanner_height").as_double();
 
 
-            for (long unsigned int i=0; i < input->points.size(); i++){
+            for (long unsigned int i=0; i < input->points.size(); i+=5){
                 cur=input->points[i];
                 
                 alpha = atan2(cur.y, cur.x)*(180/M_PI) + 180;
