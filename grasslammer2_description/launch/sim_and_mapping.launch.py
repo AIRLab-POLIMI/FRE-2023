@@ -32,7 +32,8 @@ def generate_launch_description():
                                 os.path.join(pkg_path, 'launch', 'online_sync_launch.py')
                             ),
                 )
-    """start_nav2 = IncludeLaunchDescription(
+    """
+    start_nav2 = IncludeLaunchDescription(
                             PythonLaunchDescriptionSource(
                                 os.path.join(pkg_path, 'launch', 'navigation_launch.py')
                             ),

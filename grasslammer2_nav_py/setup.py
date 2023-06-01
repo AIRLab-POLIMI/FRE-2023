@@ -36,6 +36,8 @@ setup(
             'pose_publisher = grasslammer2_nav_py.pose_publisher:main',
             'end_of_line_detection = grasslammer2_nav_py.end_of_line_detection:main',
             'spray_switch = grasslammer2_nav_py.spray_switch:main',
+            'obstacle_detector = grasslammer2_nav_py.obstacle_detector:main',
+            'plot_depth = grasslammer2_nav_py.plotter:main',
         ],
     },
 )

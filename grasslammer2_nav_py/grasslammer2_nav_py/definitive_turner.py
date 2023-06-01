@@ -79,6 +79,9 @@ class TurnerFinal(Node):
         poseToNavigate.pose.orientation.z = qt[2]
         poseToNavigate.pose.orientation.w = qt[3]
 
+        
+
+
         self.navigator.goToPose(poseToNavigate)
         print(staged_from_bf_to_odom.transform.translation.x, staged_from_bf_to_odom.transform.translation.y)
         print(poseToNavigate.pose.position.x, poseToNavigate.pose.position.y)
