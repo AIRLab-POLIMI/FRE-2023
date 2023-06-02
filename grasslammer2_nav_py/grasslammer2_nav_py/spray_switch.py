@@ -21,7 +21,7 @@ class SpraySwitch(Node):
 
         self.scan_sub = self.create_subscription(LaserScan, '/scan_initial', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
-        self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered', 1)
+        self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered5', 1)
         self.fig, self.ax = plt.subplots()
 
 

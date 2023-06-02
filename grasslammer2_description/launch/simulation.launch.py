@@ -66,6 +66,6 @@ def generate_launch_description():
         start_control,
         #start_ekf,
         #teleop_joy,
-        navigation,
+        #navigation,
          
     ])

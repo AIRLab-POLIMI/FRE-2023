@@ -26,7 +26,7 @@ import json
 # string_from_folder = 'ros2_humble/src/FRE-2023'
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
 # absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
-absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+absolute_path = '/home/carlo/Documenti/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
 
 print(absolute_path)
 config_file = open(absolute_path, 'r')
@@ -612,7 +612,7 @@ class InRowNavigation(Node):
     def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, num_skip = 5,threshold_crop_line = 0.5, threshold_bisectrice_line = 0.5, min_num_required_points=20, num_points_traverse_line=30) :
         super().__init__('in_row_navigation')
         # topics where the data are published
-        self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback, 1)
+        self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered_nav', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
         self.goal_pose_pub = self.create_publisher(Float64MultiArray, '/goal_position', 1)
         self.goal_pose_pub # prevent unused variable warning
@@ -792,7 +792,7 @@ class InRowNavigation(Node):
         self.publish_goal_pose(x, y, theta)
 
         # display 
-        self.display_prediction_forward(points_nord_east,points_nord_west, x, y)
+        #self.display_prediction_forward(points_nord_east,points_nord_west, x, y)
     
     def in_row_navigation_backward(self, points_nord_east, points_nord_west, points_south_east, points_south_west):
         # get information about emptyness of regions
@@ -1188,8 +1188,8 @@ class InRowNavigation(Node):
         end_of_line_pose.header.frame_id = "base_footprint"
 
         # get x,y
-        end_of_line_pose.pose.position.x = float(x)
-        end_of_line_pose.pose.position.y = float(y)
+        end_of_line_pose.pose.position.x = float(y)
+        end_of_line_pose.pose.position.y = float(x)
 
         # get orientation
         quaternion = quaternion_from_euler(0, 0, new_theta)

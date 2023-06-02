@@ -38,11 +38,11 @@ class TurnerFinal(Node):
         
         staged_from_bf_to_odom = self.get_tf_of_frames("base_footprint", "map")
 
-        #yawpose = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
+        yawpose = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         yawtf = euler_from_quaternion([staged_from_bf_to_odom.transform.rotation.x, staged_from_bf_to_odom.transform.rotation.y, staged_from_bf_to_odom.transform.rotation.z, staged_from_bf_to_odom.transform.rotation.w])
-        print(yawtf)
+        print(yawtf, yawpose)
 
-        yaw = yawtf[2] + math.pi/2
+        yaw = yawtf[2] + yawpose[2] + math.pi/2
 
         if(turningInfo[1] == "L"):
             if(yaw <= 1.57): #wrong but solve first the yaw not visible problem
@@ -66,11 +66,11 @@ class TurnerFinal(Node):
         poseToNavigate.header.frame_id = "map"
         
 
-        qt = quaternion_from_euler((yawtf[0]), (yawtf[1]), yaw + math.pi)
+        qt = quaternion_from_euler((yawtf[0]), (yawtf[1]), yaw + math.pi/2)
 
 
-        poseToNavigate.pose.position.x = staged_from_bf_to_odom.transform.translation.x + self.lineDimension*float(coeff)*math.cos(      yaw      ) + self.y_movement*math.cos(math.pi/2 - yaw)
-        poseToNavigate.pose.position.y = staged_from_bf_to_odom.transform.translation.y + self.lineDimension*float(coeff)*math.cos(math.pi/2 - yaw) + self.y_movement*math.cos(      yaw      )
+        poseToNavigate.pose.position.x = staged_from_bf_to_odom.transform.translation.x + msg.pose.position.x + self.lineDimension*float(coeff)*math.cos(      yaw      ) + self.y_movement*math.cos(math.pi/2 - yaw)
+        poseToNavigate.pose.position.y = staged_from_bf_to_odom.transform.translation.y + msg.pose.position.y + self.lineDimension*float(coeff)*math.cos(math.pi/2 - yaw) + self.y_movement*math.cos(      yaw      )
         poseToNavigate.pose.position.z = 0.0
 
 
@@ -83,8 +83,8 @@ class TurnerFinal(Node):
 
 
         self.navigator.goToPose(poseToNavigate)
-        print(staged_from_bf_to_odom.transform.translation.x, staged_from_bf_to_odom.transform.translation.y)
-        print(poseToNavigate.pose.position.x, poseToNavigate.pose.position.y)
+        print("TF: ", staged_from_bf_to_odom.transform.translation.x, staged_from_bf_to_odom.transform.translation.y)
+        print("MESSAGE: ",msg.pose.position.x, msg.pose.position.y)
         print("goal pubblished")
 
 

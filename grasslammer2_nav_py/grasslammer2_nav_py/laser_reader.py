@@ -21,7 +21,7 @@ class LaserReader(Node):
         # scan final
         self.scan_sub = self.create_subscription(LaserScan, '/scan_final', self.scan_callback_extended, 1)
         self.scan_sub # prevent unused variable warning 
-        self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered', 1)
+        self.filter_pub = self.create_publisher(LaserScan, '/scan/filtered_nav', 1)
         self.filter_pub_end_of_line = self.create_publisher(LaserScan, '/scan/filtered_end_of_line', 1)
         self.cluster1_pub = self.create_publisher(MarkerArray, '/cluster1', 1)
         # sself.extended_area = np.array([1, 0.8]) # rect shape x,y
