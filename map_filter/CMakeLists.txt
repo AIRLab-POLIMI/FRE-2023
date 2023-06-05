@@ -14,6 +14,7 @@ find_package(pcl_ros REQUIRED)#
 find_package(pcl_conversions REQUIRED)#
 find_package(sensor_msgs REQUIRED)#
 find_package(geometry_msgs REQUIRED)#
+find_package(std_msgs REQUIRED)
 #openMP
 find_package(OpenMP REQUIRED)
 if(OPENMP_FOUND)
@@ -116,6 +117,49 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}/
 )
 
+
+#add_executable(end_row_linear_model src/end_row_linear_model.cpp)
+#target_link_libraries(end_row_linear_model ${PCL_LIBRARIES})
+#target_link_libraries(end_row_linear_model
+#  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
+#)
+# end_row_linear_model
+#ament_target_dependencies(
+#  geometry_msgs #
+#  pcl_conversions#
+#  rcl_interfaces#
+#  pcl_ros#
+#  rclcpp #
+#  rcutils
+#  sensor_msgs#
+#  std_msgs
+#)
+#install(TARGETS
+#  end_row_linear_model
+#  DESTINATION lib/${PROJECT_NAME}/
+#)
+
+add_executable(map_filter_approx src/map_filter_approx.cpp)
+target_link_libraries(map_filter_approx ${PCL_LIBRARIES})
+target_link_libraries(map_filter_approx
+  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
+)
+ament_target_dependencies(
+  map_filter_approx
+  geometry_msgs #
+  pcl_conversions#
+  rcl_interfaces#
+  pcl_ros#
+  rclcpp #
+  rcutils
+  sensor_msgs#
+  std_msgs
+)
+install(TARGETS
+  map_filter_approx
+  DESTINATION lib/${PROJECT_NAME}/
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -134,5 +178,7 @@ target_compile_options(map_filter PRIVATE ${OpenMP_FLAGS})
 target_link_libraries(map_filter ${OpenMP_LIBS})
 target_compile_options(map_filter_sectors PRIVATE ${OpenMP_FLAGS})
 target_link_libraries(map_filter_sectors ${OpenMP_LIBS})
+target_compile_options(map_filter_approx PRIVATE ${OpenMP_FLAGS})
+target_link_libraries(map_filter_approx ${OpenMP_LIBS})
 
 ament_package()

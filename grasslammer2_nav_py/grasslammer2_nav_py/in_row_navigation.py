@@ -1,22 +1,49 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
+from rclpy.duration import Duration
 
 from sensor_msgs.msg import LaserScan, Joy
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Float64MultiArray,Bool
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
+from tf2_ros.transform_listener import TransformListener
+from tf2_ros.buffer import Buffer
+from tf2_geometry_msgs import do_transform_pose_stamped
+
 
 import time
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import numpy.ma as ma
+import os
+
+# QUEUE
+from collections import deque
+# LINE
+import math
+import matplotlib.pyplot as plt
+import numpy.ma as ma
+import os
+
 # QUEUE
 from collections import deque
 # LINE
 from sklearn.linear_model import RANSACRegressor
 from numpy import float64
+import json
+# modified robots
+# string_from_folder = 'ros2_humble/src/FRE-2023'
+#absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
+# absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+# absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+absolute_path = "/home/airlab/workspace/ros2/src/grasslammer2/grasslammer2_description/config/in_row_params.json"
+print(absolute_path)
+config_file = open(absolute_path, 'r')
+# dict_config = config_file.read()
+config_json = json.loads(config_file.read())
 
 #################################
 ########## MOVING AVARAGE CLASS
@@ -26,10 +53,11 @@ class MovingAvarage():
     # assume type are exponentials
     def __init__(self, start, stop, base_exp, dimension_queue):
         self.weigths = []
-        self.start = start
-        self.stop = stop
-        self.base_exp = base_exp
-    
+        # self.start = start
+        # self.stop = stop
+        self.base_exp, self.start, self.stop = self.get_parameters_from_config_file()
+        # print(self.base_exp, self.start, self.stop)
+
     def update_weights(self, length_queue, dimension_queue):
         # update weigths of moving avarage only when wwights < num_points 
         # print("update_weights ", length_queue, dimension_queue)
@@ -65,6 +93,11 @@ class MovingAvarage():
     def initialize_weigths(self):
         self.weights = []
     
+    def get_parameters_from_config_file(self):
+        base_exp = config_json['moving_avarage']['base_exp']
+        start = config_json['moving_avarage']['start']
+        stop = config_json['moving_avarage']['stop']
+        return base_exp, start, stop
 
     def __repr__ (self):
         tmp_weights = ''
@@ -132,6 +165,7 @@ class MovingAvarageQueue():
 
     def get_reset_value(self):
         return self.reset_value
+    
 
     def __repr__ (self):
         tmp_queue = ''
@@ -207,20 +241,20 @@ class CustomQueue:
 
 class Line():
     # assume type are exponentials
-    def __init__(self, dimension_queue, ma_flag, is_bisectrice, threshold, window_allowed_outdated_parameters, reset_value_intercept):
+    def __init__(self, dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope):
 
-        if ma_flag == True:
-            self.slope = MovingAvarageQueue(dimension_queue=dimension_queue, start=0, stop=4, base_exp=100, reset_value=0)
+        if ma_avarage_flag == True:
+            self.slope = MovingAvarageQueue(dimension_queue=dimension_queue, start=0, stop=4, base_exp=100, reset_value=reset_value_slope)
             self.intercept = MovingAvarageQueue(dimension_queue=dimension_queue,start=0, stop=4, base_exp=100, reset_value=reset_value_intercept)
         else:
-            self.slope = CustomQueue(dimension_queue, reset_value=0)
+            self.slope = CustomQueue(dimension_queue, reset_value=reset_value_slope)
             self.intercept = CustomQueue(dimension_queue, reset_value=reset_value_intercept)
         
         # ? needed flag
         self.is_bisectrice = is_bisectrice
         # threshold allowed btw two consecutive lines 
-        self.threshold_btw_consecutive_lines_intercept= threshold
-        self.threshold_btw_consecutive_lines_slope = 0.26 # 15 degree
+        self.threshold_btw_consecutive_lines_intercept = threshold_line_intercept
+        self.threshold_btw_consecutive_lines_slope = threshold_line_slope# 15 degree
         # counter outdated lines
         self.counter_outdated_consecutive_values = 0
         # consistency on filter in terms of number required points
@@ -232,7 +266,7 @@ class Line():
 
         # TO DO add consistency num_trials and min sample
         # min_samples=20, 
-        self.ransac = RANSACRegressor(min_samples=2, random_state=42)
+        self.ransac = RANSACRegressor(random_state=42)
     
     # initialization of queues
     def initialize_line(self):
@@ -312,7 +346,7 @@ class Line():
 ##################################  
 class Prediction():
     # assume type are exponentials
-    def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, window_allowed_outdated_parameters=5,threshold_crop_line = 0.30, threshold_bisectrice_line = 0) :
+    def __init__(self, dimension_queue=10, ma_crop_flag=0, ma_navigation_flag=1, window_allowed_outdated_parameters=10,threshold_crop_line = 0.30, threshold_bisectrice_line = 0) :
         # dimension_queue -> n
         
         # save right/left cluster data
@@ -320,14 +354,34 @@ class Prediction():
         # self.right_cluster = costum_queue.CustomQueue(dimension_queue, window_allowed_outdated_parameters)
         # self.left_cluster = costum_queue.CustomQueue(dimension_queue, window_allowed_outdated_parameters)
         # save crop/bisectrice parameters
-        self.navigation_line =  Line(dimension_queue, ma_navigation_flag, True, threshold_bisectrice_line, window_allowed_outdated_parameters, 0)
-        self.nord_east_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, 0.375)
-        self.nord_west_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, -0.375)
-        self.south_east_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, 0.375)
-        self.south_west_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, -0.375)
+
+        # self.navigation_line =  Line(dimension_queue, ma_navigation_flag, True, threshold_bisectrice_line, window_allowed_outdated_parameters, 0)
+        # self.nord_east_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, 0.375)
+        # self.nord_west_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, -0.375)
+        # self.south_east_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, 0.375)
+        # self.south_west_line = Line(dimension_queue, ma_crop_flag, False, threshold_crop_line, window_allowed_outdated_parameters, -0.375)
         
+        # nord east
+        # self, dimension_queue, ma_flag, is_bisectrice, threthreshold_bisectrice_lineshold, window_allowed_outdated_parameters, reset_value_intercept
+        dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope = self.get_parameters_from_config_file('line_nord_east')
+        self.nord_east_line = Line(dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope)
+        
+        dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope = self.get_parameters_from_config_file('line_nord_west')
+        self.nord_west_line = Line(dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope)
+        
+        dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope = self.get_parameters_from_config_file('line_south_east')
+        self.south_east_line = Line(dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope)
+        
+        dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope = self.get_parameters_from_config_file('line_south_west')
+        self.south_west_line = Line(dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope)
+        
+        dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope = self.get_parameters_from_config_file('line_navigation')
+        self.navigation_line =  Line(dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope)
+        
+        
+
         # min_point_for_predition + threshold
-        self.num_min_points_required_for_fitting = 7
+        self.num_min_points_required_for_fitting = 20
         self.angle_added = 5
         self.angle_removed = 5
         self.dividend_factor_bisectrice_and_crop = 50    # 15 degree
@@ -404,18 +458,6 @@ class Prediction():
             # else reset value
             slope, intercept = local_line.get_most_recent_coefficients()
             local_line.update_line_parameters_checking_threshold(slope, intercept)
-
-    def compute_bisectrice_coefficients_forward_old(self, nord_east_points, nord_west_points, south_east_points, south_west_points):
-        
-        nord_west_slope, nord_west_intercept = self.nord_west_line.get_most_recent_coefficients() 
-        nord_east_slope, nord_east_intercept = self.nord_east_line.get_most_recent_coefficients() 
-
-        # compute bisectrice
-        medium_slope = (nord_west_slope+nord_east_slope) / 2
-        medium_intercept = (nord_west_intercept+nord_east_intercept) / 2
-
-        # add coeddificent to bisectrice
-        self.navigation_line.update_line_parameters(medium_slope, medium_intercept)
     
     def compute_crop_line_coefficients_west_robustness_bisectrice(self, local_line, points):
         # print("num points", len(points))
@@ -564,41 +606,58 @@ class Prediction():
 
         local_line.update_line_parameters_checking_threshold(slope, intercept)
        
+    def get_parameters_from_config_file(self, quadrant):
+        dimension_queue = config_json['prediction']['lines'][quadrant]['dimension_queue']
+        ma_avarage_flag = config_json['prediction']['lines'][quadrant]['ma_avarage_flag']
+        is_bisectrice = config_json['prediction']['lines'][quadrant]['is_bisectrice']
+        threshold_line_intercept = config_json['prediction']['lines'][quadrant]['threshold_line_intercept']
+        threshold_line_slope = config_json['prediction']['lines'][quadrant]['threshold_line_slope']
+        reset_value_intercept = config_json['prediction']['lines'][quadrant]['reset_value_intercept']
+        reset_value_slope = config_json['prediction']['lines'][quadrant]['reset_value_slope']
+        return dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope
+    
     def __repr__ (self):
         return 'Line(slope=' + self.slope.__repr__() + ' ,intercept=' + self.intercept.__repr__()  + ')'
     
-
 class InRowNavigation(Node):
     # assume type are exponentials
-    def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, num_skip = 5,threshold_crop_line = 0.5, threshold_bisectrice_line = 0.5, min_num_required_points=7, num_points_traverse_line=30) :
+    def __init__(self, dimension_queue=5, ma_crop_flag=0, ma_navigation_flag=1, num_skip = 5,threshold_crop_line = 0.5, threshold_bisectrice_line = 0.5, min_num_required_points=20, num_points_traverse_line=30) :
         super().__init__('in_row_navigation')
+
+        self._tf_buffer = Buffer()
+        self._tf_listener = TransformListener(self._tf_buffer, self)
+
         # topics where the data are published
         self.scan_sub = self.create_subscription(LaserScan, '/scan/filtered', self.scan_callback, 1)
         self.scan_sub # prevent unused variable warning 
         self.goal_pose_pub = self.create_publisher(Float64MultiArray, '/goal_position', 1)
         self.goal_pose_pub # prevent unused variable warning
         self.end_of_line_pose_topic = self.create_publisher(PoseStamped, '/end_of_line_pose', 1)
+        self.pub_goal_pose_rviz = self.create_publisher(PoseStamped, '/goal_pose_rviz', 1)
         self.end_of_line_pose_topic # prevent unused variable warning
         self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
-        self.area = np.array([2.6, 2]) 
-        self.nord_treshold = 1.0
-        self.south_treshold = 0.7
+
+        area, dimension_queue, min_number_required_points_per_quadrants, line_width, tolerance_crop_distance_filtering, distance_goal_point_forward, distance_goal_point_backward, nord_threshold, south_threshold = self.get_parameters_from_config_file()
+        self.area = area
+        self.nord_treshold = self.area[1]/2
+        self.south_treshold = self.area[1]/2
 
         self.goal_pose_pub # prevent unused variable warning
 
-        # minimum number points
-        self.min_num_required_points = min_num_required_points
-        self.min_num_build_quadrants = min_num_required_points * 2 - 1
+        # minimum number points entire region
+        self.min_num_required_points = min_number_required_points_per_quadrants
+        # proportion of 15 point
+        self.min_num_build_quadrants = self.min_num_required_points * 2 - 1
 
         # parameters needed during perfomance calculation
         self.end_computation = -1
         self.start_computation = -1
 
         # prefiltering
-        self.line_width = 0.70
+        self.line_width = line_width
         # distance_from_goal +/- distance_from_bisectrice
-        self.distance_from_bisectrice = self.line_width/2 #+ 0.2
-        self.tolerance_crop_distance = 0.15
+        self.distance_from_bisectrice = self.line_width/2
+        self.tolerance_crop_distance = tolerance_crop_distance_filtering
         self.prefiltering_threshold = self.line_width
         self.filtering_from_crop = self.line_width
 
@@ -620,28 +679,44 @@ class InRowNavigation(Node):
         self.last_cluster_left = 0
 
         # distance_goal_point
-        self.distance_goal_point_forward = self.area[1]/2 - 0.5# 0.5
-        self.distance_goal_point_backward = (-self.area[1]/2) - 0.15 # -0.5
+        self.distance_goal_point_forward = (self.area[1]/2)/2 # 0.4
+        self.distance_goal_point_backward = (-self.area[1]/2)/2 # -0.4
         
         # needed for goal publication
         self.is_goal_published = True
         self.distance_goal_end_of_line_forward = 0.1
         self.distance_goal_end_of_line_backward =  -0.1
 
-        # pubblication goal pose
-        # 
-        self.last_valid_crop_nord_west = ''
-        self.last_valid_crop_nord_east = ''
-        self.greatest_point_nord_west = ''
-        self.greatest_point_nord_east = ''
-        self.previous_forward_goal = ''
-
         # TODO backward
-        self.last_valid_crop_south_west = ''
-        self.last_valid_crop_south_east = ''
-        self.greatest_points_south_west = ''
-        self.greatest_point_south_east = ''
+        self.greatest_point_south_west_forward = [-10,-10]
+        self.greatest_point_south_east_forward = [-10,-10]
+        self.greatest_point_nord_west_backward = [-10,-10]
+        self.greatest_point_nord_east_backward = [-10,-10]
+        self.previous_forward_goal = ''
         self.previous_backward_goal = ''
+
+
+        #TODO threshold to plot quadrants
+        # nord east quadrants
+        self.x_nord_east_nord = ''
+        self.x_nord_east_south = ''
+        self.y_nord_east_east = ''
+        self.y_nord_east_west = ''
+         # nord west quadrants
+        self.x_nord_west_nord = ''
+        self.x_nord_west_south = ''
+        self.y_nord_west_east = ''
+        self.y_nord_west_west = ''
+         # south east quadrants
+        self.x_south_east_nord = ''
+        self.x_south_east_south = ''
+        self.y_south_east_east = ''
+        self.y_south_east_west = ''
+         # south west quadrants
+        self.x_south_west_nord = ''
+        self.x_south_west_south = ''
+        self.y_south_west_east = ''
+        self.y_south_west_west = ''
 
 
         # modify is_begin/end line
@@ -650,7 +725,24 @@ class InRowNavigation(Node):
 
         # move forward
         self.moving_forward = True
+
+        # save last goal position
+        self.end_of_line_pose_message = ''
+        self.line_entered = False
+
   
+    def get_parameters_from_config_file(self):
+        area = config_json["in_row_navigation"]['area']
+        dimension_queue = config_json["in_row_navigation"]['dimension_queue']
+        min_number_required_points_per_quadrants = config_json["in_row_navigation"]['min_number_required_points_per_quadrants']
+        line_width = config_json["in_row_navigation"]['line_width']
+        tolerance_crop_distance_filtering = config_json["in_row_navigation"]['tolerance_crop_distance_filtering']
+        distance_goal_point_forward = config_json["in_row_navigation"]['distance_goal_point_forward']
+        distance_goal_point_backward = config_json["in_row_navigation"]['distance_goal_point_backward']
+        nord_threshold = config_json["in_row_navigation"]['nord_threshold']
+        south_threshold = config_json["in_row_navigation"]['south_threshold']
+        return area, dimension_queue, min_number_required_points_per_quadrants, line_width, tolerance_crop_distance_filtering, distance_goal_point_forward, distance_goal_point_backward, nord_threshold, south_threshold
+    
     def scan_callback(self, scan_msg):
         self.start_computation = time.perf_counter()
         # points_nord_east, points_nord_west, points_south_east, points_south_west
@@ -658,7 +750,6 @@ class InRowNavigation(Node):
 
         # print(points_2d)
         # if going forward/backward 
-        # print(len(points_nord_east), len(points_nord_west), len(points_south_east), len(points_south_west))
 
         if(self.moving_forward):
             self.in_row_navigation_forward(points_nord_east, points_nord_west, points_south_east, points_south_west)
@@ -673,30 +764,45 @@ class InRowNavigation(Node):
         is_south_east_empty = True if np.size(points_south_east) < self.min_num_required_points else False
         is_south_west_empty = True if np.size(points_south_west) < self.min_num_required_points else False
 
+        print(len(points_nord_east), len(points_nord_west), len(points_south_east), len(points_south_west))
         # needed to save the last point to calculate the perpendicular angle
-        if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):  
-            # self.last_valid_crop_west = self.prediction_instance.south_east_line.get_most_recent_coefficients()
-            # self.last_valid_crop_east = self.prediction_instance.south_west_line.get_most_recent_coefficients()
-            print("TEST OK")
-            self.greatest_point_nord_east = points_south_east.max(axis=0)
-            self.greatest_point_nord_west = points_south_west.max(axis=0)
-            print(greatest_point_nord_east, greatest_point_nord_west)
+        #if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):
+        # IDEA -> anticipate it beforehand
         
-        if is_nord_east_empty & is_nord_west_empty & is_south_east_empty & is_south_west_empty:
-            if (self.is_goal_published==True):
-                # self.distance_goal_point_forward = 0.1
-                # publish last goal pose
-                # x, y, theta = self.calculate_goal_point_forward()
-                self.publish_end_of_line_pose_perpendicular_crop()
-                # reset_is_goal_published
-                # self.distance_goal_point_forward = self.area[1]/2
-                self.update_turning_status_after_pose_publication()
-                return
+        if (is_nord_east_empty == True & is_nord_west_empty == True) & (is_south_east_empty == False & is_south_west_empty == False) & self.is_goal_published==True:
+            if is_south_east_empty != True and is_south_west_empty != True:
+                tmp_south_east = points_south_east.max(axis=0)
+                tmp_south_west = points_south_west.max(axis=0)
+                 # get the highest values
+                if(tmp_south_east[0] > self.greatest_point_south_east_forward[0]) and (tmp_south_west[0] > self.greatest_point_south_west_forward[0]) and self.line_entered == True:
+                    self.greatest_point_south_east_forward = tmp_south_east
+                    self.greatest_point_south_west_forward = tmp_south_west
+                    # compute pose and save 
+                    self.calculate_end_of_line_pose_perpendicular_crop_forward()
+            print(self.greatest_point_south_east_forward, self.greatest_point_south_west_forward)
 
-        elif (is_nord_east_empty == False | is_nord_west_empty == False) & is_south_east_empty & is_south_west_empty:
-                self.is_begin_line_forward = True
-                self.is_end_line_backward = False
-                self.is_goal_published=True
+            # self.greatest_point_nord_east_backward = points_nord_east.max(axis=0)
+            # self.greatest_point_nord_west_backward = points_nord_west.max(axis=0)
+        if (is_nord_east_empty == False & is_nord_west_empty == False) & (is_south_east_empty == False & is_south_west_empty == False) & self.is_goal_published==True & self.line_entered==False:
+            self.line_entered = True
+
+        if is_nord_east_empty & is_nord_west_empty & is_south_east_empty & is_south_west_empty:
+            if (self.is_goal_published==True) and (self.line_entered ==True):
+                # self.distance_goal_point_forward = 0.1
+                # publish last goal pose    
+                # x, y, theta = self.calculate_goal_point_forward()
+                if(self.end_of_line_pose_message!= ''):
+                    self.publish_end_of_line_pose_perpendicular_crop_forward()
+                    # reset_is_goal_published
+                    # self.distance_goal_point_forward = self.area[1]/2
+                    self.update_turning_status_after_pose_publication()
+                    self.prediction_instance.initialize_prediction()
+                    return
+
+        # elif (is_nord_east_empty == False | is_nord_west_empty == False) & is_south_east_empty & is_south_west_empty:
+                # self.is_begin_line_forward = True
+                # self.is_end_line_backward = False
+                # self.is_goal_published=True
 
         # compute bisectrice
         self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
@@ -705,8 +811,8 @@ class InRowNavigation(Node):
         x, y, theta = self.calculate_goal_point_forward()
 
         # needed to store the last x,y
-        if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty!= False or is_south_west_empty!=False):
-            self.previous_forward_goal = [x, y]
+        # if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty!= False or is_south_west_empty!=False):
+            # self.previous_forward_goal = [x, y]
 
         # publish goal pose
         self.publish_goal_pose(x, y, theta)
@@ -715,11 +821,51 @@ class InRowNavigation(Node):
         self.display_prediction_forward(points_nord_east,points_nord_west, x, y)
     
     def in_row_navigation_backward(self, points_nord_east, points_nord_west, points_south_east, points_south_west):
+        # get information about emptyness of regions
+        is_nord_east_empty = True if np.size(points_nord_east) < self.min_num_required_points else False
+        is_nord_west_empty = True if np.size(points_nord_west) < self.min_num_required_points else False
+        is_south_east_empty = True if np.size(points_south_east) < self.min_num_required_points else False
+        is_south_west_empty = True if np.size(points_south_west) < self.min_num_required_points else False
+
+        print(len(points_nord_east), len(points_nord_west), len(points_south_east), len(points_south_west))
+        # needed to save the last point to calculate the perpendicular angle
+        #if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):
+        # IDEA -> anticipate it beforehand
+        
+        if (is_nord_east_empty == False & is_nord_west_empty == False) & (is_south_east_empty == True & is_south_west_empty == True) & self.is_goal_published==True:
+            tmp_nord_east = points_nord_east.max(axis=0)
+            tmp_nord_west = points_nord_west.max(axis=0)
+            # get the highest values
+            if(tmp_nord_east[0] > self.greatest_point_south_east_forward[0]):
+                self.greatest_point_nord_east_backward = tmp_nord_east
+            if(tmp_nord_west[0] > self.greatest_point_south_west_forward[0]):
+                self.greatest_point_nord_west_backward = tmp_nord_west
+            print(self.greatest_point_south_east_forward, self.greatest_point_south_west_forward)
+
+            # self.greatest_point_nord_east_backward = points_nord_east.max(axis=0)
+            # self.greatest_point_nord_west_backward = points_nord_west.max(axis=0)
+        
+        if is_nord_east_empty & is_nord_west_empty & is_south_east_empty & is_south_west_empty:
+            if (self.is_goal_published==True) and (self.end_of_line_pose_message !=''):
+                # self.distance_goal_point_forward = 0.1
+                # publish last goal pose    
+                # x, y, theta = self.calculate_goal_point_forward()
+                self.publish_end_of_line_pose_perpendicular_crop_backward()
+                # reset_is_goal_published
+                # self.distance_goal_point_forward = self.area[1]/2
+                self.update_turning_status_after_pose_publication()
+            self.prediction_instance.initialize_prediction()
+            return
+
+        # elif (is_nord_east_empty == False | is_nord_west_empty == False) & is_south_east_empty & is_south_west_empty:
+                # self.is_begin_line_forward = True
+                # self.is_end_line_backward = False
+                # self.is_goal_published=True
         # compute bisectrice
         self.prediction_instance.compute_bisectrice_coefficients_backward(points_nord_east, points_nord_west, points_south_east, points_south_west)
 
         # invoke calculate_goal_position
-        x, y, theta = self.calculate_goal_point_forward()
+        x, y, theta = self.calculate_goal_point_backward()
 
         # publish goal pose
         self.publish_goal_pose(x, y, theta)
@@ -727,146 +873,77 @@ class InRowNavigation(Node):
         # display 
         self.display_prediction_backward(points_south_east,points_south_west,  x, y)
 
-    def laser_scan_to_cartesian_old(self, msg):
-        ranges = np.array(msg.ranges)
-        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/len(ranges)) 
-
-        x = np.where(ranges == -1, -1, ranges * np.cos(angles))
-        y = np.where(ranges == -1, -1, ranges * np.sin(angles))
-
-        points = np.vstack((x, y)).T
-        points_filtered = points[y != -1]
-
-       
-        # if number of points 
-        if(np.size(points_filtered) < self.min_num_build_quadrants):
-            x_nord = np.where(((0 <= x) & (x <= self.area[1]/2)),x, -1)
-            x_south = np.where(((-self.area[1]/2 <= x)&(x <= 0)), x, -1)
-
-            y_west = np.where(((0 <= y)&(y<= self.area[0]/2)),y, -1)
-            y_east = np.where(((-self.area[0]/2 <= y)&(y <= 0)),y, -1)
-
-            points_nord_east = np.vstack((x_nord, y_east)).T
-            points_nord_west = np.vstack((x_nord, y_west)).T
-            points_south_east = np.vstack((x_south, y_east)).T
-            points_south_west = np.vstack((x_south, y_west)).T
-
-            points_nord_east = points_nord_east[y_east != -1]
-            points_nord_west = points_nord_west[y_west != -1]
-            points_south_east = points_south_east[y_east != -1]
-            points_south_west = points_south_west[y_west != -1]
-
-        else:
-            
-
-            slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
-
-            if(slope==0 and intercept==0):
-                x_nord = np.where(((0 <= x) & (x <= self.area[1]/2)),x, -1)
-                x_south = np.where(((-self.area[1]/2 <= x)&(x <= 0)), x, -1)
-                y_west = np.where(((0 <= y)&(y<= self.line_width)),y, -1)
-                y_east = np.where(((-self.line_width <= y)&(y <= 0)),y, -1)
-
-                points_nord_east = np.vstack((x_nord, y_east)).T
-                points_nord_west = np.vstack((x_nord, y_west)).T
-                points_south_east = np.vstack((x_south, y_east)).T
-                points_south_west = np.vstack((x_south, y_west)).T
-
-                points_nord_east = points_nord_east[y_east != -1]
-                points_nord_west = points_nord_west[y_west != -1]
-                points_south_east = points_south_east[y_east != -1]
-                points_south_west = points_south_west[y_west != -1]
-
-            else:
-                # distance_from_goal +/- distance_from_bisectrice
-                # self.distance_from_bisectrice = 0.3
-                # self.tolerance_crop_distance = 0.5
-                x_nord = np.where(((0 <= x) & (x <= self.area[1]/2)),x, -1)
-                x_south = np.where(((-self.area[1]/2 <= x)&(x <= 0)), x, -1)
-                intercept_n = np.full_like(x_nord, intercept)
-                intercept_s = np.full_like(x_south, intercept) 
-                intercept_n_t_p = np.full_like(x_nord, self.filtering_from_crop)
-                intercept_n_t_n = np.full_like(x_nord, -self.filtering_from_crop)
-                intercept_s_t_p = np.full_like(x_south, self.filtering_from_crop)
-                intercept_s_t_n = np.full_like(x_south, -self.filtering_from_crop)
-
-                # y east -> <=0
-                # y_west -> >0
-
-                y_nord_west = np.where((y > np.add(slope*x_nord, intercept_n))&(y < np.add(np.add(slope*x_nord, intercept_n),intercept_n_t_p)),y, -1)
-                y_nord_east = np.where((y < np.add(slope*x_nord, intercept_n))&(y > np.add(np.add(slope*x_nord,intercept_n),intercept_n_t_n)),y, -1)
-                y_south_east = np.where((y < np.add(slope*x_south, intercept_s))&(y > np.add(np.add(slope*x_south,intercept_s),intercept_s_t_n)),y, -1)
-                y_south_west = np.where((y > np.add(slope*x_south, intercept_s))&(y < np.add(np.add(slope*x_south,intercept_s),intercept_s_t_p)),y, -1)
-
-                # print(y_south_east, y_nord_east)
-                # print(mask_nord_west, mask_nord_east)
-                # mask_nord_east = ((point_nord_east[:, 1] < slope*point_nord_east[:, 0]+ intercept) & (point_nord_east[:, 1] > ((slope*point_nord_east[:, 0]+ intercept) + self.prefiltering_threshold)))
-                # mask_nord_west = ((point_nord_west[:, 1] > slope*point_nord_west[:, 0]+ intercept) & (point_nord_west[:, 1] < ((slope*point_nord_west[:, 0]+ intercept) + self.prefiltering_threshold)))
-                # mask_south_east = ((point_south_east[:, 1] < slope*point_south_east[:, 0]+ intercept) & (point_south_east[:, 1] > ((slope*point_south_east[:, 0]+ intercept) + self.prefiltering_threshold)))
-                # mask_south_west = ((point_south_west[:, 1] > slope*point_south_west[:, 0]+ intercept) & (point_south_west[:, 1] < ((slope*point_south_west[:, 0]+ intercept) + self.prefiltering_threshold)))
-                
-                points_nord_east = np.vstack((x_nord, y_nord_east)).T
-                points_nord_west = np.vstack((x_nord, y_nord_west)).T
-                points_south_east = np.vstack((x_south, y_south_east)).T
-                points_south_west = np.vstack((x_south, y_south_west)).T
-
-                points_nord_east = points_nord_east[y_nord_east != -1]
-                points_nord_west = points_nord_west[y_nord_west != -1]
-                points_south_east = points_south_east[y_south_east != -1]
-                points_south_west = points_south_west[y_south_west != -1]
-        
-
-    
-        return points_nord_east, points_nord_west, points_south_east, points_south_west
-
     def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
         angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/len(ranges)) 
 
-        x = np.where(ranges == -1, -1, ranges * np.cos(angles))
-        y = np.where(ranges == -1, -1, ranges * np.sin(angles))
-
+        x = np.where(ranges == -1, np.inf, ranges * np.cos(angles))
+        y = np.where(ranges == -1, np.inf, ranges * np.sin(angles))
+        # print(x, y)
         points = np.vstack((x, y)).T
-        points_filtered = points[y != -1]
+        # print(type(points))
+        points = points[~np.isinf(points).any(axis=1)]
 
        
         # if number of points 
-        if(np.size(points_filtered) < self.min_num_build_quadrants):
-            x_nord = np.where(((0 <= x) & (x <= self.nord_treshold)),x, -1)
-            x_south = np.where(((-self.south_treshold <= x)&(x <= 0)), x, -1)
+        if(np.size(points) < self.min_num_build_quadrants):
+            x_nord = np.where(((0 <= x) & (x <= self.nord_treshold)),x, np.inf)
+            x_south = np.where(((-self.south_treshold <= x)&(x <= 0)), x, np.inf)
 
-            y_west = np.where(((0 <= y)&(y<= self.area[0]/2)),y, -1)
-            y_east = np.where(((-self.area[0]/2 <= y)&(y <= 0)),y, -1)
+            y_west = np.where(((0 <= y)&(y<= self.area[0]/2)),y, np.inf)
+            y_east = np.where(((-self.area[0]/2 <= y)&(y <= 0)),y, np.inf)
 
             points_nord_east = np.vstack((x_nord, y_east)).T
             points_nord_west = np.vstack((x_nord, y_west)).T
             points_south_east = np.vstack((x_south, y_east)).T
             points_south_west = np.vstack((x_south, y_west)).T
 
-            points_nord_east = points_nord_east[y_east != -1]
-            points_nord_west = points_nord_west[y_west != -1]
-            points_south_east = points_south_east[y_east != -1]
-            points_south_west = points_south_west[y_west != -1]
+            points_nord_east = points_nord_east[~np.isinf(points_nord_east).any(axis=1)]
+            points_nord_west = points_nord_west[~np.isinf(points_nord_west).any(axis=1)]
+            points_south_east = points_south_east[~np.isinf(points_south_east).any(axis=1)]
+            points_south_west = points_south_west[~np.isinf(points_south_west).any(axis=1)]
+
+
+            # nord east
+            self.y_nord_east_east, self.y_nord_east_west, self.x_nord_east_nord, self.x_nord_east_south = -self.area[0]/2, 0,  self.nord_treshold,0
+            # nord west
+            self.y_nord_west_east, self.y_nord_west_west, self.x_nord_west_nord, self.x_nord_west_south = 0, self.area[0]/2, self.nord_treshold,0 
+            # south east
+            self.y_south_east_east, self.y_south_east_west, self.x_south_east_nord, self.x_south_east_south = -self.area[0]/2, 0, 0 , self.south_treshold
+            # south wes
+            self.y_south_west_east, self.y_south_west_west, self.x_south_west_nord, self.x_south_west_south = 0, self.area[0]/2, 0 , self.south_treshold
+
 
         else:
             
             slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
 
             if(slope==0 and intercept==0):
-                x_nord = np.where(((0 <= x) & (x <= self.nord_treshold)),x, -1)
-                x_south = np.where(((-self.south_treshold <= x)&(x <= 0)), x, -1)
-                y_west = np.where(((0 <= y)&(y<= self.area[0]/2)),y, -1)
-                y_east = np.where(((-self.area[0]/2 <= y)&(y <= 0)),y, -1)
+                x_nord = np.where(((0 <= x) & (x <= self.nord_treshold)),x, np.inf)
+                x_south = np.where(((-self.south_treshold <= x)&(x <= 0)), x, np.inf)
+                y_west = np.where(((0 <= y)&(y<= self.line_width)),y, np.inf)
+                y_east = np.where(((-self.line_width <= y)&(y <= 0)),y, np.inf)
 
                 points_nord_east = np.vstack((x_nord, y_east)).T
                 points_nord_west = np.vstack((x_nord, y_west)).T
                 points_south_east = np.vstack((x_south, y_east)).T
                 points_south_west = np.vstack((x_south, y_west)).T
 
-                points_nord_east = points_nord_east[y_east != -1]
-                points_nord_west = points_nord_west[y_west != -1]
-                points_south_east = points_south_east[y_east != -1]
-                points_south_west = points_south_west[y_west != -1]
+                points_nord_east = points_nord_east[~np.isinf(points_nord_east).any(axis=1)]
+                points_nord_west = points_nord_west[~np.isinf(points_nord_west).any(axis=1)]
+                points_south_east = points_south_east[~np.isinf(points_south_east).any(axis=1)]
+                points_south_west = points_south_west[~np.isinf(points_south_west).any(axis=1)]
+
+               
+                # nord east
+                self.y_nord_east_east, self.y_nord_east_west, self.x_nord_east_nord, self.x_nord_east_south = -self.area[0]/2, 0,  self.nord_treshold,0
+                # nord west
+                self.y_nord_west_east, self.y_nord_west_west, self.x_nord_west_nord, self.x_nord_west_south = 0, self.area[0]/2, self.nord_treshold,0 
+                # south east
+                self.y_south_east_east, self.y_south_east_west, self.x_south_east_nord, self.x_south_east_south = -self.area[0]/2, 0, 0 , self.south_treshold
+                # south wes
+                self.y_south_west_east, self.y_south_west_west, self.x_south_west_nord, self.x_south_west_south = 0, self.area[0]/2, 0 , self.south_treshold
+
 
             else:
                 # distance_from_goal +/- distance_from_bisectrice
@@ -889,8 +966,9 @@ class InRowNavigation(Node):
                 # y east -> <=0
                 # y_west -> >0
 
-                y_west = np.where((y > np.add(slope*x, threshold_west_below))&(y < np.add(slope*x, threshold_west_above)),y, -1)
-                y_east = np.where((y > np.add(slope*x, threshold_east_below))&(y < np.add(slope*x,threshold_east_above)),y, -1)
+                y_west = np.where((y > np.add(slope*x, threshold_west_below))&(y < np.add(slope*x, threshold_west_above)),y, np.inf)
+                y_east = np.where((y > np.add(slope*x, threshold_east_below))&(y < np.add(slope*x,threshold_east_above)),y, np.inf)
+
                 
                 # print(y_south_east, y_nord_east)
                 # print(mask_nord_west, mask_nord_east)
@@ -905,20 +983,47 @@ class InRowNavigation(Node):
                 m_q = np.full_like(x, slope*intercept)
 
                 # x = -m*y + m*q
-                x_nord_east = np.where((x > np.add(-slope*y_east, m_q))&(x < np.add(-slope*y_east, threshold_nord)),x, -1)
-                x_nord_west = np.where((x > np.add(-slope*y_west, m_q))&(x < np.add(-slope*y_west,threshold_nord)),x, -1)
-                x_south_east = np.where((x < np.add(-slope*y_east, m_q))&(x > np.add(-slope*y_east, threshold_south)),x, -1)
-                x_south_west = np.where((x < np.add(-slope*y_west, m_q))&(x > np.add(-slope*y_west,threshold_south)),x, -1)
+                # x><0 KO
+                x_nord_east = np.where((x > np.add(-slope*y_east, m_q))&(x < np.add(-slope*y_east, threshold_nord)) ,x, np.inf)
+                x_nord_west = np.where((x > np.add(-slope*y_west, m_q))&(x < np.add(-slope*y_west,threshold_nord)),x, np.inf)
+                x_south_east = np.where((x < np.add(-slope*y_east, m_q))&(x > np.add(-slope*y_east, threshold_south)) ,x, np.inf)
+                x_south_west = np.where((x < np.add(-slope*y_west, m_q))&(x > np.add(-slope*y_west,threshold_south)) ,x, np.inf)
                     
                 points_nord_east = np.vstack((x_nord_east, y_east)).T
                 points_nord_west = np.vstack((x_nord_west, y_west)).T
                 points_south_east = np.vstack((x_south_east, y_east)).T
                 points_south_west = np.vstack((x_south_west, y_west)).T
 
-                points_nord_east = points_nord_east[y_east != -1]
-                points_nord_west = points_nord_west[y_west != -1]
-                points_south_east = points_south_east[y_east != -1]
-                points_south_west = points_south_west[y_west != -1]
+                points_nord_east = points_nord_east[~np.isinf(points_nord_east).any(axis=1)]
+                points_nord_west = points_nord_west[~np.isinf(points_nord_west).any(axis=1)]
+                points_south_east = points_south_east[~np.isinf(points_south_east).any(axis=1)]
+                points_south_west = points_south_west[~np.isinf(points_south_west).any(axis=1)]
+                
+
+                # drawing
+                y_east_baseline = slope* (-self.line_width/2)
+                y_west_baseline = slope* (self.line_width/2) 
+                y_east_east_threshold = y_east_baseline + distance_east_above
+                y_east_west_threshold = y_east_baseline + distance_east_below
+                y_west_east_threshold = y_west_baseline + distance_west_above
+                y_west_west_threshold = y_west_baseline + distance_west_below
+
+                y_nord_baseline = intercept*slope 
+                y_south_baseline = intercept*slope 
+                y_nord_nord_threshold = y_nord_baseline + self.nord_treshold
+                y_nord_south_threshold = y_nord_baseline 
+                y_south_nord_threshold = y_south_baseline
+                y_south_south_threshold = y_south_baseline - self.south_treshold
+
+                # nord east
+                self.y_nord_east_east, self.y_nord_east_west, self.x_nord_east_nord, self.x_nord_east_south = y_east_east_threshold, y_east_west_threshold,  y_nord_nord_threshold, y_nord_south_threshold
+                # nord west
+                self.y_nord_west_east, self.y_nord_west_west, self.x_nord_west_nord, self.x_nord_west_south = y_west_east_threshold, y_west_west_threshold,  y_nord_nord_threshold, y_nord_south_threshold
+                # south east
+                self.y_south_east_east, self.y_south_east_west, self.x_south_east_nord, self.x_south_east_south = y_east_east_threshold, y_east_west_threshold,y_south_nord_threshold, y_south_south_threshold
+                # south west
+                self.y_south_west_east, self.y_south_west_west, self.x_south_west_nord, self.x_south_west_south = y_west_east_threshold, y_west_west_threshold, y_south_nord_threshold, y_south_south_threshold
+
                 
             
         return points_nord_east, points_nord_west, points_south_east, points_south_west
@@ -949,7 +1054,9 @@ class InRowNavigation(Node):
         y = slope*x + intercept
 
         # take euler angle
-        theta = math.atan(y/x)
+        # from atan -> no division by zero to tan2
+        theta = math.atan2(y,x)
+
         return x,y,theta
     
     def publish_goal_pose(self, x, y, theta):
@@ -965,7 +1072,7 @@ class InRowNavigation(Node):
         slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
         
         # calculate goal_points
-        tmp_result = pow(slope,2)* pow(intercept,2) - (1+ pow(slope,2))*(pow(intercept,2)-pow(self.distance_goal_point,2))
+        tmp_result = pow(slope,2)* pow(intercept,2) - (1+ pow(slope,2))*(pow(intercept,2)-pow(self.distance_goal_point_backward,2))
         
         # safety if-else statement
         if(tmp_result >=0):
@@ -976,8 +1083,8 @@ class InRowNavigation(Node):
             x_2 = 0
             print("ERROR QUADRATIC")
 
-        # take greatest value
-        if x_1 >= x_2:
+        # take smallest value
+        if x_1 <= x_2:
             x = x_1
         else:
             x = x_2
@@ -986,87 +1093,169 @@ class InRowNavigation(Node):
         y = slope*x + intercept
 
         # take euler angle
-        theta = math.atan(y/x)
+        # from atan to atan2
+        theta = math.atan2(y,x)
+        # turn orientation 180 degrees -> negative velocity
+        # theta = math.radians(math.degrees(theta_forward) + 180)
+        self.publication_goal_pose_rviz(x,y,theta)
         return x,y,theta
 
-     # update bool value
-    
-    def callback_update_bool(self, msg):
-        self.publish_goal_position = True
-
-    # update turning status: make switch work
-    def update_turning_status_after_pose_publication(self):
-        self.is_goal_published = False
-        # msg = Bool()
-        # msg.data = self.publish_goal_position
-        # self.pub_turning_status(msg)
-
-    def publish_end_of_line_pose(self, x, y, theta):
+    def publication_goal_pose_rviz(self, x, y, theta):
         # create message Pose
-        end_of_line_pose = PoseStamped()
+        goal_pose_rviz_msg = PoseStamped()
         
         # update timestamp and frame
         time_now = Time()
-        end_of_line_pose.header.stamp = time_now.to_msg()
-        end_of_line_pose.header.frame_id = "base_footprint"
+        goal_pose_rviz_msg.header.stamp = time_now.to_msg()
+        goal_pose_rviz_msg.header.frame_id = "base_footprint"
 
         # get x,y
-        end_of_line_pose.pose.position.x = float(x)
-        end_of_line_pose.pose.position.y = float(y)
+        goal_pose_rviz_msg.pose.position.x = float(x)
+        goal_pose_rviz_msg.pose.position.y = float(y)
 
         # get orientation
         quaternion = quaternion_from_euler(0, 0, theta)
-        end_of_line_pose.pose.orientation.x = quaternion[0]
-        end_of_line_pose.pose.orientation.y = quaternion[1]
-        end_of_line_pose.pose.orientation.z = quaternion[2]
-        end_of_line_pose.pose.orientation.w = quaternion[3]
+        goal_pose_rviz_msg.pose.orientation.x = quaternion[0]
+        goal_pose_rviz_msg.pose.orientation.y = quaternion[1]
+        goal_pose_rviz_msg.pose.orientation.z = quaternion[2]
+        goal_pose_rviz_msg.pose.orientation.w = quaternion[3]
 
-        #if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
+        #if(goal_pose_rviz_msg.pose.position.x == 1) and (goal_pose_rviz_msg.pose.orientation.w == 1):
             #return
         #else:
             # publish goal pose
-        self.end_of_line_pose_topic.publish(end_of_line_pose)
-
-    def publish_end_of_line_pose_perpendicular_crop(self):
-
-        # takes the last m/q value of bisectrice
-       
-        # slope_east, intercept_east = self.last_cluster_east
-        # slope_west, intercept_west = self.last_valid_crop_west
-        # from last greatest point
-        point_east = self.greatest_point_nord_east
-        point_west = self.greatest_point_nord_west
+        self.pub_goal_pose_rviz.publish(goal_pose_rviz_msg)
         
+     # update bool value
+    
+    def callback_update_bool(self, msg):
+        time.sleep(2)
+        self.is_goal_published = msg.data
+        
+    # update turning status: make switch work
+    def update_turning_status_after_pose_publication(self):
+        self.is_goal_published = False
+        self.end_of_line_pose_message = ''
+        self.line_entered=False
+        self.initialize_parameters_end_of_line()
+        # msg = Bool()
+        # msg.data = self.publish_goal_position
+        # self.pub_turning_status(msg)
+    
+    def initialize_parameters_end_of_line(self):
+        self.greatest_point_south_west_forward = [-10,-10]
+        self.greatest_point_south_east_forward = [-10,-10]
+        self.greatest_point_nord_west_backward = [-10,-10]
+        self.greatest_point_nord_east_backward = [-10,-10]
+
+    def calculate_end_of_line_pose_perpendicular_crop_forward(self):
+        # from last greatest point
+        # if(self.greatest_point_south_east_forward != '') & (self.greatest_point_south_west_forward!= ''):
+        point_east = self.greatest_point_south_east_forward
+        point_west = self.greatest_point_south_west_forward
+        # elif(self.greatest_point_nord_east_backward != '') & (self.greatest_point_nord_west_backward!= ''):
+            # point_east = self.greatest_point_nord_east_backward
+            # point_west = self.greatest_point_nord_west_backward
+        # else:
+           # print("ERROR")
+        
+        print(point_east, point_west)
         # m equationfrom two points
-        if m ==  '':
-            m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+        if(point_west[1] - point_east[1] == 0):
+            new_theta = math.radians(90)
+        elif (point_west[0] - point_east[0] == 0):
+            new_theta = math.radians(180)
         else:
-            print("updated")
-
-        # m_perpendicular
-        m_perp = -1/m
-
-        # atan of the new theta
-        new_theta = math.atan(m_perp)
-        # perpendicular m
-        # new_theta = math.tan(math.degrees(math.atan(m)) + 90)
+            m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+            # m_perpendicular
+            m_perp = -1/m
+            # atan of the new theta
+            # Return the arc tangent of x, in radians
+            new_theta = math.atan(m_perp)
+            # perpendicular m
+            # new_theta = math.tan(math.degrees(math.atan(m)) + 90)
 
         # take previous goal position
         # x,y = self.previous_forward_goal[0], self.previous_forward_goal[1]
         
-        x = (point_west[1] - point_east[1])/2
-        y = math.max(point_east[0], point_west[0])
+        y = 0#(point_west[1] - point_east[1])/2
+        x = 0#max(point_east[0], point_west[0])
+
+        print("POINT ", x, y,new_theta)
         # create message Pose
         end_of_line_pose = PoseStamped()
         
         # update timestamp and frame
         time_now = Time()
         end_of_line_pose.header.stamp = time_now.to_msg()
-        end_of_line_pose.header.frame_id = "base_footprint"
+        end_of_line_pose.header.frame_id = "velodyne"
+
+        # get x,y
+        end_of_line_pose.pose.position.x = float(y)
+        end_of_line_pose.pose.position.y = float(x)
+
+        # get orientation
+        quaternion = quaternion_from_euler(0, 0, new_theta)
+        end_of_line_pose.pose.orientation.x = quaternion[0]
+        end_of_line_pose.pose.orientation.y = quaternion[1]
+        end_of_line_pose.pose.orientation.z = quaternion[2]
+        end_of_line_pose.pose.orientation.w = quaternion[3]
+        print(end_of_line_pose)
+
+        #transform from of the received odom to the current map
+        transform = self._tf_buffer.lookup_transform('odom', 'velodyne', end_of_line_pose.header.stamp, Duration(seconds=1, nanoseconds=0))
+        self.end_of_line_pose_message = do_transform_pose_stamped(end_of_line_pose, transform)
+        
+    def publish_end_of_line_pose_perpendicular_crop_forward(self):
+        self.end_of_line_pose_message.header.stamp = Time().to_msg()
+        self.end_of_line_pose_topic.publish(self.end_of_line_pose_message)
+
+    def publish_end_of_line_pose_perpendicular_crop_backward(self):
+        # from last greatest point
+        # if(self.greatest_point_south_east_forward != '') & (self.greatest_point_south_west_forward!= ''):
+        point_east = self.greatest_point_nord_east_backward
+        point_west = self.greatest_point_nord_west_backward
+        # elif(self.greatest_point_nord_east_backward != '') & (self.greatest_point_nord_west_backward!= ''):
+            # point_east = self.greatest_point_nord_east_backward
+            # point_west = self.greatest_point_nord_west_backward
+        # else:
+           # print("ERROR")
+        
+        print(point_east, point_west)
+        # m equationfrom two points
+        if(point_west[1] - point_east[1] == 0):
+            new_theta = math.radians(90)
+        elif (point_west[0] - point_east[0] == 0):
+            new_theta = math.radians(180)
+        else:
+            m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+            # m_perpendicular
+            m_perp = -1/m
+            # atan of the new theta
+            # Return the arc tangent of x, in radians
+            new_theta = math.atan(m_perp)
+            # perpendicular m
+            # new_theta = math.tan(math.degrees(math.atan(m)) + 90)
+
+        # take previous goal position
+        # x,y = self.previous_forward_goal[0], self.previous_forward_goal[1]
+        
+        y = (point_west[1] - point_east[1])/2
+        x = max(point_east[0], point_west[0])
+
+        print("POINT ", x, y,new_theta)
+        # create message Pose
+        end_of_line_pose = PoseStamped()
+        
+        # update timestamp and frame
+        time_now = Time()
+        end_of_line_pose.header.stamp = time_now.to_msg()
+        end_of_line_pose.header.frame_id = "velodyne"
 
         # get x,y
         end_of_line_pose.pose.position.x = float(x)
         end_of_line_pose.pose.position.y = float(y)
+        end_of_line_pose.pose.position.z = 0
 
         # get orientation
         quaternion = quaternion_from_euler(0, 0, new_theta)
@@ -1090,7 +1279,7 @@ class InRowNavigation(Node):
         plt.scatter(nord_east_points[:, 0], nord_east_points[:, 1], color='orange')
         
         # takes 3 values btw 0/2
-        x = np.linspace(0, 2, 3)
+        x = np.linspace(0, 1.5, 3)
 
         # get proper slope, intercept for each value
         nord_west_slope, nord_west_intercept = self.prediction_instance.nord_west_line.get_most_recent_coefficients()
@@ -1116,7 +1305,35 @@ class InRowNavigation(Node):
         # goal point 
         plt.plot(x_goal, y_goal, marker="o", markersize=10, markeredgecolor="green", markerfacecolor="green")
 
-        plt.xlim(0,3)
+        # nord east
+        x_values_1 = [self.x_nord_east_south, self.x_nord_east_nord]
+        y_values_1 = [self.y_nord_east_east, self.y_nord_east_east]
+        # print(x_values_1, y_values_1)
+        plt.plot(x_values_1, y_values_1, color='orange',linestyle="--")
+
+        x_values_2 = [self.x_nord_east_south, self.x_nord_east_nord]
+        y_values_2 = [self.y_nord_east_west,self.y_nord_east_west]
+        plt.plot(x_values_2, y_values_2,color='orange', linestyle="--")
+        # print(x_values_2, y_values_2)
+
+        # nord west
+        x_values_3 = [self.x_nord_west_south, self.x_nord_west_nord]
+        y_values_3 = [self.y_nord_west_east, self.y_nord_west_east]
+        plt.plot(x_values_3, y_values_3, color='red',linestyle="--")
+
+        x_values_4 = [self.x_nord_west_south, self.x_nord_west_nord]
+        y_values_4 = [self.y_nord_west_west,self.y_nord_west_west]
+        plt.plot(x_values_4, y_values_4,color='red', linestyle="--")
+
+        # south east
+        # plt.plot(x1, y1, x2, y2, marker = 'o') 
+        # plt.plot(x1, y1, x2, y2, marker = 'o')
+
+        # south west
+        # plt.plot(x1, y1, x2, y2, marker = 'o') 
+        # plt.plot(x1, y1, x2, y2, marker = 'o')
+
+        plt.xlim(-3,3)
         plt.ylim(-3,3)
 
         self.fig.canvas.draw()
@@ -1125,16 +1342,17 @@ class InRowNavigation(Node):
     def display_prediction_backward(self, south_east_points,south_west_points, x_goal, y_goal):
         # clear axes
         self.ax.clear()
+        print(x_goal, y_goal)
         # creates scatter plot
         plt.scatter(south_west_points[:, 0], south_west_points[:, 1], color='red')
         plt.scatter(south_east_points[:, 0], south_east_points[:, 1], color='orange')
         
         # takes 3 values btw 0/2
-        x = np.linspace(0, 2, 3)
+        x = np.linspace(-2, 0, 3)
 
         # get proper slope, intercept for each value
-        south_west_slope, south_west_intercept = self.prediction_instance.south_east_line.get_most_recent_coefficients()
-        south_east_slope, south_east_intercept = self.prediction_instance.south_west_line.get_most_recent_coefficients()
+        south_west_slope, south_west_intercept = self.prediction_instance.south_west_line.get_most_recent_coefficients()
+        south_east_slope, south_east_intercept = self.prediction_instance.south_east_line.get_most_recent_coefficients()
         bisectrice_slope, bisectrice_intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
 
         # creates line
@@ -1154,7 +1372,7 @@ class InRowNavigation(Node):
         # goal point 
         plt.plot(x_goal, y_goal, marker="o", markersize=10, markeredgecolor="green", markerfacecolor="green")
 
-        plt.xlim(0,3)
+        plt.xlim(-3,3)
         plt.ylim(-2,2)
 
         self.fig.canvas.draw()
@@ -1165,7 +1383,6 @@ class InRowNavigation(Node):
     # def __repr__ (self):
         # return 'Line(slope=' + self.slope.__repr__() + ' ,intercept=' + self.intercept.__repr__()  + ')'
     
-     
 def main(args=None):
     rclpy.init(args=args)
 
@@ -1178,4 +1395,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-

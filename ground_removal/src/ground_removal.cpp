@@ -67,8 +67,8 @@ class plane_filter : public rclcpp::Node{
 
             //Minimum and maximum values for the cropbox filter.
             //x, y, z and intensity
-            Eigen::Vector4f min_pt (-4.0f, -4.0f, -0.5f, -1.0f);
-            Eigen::Vector4f max_pt (4.0f, 4.0f,  0.5f, 1.0f);
+            Eigen::Vector4f min_pt (-4.0f, -3.0f, -0.5f, -1.0f);
+            Eigen::Vector4f max_pt (4.0f, 3.0f,  0.5f, 1.0f);
             //Define the matrix to rotate the pointcloud using pitch data from the imu
             Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
             Eigen::Matrix3f m;

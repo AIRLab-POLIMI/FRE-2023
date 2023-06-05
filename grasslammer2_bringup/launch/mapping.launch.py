@@ -15,7 +15,7 @@ def generate_launch_description():
 
     remove_ground_node = Node(package='ground_removal', executable='plane_filter',)
 
-    density_filter = Node(package='map_filter', executable='map_filter',)
+    density_filter = Node(package='map_filter', executable='map_filter_approx',)
 
     pointcloud_converter = Node(package='map_filter',
                                 executable='cloud_to_scan',
