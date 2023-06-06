@@ -38,8 +38,8 @@ import json
 # string_from_folder = 'ros2_humble/src/FRE-2023'
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
 # absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
-absolute_path = '/home/carlo/Documenti/robotics/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
-#absolute_path = "/home/airlab/workspace/ros2/src/grasslammer2/grasslammer2_description/config/in_row_params.json"
+absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
+
 print(absolute_path)
 config_file = open(absolute_path, 'r')
 # dict_config = config_file.read()
@@ -478,15 +478,7 @@ class InRowNavigation(Node):
 
         # move forward
         self.moving_forward = True
-
-        # prediction
-        self.prediction_instance = Prediction()
-
-
-        # save last goal position
-        self.end_of_line_pose_message = ''
-        self.line_entered = False
-
+  
     def get_parameters_from_config_file(self):
         area = config_json["in_row_navigation"]['area']
         dimension_queue = config_json["in_row_navigation"]['dimension_queue']
@@ -512,7 +504,119 @@ class InRowNavigation(Node):
         else:
             self.in_row_navigation_backward(points_nord_east, points_nord_west, points_south_east, points_south_west)
            
-    def laser_scan_to_cartesian_static(self, msg):
+    def in_row_navigation_forward(self, points_nord_east, points_nord_west, points_south_east, points_south_west):
+
+        # get information about emptyness of regions
+        is_nord_east_empty = True if np.size(points_nord_east) < self.min_num_required_points else False
+        is_nord_west_empty = True if np.size(points_nord_west) < self.min_num_required_points else False
+        is_south_east_empty = True if np.size(points_south_east) < self.min_num_required_points else False
+        is_south_west_empty = True if np.size(points_south_west) < self.min_num_required_points else False
+
+        print(len(points_nord_east), len(points_nord_west), len(points_south_east), len(points_south_west))
+        # needed to save the last point to calculate the perpendicular angle
+        #if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):
+        # IDEA -> anticipate it beforehand
+        
+        if (is_nord_east_empty == True & is_nord_west_empty == True) & (is_south_east_empty == False & is_south_west_empty        == False) & self.is_goal_published==True:
+            tmp_south_east = points_south_east.max(axis=0)
+            tmp_south_west = points_south_west.max(axis=0)
+            # get the highest values
+            if(tmp_south_east[0] > self.greatest_point_south_east_forward[0]):
+                self.greatest_point_south_east_forward = tmp_south_east
+            if(tmp_south_west[0] > self.greatest_point_south_west_forward[0]):
+                self.greatest_point_south_west_forward = tmp_south_west
+            print(self.greatest_point_south_east_forward, self.greatest_point_south_west_forward)
+
+            # self.greatest_point_nord_east_backward = points_nord_east.max(axis=0)
+            # self.greatest_point_nord_west_backward = points_nord_west.max(axis=0)
+        
+        if is_nord_east_empty & is_nord_west_empty & is_south_east_empty & is_south_west_empty:
+            if (self.is_goal_published==True):
+                # self.distance_goal_point_forward = 0.1
+                # publish last goal pose    
+                # x, y, theta = self.calculate_goal_point_forward()
+                self.publish_end_of_line_pose_perpendicular_crop_forward()
+                # reset_is_goal_published
+                # self.distance_goal_point_forward = self.area[1]/2
+                self.update_turning_status_after_pose_publication()
+                self.prediction_instance.initialize_prediction()
+                return
+
+        # elif (is_nord_east_empty == False | is_nord_west_empty == False) & is_south_east_empty & is_south_west_empty:
+                # self.is_begin_line_forward = True
+                # self.is_end_line_backward = False
+                # self.is_goal_published=True
+
+        # compute bisectrice
+        self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
+
+        # invoke calculate_goal_position
+        x, y, theta = self.calculate_goal_point_forward()
+
+        # needed to store the last x,y
+        # if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty!= False or is_south_west_empty!=False):
+            # self.previous_forward_goal = [x, y]
+
+        # publish goal pose
+        self.publish_goal_pose(x, y, theta)
+
+        # display 
+        self.display_prediction_forward(points_nord_east,points_nord_west, x, y)
+    
+    def in_row_navigation_backward(self, points_nord_east, points_nord_west, points_south_east, points_south_west):
+        # get information about emptyness of regions
+        is_nord_east_empty = True if np.size(points_nord_east) < self.min_num_required_points else False
+        is_nord_west_empty = True if np.size(points_nord_west) < self.min_num_required_points else False
+        is_south_east_empty = True if np.size(points_south_east) < self.min_num_required_points else False
+        is_south_west_empty = True if np.size(points_south_west) < self.min_num_required_points else False
+
+        print(len(points_nord_east), len(points_nord_west), len(points_south_east), len(points_south_west))
+        # needed to save the last point to calculate the perpendicular angle
+        #if is_nord_east_empty & is_nord_west_empty & (is_south_east_empty == False or is_south_west_empty == False):
+        # IDEA -> anticipate it beforehand
+        
+        if (is_nord_east_empty == False & is_nord_west_empty == False) & (is_south_east_empty == True & is_south_west_empty == True) & self.is_goal_published==True:
+            tmp_nord_east = points_nord_east.max(axis=0)
+            tmp_nord_west = points_nord_west.max(axis=0)
+            # get the highest values
+            if(tmp_nord_east[0] > self.greatest_point_south_east_forward[0]):
+                self.greatest_point_nord_east_backward = tmp_nord_east
+            if(tmp_nord_west[0] > self.greatest_point_south_west_forward[0]):
+                self.greatest_point_nord_west_backward = tmp_nord_west
+            print(self.greatest_point_south_east_forward, self.greatest_point_south_west_forward)
+
+            # self.greatest_point_nord_east_backward = points_nord_east.max(axis=0)
+            # self.greatest_point_nord_west_backward = points_nord_west.max(axis=0)
+        
+        if is_nord_east_empty & is_nord_west_empty & is_south_east_empty & is_south_west_empty:
+            if (self.is_goal_published==True):
+                # self.distance_goal_point_forward = 0.1
+                # publish last goal pose    
+                # x, y, theta = self.calculate_goal_point_forward()
+                self.publish_end_of_line_pose_perpendicular_crop_backward()
+                # reset_is_goal_published
+                # self.distance_goal_point_forward = self.area[1]/2
+                self.update_turning_status_after_pose_publication()
+                self.prediction_instance.initialize_prediction()
+                return
+
+        # elif (is_nord_east_empty == False | is_nord_west_empty == False) & is_south_east_empty & is_south_west_empty:
+                # self.is_begin_line_forward = True
+                # self.is_end_line_backward = False
+                # self.is_goal_published=True
+        # compute bisectrice
+        self.prediction_instance.compute_bisectrice_coefficients_backward(points_nord_east, points_nord_west, points_south_east, points_south_west)
+
+        # invoke calculate_goal_position
+        x, y, theta = self.calculate_goal_point_backward()
+
+        # publish goal pose
+        self.publish_goal_pose(x, y, theta)
+
+        # display 
+        self.display_prediction_backward(points_south_east,points_south_west,  x, y)
+
+    def laser_scan_to_cartesian(self, msg):
         ranges = np.array(msg.ranges)
         angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/len(ranges)) 
 
@@ -637,7 +741,251 @@ class InRowNavigation(Node):
         x_goal_pose = x_goal_robot + x_proj_bis
         y_goal_pose = y_goal_robot + y_proj_bis
 
-        return x_goal_pose, y_goal_pose, theta
+        return x,y,theta
+    
+    def publish_goal_pose(self, x, y, theta):
+        # create message Float64MultiArray
+        goal_pose = Float64MultiArray()
+        # update content
+        goal_pose.data = [float(x), float(y), float(theta)]
+        # publish goal pose
+        self.goal_pose_pub.publish(goal_pose)
+
+    def calculate_goal_point_backward(self):
+        # takes the last m/q value of bisectrice
+        slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
+        
+        # calculate goal_points
+        tmp_result = pow(slope,2)* pow(intercept,2) - (1+ pow(slope,2))*(pow(intercept,2)-pow(self.distance_goal_point_backward,2))
+        
+        # safety if-else statement
+        if(tmp_result >=0):
+            x_1 = (-slope*intercept + math.sqrt(tmp_result))/(1+pow(slope,2))
+            x_2 = (-slope*intercept - math.sqrt(tmp_result))/(1+pow(slope,2))
+        else:
+            x_1 = 0
+            x_2 = 0
+            print("ERROR QUADRATIC")
+
+        # take smallest value
+        if x_1 <= x_2:
+            x = x_1
+        else:
+            x = x_2
+
+        # solve equation
+        y = slope*x + intercept
+
+        # take euler angle
+        # from atan to atan2
+        theta = math.atan2(y,x)
+        # turn orientation 180 degrees -> negative velocity
+        # theta = math.radians(math.degrees(theta_forward) + 180)
+        self.publication_goal_pose_rviz(x,y,theta)
+        return x,y,theta
+
+    def publication_goal_pose_rviz(self, x, y, theta):
+        # create message Pose
+        goal_pose_rviz_msg = PoseStamped()
+        
+        # update timestamp and frame
+        time_now = Time()
+        goal_pose_rviz_msg.header.stamp = time_now.to_msg()
+        goal_pose_rviz_msg.header.frame_id = "base_footprint"
+
+        # get x,y
+        goal_pose_rviz_msg.pose.position.x = float(x)
+        goal_pose_rviz_msg.pose.position.y = float(y)
+
+        # get orientation
+        quaternion = quaternion_from_euler(0, 0, theta)
+        goal_pose_rviz_msg.pose.orientation.x = quaternion[0]
+        goal_pose_rviz_msg.pose.orientation.y = quaternion[1]
+        goal_pose_rviz_msg.pose.orientation.z = quaternion[2]
+        goal_pose_rviz_msg.pose.orientation.w = quaternion[3]
+
+        #if(goal_pose_rviz_msg.pose.position.x == 1) and (goal_pose_rviz_msg.pose.orientation.w == 1):
+            #return
+        #else:
+            # publish goal pose
+        self.pub_goal_pose_rviz.publish(goal_pose_rviz_msg)
+        
+     # update bool value
+    
+    def callback_update_bool(self, msg):
+        self.publish_goal_position = True
+        
+    # update turning status: make switch work
+    def update_turning_status_after_pose_publication(self):
+        self.is_goal_published = False
+        self.initialize_parameters_end_of_line()
+        # msg = Bool()
+        # msg.data = self.publish_goal_position
+        # self.pub_turning_status(msg)
+    
+    def initialize_parameters_end_of_line(self):
+        self.greatest_point_south_west_forward = [-10,-10]
+        self.greatest_point_south_east_forward = [-10,-10]
+        self.greatest_point_nord_west_backward = [-10,-10]
+        self.greatest_point_nord_east_backward = [-10,-10]
+
+    def publish_end_of_line_pose(self, x, y, theta):
+        # create message Pose
+        end_of_line_pose = PoseStamped()
+        
+        # update timestamp and frame
+        time_now = Time()
+        end_of_line_pose.header.stamp = time_now.to_msg()
+        end_of_line_pose.header.frame_id = "base_footprint"
+
+        # get x,y
+        end_of_line_pose.pose.position.x = float(x)
+        end_of_line_pose.pose.position.y = float(y)
+
+        # get orientation
+        quaternion = quaternion_from_euler(0, 0, theta)
+        end_of_line_pose.pose.orientation.x = quaternion[0]
+        end_of_line_pose.pose.orientation.y = quaternion[1]
+        end_of_line_pose.pose.orientation.z = quaternion[2]
+        end_of_line_pose.pose.orientation.w = quaternion[3]
+
+        #if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
+            #return
+        #else:
+            # publish goal pose
+        self.end_of_line_pose_topic.publish(end_of_line_pose)
+
+    def publish_end_of_line_pose_perpendicular_crop_forward(self):
+        # from last greatest point
+        # if(self.greatest_point_south_east_forward != '') & (self.greatest_point_south_west_forward!= ''):
+        point_east = self.greatest_point_south_east_forward
+        point_west = self.greatest_point_south_west_forward
+        # elif(self.greatest_point_nord_east_backward != '') & (self.greatest_point_nord_west_backward!= ''):
+            # point_east = self.greatest_point_nord_east_backward
+            # point_west = self.greatest_point_nord_west_backward
+        # else:
+           # print("ERROR")
+        
+        print(point_east, point_west)
+        # m equationfrom two points
+        if(point_west[1] - point_east[1] == 0):
+            new_theta = math.radians(90)
+        elif (point_west[0] - point_east[0] == 0):
+            new_theta = math.radians(180)
+        else:
+            m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+            # m_perpendicular
+            m_perp = -1/m
+            # atan of the new theta
+            # Return the arc tangent of x, in radians
+            new_theta = math.atan(m_perp)
+            # perpendicular m
+            # new_theta = math.tan(math.degrees(math.atan(m)) + 90)
+
+        # take previous goal position
+        # x,y = self.previous_forward_goal[0], self.previous_forward_goal[1]
+        
+        y = (point_west[1] - point_east[1])/2
+        x = max(point_east[0], point_west[0])
+
+        print("POINT ", x, y,new_theta)
+        # create message Pose
+        end_of_line_pose = PoseStamped()
+        
+        # update timestamp and frame
+        time_now = Time()
+        end_of_line_pose.header.stamp = time_now.to_msg()
+        end_of_line_pose.header.frame_id = "base_footprint"
+
+        # get x,y
+        end_of_line_pose.pose.position.x = float(x)
+        end_of_line_pose.pose.position.y = float(y)
+
+        # get orientation
+        quaternion = quaternion_from_euler(0, 0, new_theta)
+        end_of_line_pose.pose.orientation.x = quaternion[0]
+        end_of_line_pose.pose.orientation.y = quaternion[1]
+        end_of_line_pose.pose.orientation.z = quaternion[2]
+        end_of_line_pose.pose.orientation.w = quaternion[3]
+
+        #transform from of the received odom to the current map
+        transform = self._tf_buffer.lookup_transform('odom', end_of_line_pose.header.frame_id, end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
+        goal_pose_final = PoseStamped()
+        goal_pose_final.header.stamp = time_now.to_msg()
+        goal_pose_final.header.frame_id = "odom"
+
+        goal_pose_final.pose.position.x = end_of_line_pose.pose.position.x + transform.transform.translation.x
+        goal_pose_final.pose.position.y = end_of_line_pose.pose.position.y + transform.transform.translation.y
+        goal_pose_final.pose.position.z = end_of_line_pose.pose.position.z + transform.transform.translation.z
+        goal_pose_final.pose.orientation.z = 0.0
+        goal_pose_final.pose.orientation.w = 1.0
+        goal_pose_final.pose.orientation.y = 0.0
+        goal_pose_final.pose.orientation.x = end_of_line_pose.pose.orientation.x + transform.transform.rotation.x
+
+        if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
+            return
+        else:
+            # publish goal pose
+            self.end_of_line_pose_topic.publish(goal_pose_final)
+
+    def publish_end_of_line_pose_perpendicular_crop_backward(self):
+        # from last greatest point
+        # if(self.greatest_point_south_east_forward != '') & (self.greatest_point_south_west_forward!= ''):
+        point_east = self.greatest_point_nord_east_backward
+        point_west = self.greatest_point_nord_west_backward
+        # elif(self.greatest_point_nord_east_backward != '') & (self.greatest_point_nord_west_backward!= ''):
+            # point_east = self.greatest_point_nord_east_backward
+            # point_west = self.greatest_point_nord_west_backward
+        # else:
+           # print("ERROR")
+        
+        print(point_east, point_west)
+        # m equationfrom two points
+        if(point_west[1] - point_east[1] == 0):
+            new_theta = math.radians(90)
+        elif (point_west[0] - point_east[0] == 0):
+            new_theta = math.radians(180)
+        else:
+            m = (point_west[1]- point_east[1])/(point_west[0] - point_east[0])
+            # m_perpendicular
+            m_perp = -1/m
+            # atan of the new theta
+            # Return the arc tangent of x, in radians
+            new_theta = math.atan(m_perp)
+            # perpendicular m
+            # new_theta = math.tan(math.degrees(math.atan(m)) + 90)
+
+        # take previous goal position
+        # x,y = self.previous_forward_goal[0], self.previous_forward_goal[1]
+        
+        y = (point_west[1] - point_east[1])/2
+        x = max(point_east[0], point_west[0])
+
+        print("POINT ", x, y,new_theta)
+        # create message Pose
+        end_of_line_pose = PoseStamped()
+        
+        # update timestamp and frame
+        time_now = Time()
+        end_of_line_pose.header.stamp = time_now.to_msg()
+        end_of_line_pose.header.frame_id = "base_footprint"
+
+        # get x,y
+        end_of_line_pose.pose.position.x = float(x)
+        end_of_line_pose.pose.position.y = float(y)
+
+        # get orientation
+        quaternion = quaternion_from_euler(0, 0, new_theta)
+        end_of_line_pose.pose.orientation.x = quaternion[0]
+        end_of_line_pose.pose.orientation.y = quaternion[1]
+        end_of_line_pose.pose.orientation.z = quaternion[2]
+        end_of_line_pose.pose.orientation.w = quaternion[3]
+
+        if(end_of_line_pose.pose.position.x == 1) and (end_of_line_pose.pose.orientation.w == 1):
+            return
+        else:
+            # publish goal pose
+            self.end_of_line_pose_topic.publish(end_of_line_pose)
 
     def display_prediction_forward(self, nord_east_points,nord_west_points,x_goal, y_goal):
         # clear axes

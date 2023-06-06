@@ -11,6 +11,7 @@ from tf2_ros.buffer import Buffer
 import os
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from std_msgs.msg import Bool
+from tf2_geometry_msgs import do_transform_pose_stamped
 
 class TurnerFromLine(Node):
     def __init__(self):
@@ -41,7 +42,8 @@ class TurnerFromLine(Node):
         turning_info = self.turningCommands[self.turnNum]
         self.turnNum += 1
         #get the supposed angle of the rows end line
-        perpendicular_line_angle = end_of_line_pose.pose.orientation.x - math.pi/2 #<-----------------------------
+        (roll_end_of_line, pitch_end_of_line,yaw_end_of_line) = euler_from_quaternion([end_of_line_pose.pose.orientation.x, end_of_line_pose.pose.orientation.y, end_of_line_pose.pose.orientation.z, end_of_line_pose.pose.orientation.w])
+        perpendicular_line_angle = yaw_end_of_line - math.pi/2 
         if(turning_info[1] == "L"):
             perpendicular_line_angle += math.pi
 
@@ -50,48 +52,36 @@ class TurnerFromLine(Node):
         #calculate goal pose in odom frame
         goal_pose_odom = PoseStamped()
         goal_pose_odom.header.stamp = time_now.to_msg()
-        goal_pose_odom.header.frame_id = end_of_line_pose.header.frame_id
+        goal_pose_odom.header.frame_id = "odom"
 
-        goal_pose_odom.pose.position.x = end_of_line_pose.pose.position.x + math.cos(perpendicular_line_angle)*float(turning_info[0]) * self.lineDimension
-        goal_pose_odom.pose.position.y = end_of_line_pose.pose.position.y + math.sin(perpendicular_line_angle)*float(turning_info[0]) * self.lineDimension
-        goal_pose_odom.pose.position.z = 0.0
+        goal_pose_odom.pose.position.x = end_of_line_pose.pose.position.x + math.cos(perpendicular_line_angle)*float(turning_info[0]) * self.lineDimension + math.sin(perpendicular_line_angle)*float(turning_info[0]) * self.y_movement
+        goal_pose_odom.pose.position.y = end_of_line_pose.pose.position.y + math.sin(perpendicular_line_angle)*float(turning_info[0]) * self.lineDimension + math.cos(perpendicular_line_angle)*float(turning_info[0]) * self.y_movement
+        goal_pose_odom.pose.position.z = end_of_line_pose.pose.position.z
 
-        goal_pose_odom.pose.orientation.x = end_of_line_pose.pose.orientation.x + math.pi
-        goal_pose_odom.pose.orientation.y = 0.0
-        goal_pose_odom.pose.orientation.z = 0.0
-        goal_pose_odom.pose.orientation.w = 1.0
-        if goal_pose_odom.pose.orientation.z > math.pi:
-            goal_pose_odom.pose.orientation.z -= 2*math.pi  #angle must be between -pi and pi
-        #self.end_pose_pub.publish(goal_pose_odom)
+        
+        (roll_goal_pose_odom, pitch_goal_pose_odom,yaw_goal_pose_odom) = (roll_end_of_line, pitch_end_of_line, yaw_end_of_line + math.pi)
 
+        goal_pose_odom_quaternion = quaternion_from_euler(roll_goal_pose_odom, pitch_goal_pose_odom,yaw_goal_pose_odom)
+        goal_pose_odom.pose.orientation.x = goal_pose_odom_quaternion[0]# -end_of_line_pose.pose.orientation.x
+        goal_pose_odom.pose.orientation.y = goal_pose_odom_quaternion[1]# -end_of_line_pose.pose.orientation.y
+        goal_pose_odom.pose.orientation.z = goal_pose_odom_quaternion[2]# -end_of_line_pose.pose.orientation.z
+        goal_pose_odom.pose.orientation.w = goal_pose_odom_quaternion[3]# -end_of_line_pose.pose.orientation.w
 
         #transform from of the received odom to the current map
-        transform = self._tf_buffer.lookup_transform('map', goal_pose_odom.header.frame_id, goal_pose_odom.header.stamp, Duration(seconds=4, nanoseconds=0))
-        goal_pose_final = PoseStamped()
-        goal_pose_final.header.stamp = time_now.to_msg()
-        goal_pose_final.header.frame_id = "map"
+        transform = self._tf_buffer.lookup_transform("map", "odom", goal_pose_odom.header.stamp, Duration(seconds=1, nanoseconds=0))
+        goal_pose_final = do_transform_pose_stamped(goal_pose_odom, transform)
+        #print(transform)
+        print(goal_pose_final)
+        #print(goal_pose_final)
 
-        goal_pose_final.pose.position.x = goal_pose_odom.pose.position.x - transform.transform.translation.x
-        goal_pose_final.pose.position.y = goal_pose_odom.pose.position.y - transform.transform.translation.y
-        goal_pose_final.pose.position.z = goal_pose_odom.pose.position.z - transform.transform.translation.z
-        goal_pose_final.pose.orientation.z = 0.0
-        goal_pose_final.pose.orientation.w = 1.0
-        goal_pose_final.pose.orientation.y = 0.0
-        goal_pose_final.pose.orientation.x = goal_pose_odom.pose.orientation.x + transform.transform.rotation.x
-        if(goal_pose_final.pose.orientation.x > math.pi):
-            goal_pose_final.pose.orientation.x -= 2*math.pi
-        elif(goal_pose_final.pose.orientation.x < -math.pi):
-            goal_pose_final.pose.orientation.x += 2*math.pi
         self.end_pose_pub.publish(goal_pose_final)
 
         
         self.navigator.goToPose(goal_pose_final)
-        print("starting from: ",end_of_line_pose.header.frame_id, " ", end_of_line_pose.pose.position.x, " ", end_of_line_pose.pose.position.y)
-        print("going to: ", goal_pose_final.header.frame_id," ", goal_pose_final.pose.orientation.x," ", goal_pose_final.pose.orientation.y)
         print("goal pubblished")
 
 
-        """while not self.navigator.isTaskComplete():
+        while not self.navigator.isTaskComplete():
             continue
 
         result = self.navigator.getResult()
@@ -102,7 +92,7 @@ class TurnerFromLine(Node):
             print("Goal Succeded")
         else:
             if result == TaskResult.FAILED:
-                print("Failed To Reach The Goal")"""
+                print("Failed To Reach The Goal")
 
 
 def main(args=None):
