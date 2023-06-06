@@ -391,7 +391,7 @@ class Prediction():
 
             slope_east = slope_east if slope_east*slope_west>0 else -slope_east
             
-            intercept_east = intercept_east if intercept_east*intercept_west > 0 else -intercept_east
+            # intercept_east = intercept_east if intercept_east*intercept_west > 0 else -intercept_east
             
             # reviewed
             # check if distanciated enough
@@ -411,7 +411,7 @@ class Prediction():
             slope_east, intercept_east = line_east.fitting_line(point_east)
 
             slope_east = slope_east if slope_east*slope_west>0 else -slope_east
-            intercept_east = intercept_east if intercept_east*intercept_west > 0 else -intercept_east
+            # intercept_east = intercept_east if intercept_east*intercept_west > 0 else -intercept_east
             # check if distanciated enough
             if(abs(intercept_west - intercept_east) < self.line_with - self.tolerance_intercept) and (abs(intercept_west - intercept_east) > self.line_with + self.tolerance_intercept):
                 slope_east, intercept_east = line_east.get_most_recent_coefficients()
@@ -426,7 +426,7 @@ class Prediction():
             slope_east, intercept_east = line_east.get_most_recent_coefficients()
 
             slope_east = slope_east if slope_east*slope_west>0 else -slope_east
-            intercept_east = intercept_east if intercept_east*intercept_west > 0 else -intercept_east
+            # intercept_east = intercept_east if intercept_east*intercept_west > 0 else -intercept_east
             # check if distanciated enough
             if(abs(intercept_west - intercept_east) < self.line_with - self.tolerance_intercept) and (abs(intercept_west - intercept_east) > self.line_with + self.tolerance_intercept):
                 slope_west, intercept_west = line_west.get_most_recent_coefficients()
@@ -626,7 +626,11 @@ class InRowNavigation(Node):
 
     def display_reasoning(self, x_goal_robot, y_goal_robot,x_proj_bis, y_proj_bis,x_goal_pose,y_goal_pose):
         origin = np.array([[0, 0, 0],[0, 0, 0]]) # origin point
+<<<<<<< HEAD
         vector = np.array([[x_goal_robot,y_goal_robot],[x_proj_bis,y_proj_bis], [x_goal_pose,y_goal_pose]])
+=======
+        vector = [[x_goal_robot,y_goal_robot],[x_proj_bis,y_proj_bis], [x_goal_pose,y_goal_pose]]
+>>>>>>> 748485ab6f28b5b71ccf1fd215c8bbd321781f66
         plt.quiver(*origin, vector[:,0], vector[:,1], color=['r','b','g'], scale=21)
         plt.show()
     
