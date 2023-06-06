@@ -31,7 +31,7 @@ setup(
             'switcher = grasslammer2_nav_py.convert_cmd_vel_for_sim:main',
             'starting_pose_pub = grasslammer2_nav_py.end_of_line_pose:main',
             'turner = grasslammer2_nav_py.definitive_turner:main',
-            'in_row_navigation = grasslammer2_nav_py.in_row_navigation:main',
+            'in_row_navigation = grasslammer2_nav_py.in_row_navigation_new:main',
             'end_of_line_detection = grasslammer2_nav_py.end_of_line_detection:main',
             'spray_switch = grasslammer2_nav_py.spray_switch:main',
             'obstacle_detector = grasslammer2_nav_py.obstacle_detector:main',

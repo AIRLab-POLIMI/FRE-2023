@@ -48,7 +48,7 @@ class Navigation(Node):
             coef = 1
 
         cmd_msg.linear.x = coef * self.b * math.cos(theta)
-        cmd_msg.angular.z = self.a * math.sin(theta)
+        cmd_msg.angular.z = self.a * theta # math.sin(theta)
 
         self.cmd_pub.publish(cmd_msg)
   

@@ -21,7 +21,7 @@ def generate_launch_description():
 
     in_row_navigation = Node(
         package='grasslammer2_nav_py',
-        executable='in_row_navigation',
+        executable='in_row_navigation', # executable='in_row_navigation',
         name='in_row_navigation',
         #output='screen'
         )
@@ -47,7 +47,7 @@ def generate_launch_description():
         laser_reader, 
         in_row_navigation,
         #end_of_line_detection,
-        aut_nav_cmd, 
+        #aut_nav_cmd, 
 
         
     ])
