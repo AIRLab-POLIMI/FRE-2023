@@ -38,7 +38,7 @@ import json
 # string_from_folder = 'ros2_humble/src/FRE-2023'
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
 # absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
-absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
+absolute_path = '/home/carlo/Documenti/robotics/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
 #absolute_path = "/home/airlab/workspace/ros2/src/grasslammer2/grasslammer2_description/config/in_row_params.json"
 print(absolute_path)
 config_file = open(absolute_path, 'r')
@@ -626,7 +626,7 @@ class InRowNavigation(Node):
 
     def display_reasoning(self, x_goal_robot, y_goal_robot,x_proj_bis, y_proj_bis,x_goal_pose,y_goal_pose):
         origin = np.array([[0, 0, 0],[0, 0, 0]]) # origin point
-        vector = [[x_goal_pose,y_goal_pose],[x_proj_bis,y_proj_bis], [x_goal_pose,y_goal_pose]]
+        vector = np.array([[x_goal_robot,y_goal_robot],[x_proj_bis,y_proj_bis], [x_goal_pose,y_goal_pose]])
         plt.quiver(*origin, vector[:,0], vector[:,1], color=['r','b','g'], scale=21)
         plt.show()
     
