@@ -38,7 +38,7 @@ import json
 # string_from_folder = 'ros2_humble/src/FRE-2023'
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
 # absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
-absolute_path = '/home/carlo/Documenti/robotics/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
+absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
 #absolute_path = "/home/airlab/workspace/ros2/src/grasslammer2/grasslammer2_description/config/in_row_params.json"
 print(absolute_path)
 config_file = open(absolute_path, 'r')
@@ -380,7 +380,7 @@ class Prediction():
         self.navigation_line.update_line_parameters(medium_slope, medium_intercept)
 
     def calculate_crop_coefficients(self,line_west, point_west, line_east, point_east):
-        # print("num points", len(points))
+        print("num points", len(point_west), len(point_east))
         # print("num points", len(points))
         # add delta threshold
         if(len(point_west)> self.num_min_points_required_for_fitting) and (len(point_east)> self.num_min_points_required_for_fitting):
@@ -437,6 +437,7 @@ class Prediction():
             slope_west, intercept_west = line_west.get_most_recent_coefficients()
             slope_east, intercept_east = line_east.get_most_recent_coefficients()
         
+        print(slope_west, intercept_west, slope_east, intercept_east)
         return slope_west, intercept_west, slope_east, intercept_east
         
 
@@ -467,8 +468,8 @@ class InRowNavigation(Node):
         # define thresholds
         self.nord_threshold = self.area[0]/2
         self.south_threshold = -self.area[0]/2
-        self.west_threshold = self.line_width/2
-        self.east_threshold = -self.line_width/2
+        self.west_threshold = self.area[1]/2
+        self.east_threshold = -self.area[1]/2
 
         #define quadrants
         self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
@@ -531,7 +532,6 @@ class InRowNavigation(Node):
         # print(type(points))
         points = points[~np.isinf(points).any(axis=1)]
 
-       
         # if number of points 
         if(np.size(points) < self.min_points):
             x_nord = np.where(((0 <= x) & (x <= self.nord_threshold)),x, np.inf)
@@ -623,7 +623,14 @@ class InRowNavigation(Node):
             # to do -> publish goal
             # to_do -> update queue with goal pose, add checks
             # self.display_prediction_forward(points_nord_east, points_nord_west,x,y)
-            
+
+    def display_reasoning(self, x_goal_robot, y_goal_robot,x_proj_bis, y_proj_bis,x_goal_pose,y_goal_pose):
+        origin = np.array([[0, 0, 0],[0, 0, 0]]) # origin point
+        vector = [[x_goal_pose,y_goal_pose],[x_proj_bis,y_proj_bis], [x_goal_pose,y_goal_pose]]
+        plt.quiver(*origin, vector[:,0], vector[:,1], color=['r','b','g'], scale=21)
+        plt.show()
+    
+
     def calculate_goal_point_forward(self):
         # get latest bisectrice coefficients
         slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
@@ -644,6 +651,8 @@ class InRowNavigation(Node):
                      
         x_goal_pose = x_goal_robot + x_proj_bis
         y_goal_pose = y_goal_robot + y_proj_bis
+
+        self.display_reasoning(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
 
         return x_goal_pose, y_goal_pose, theta
 
