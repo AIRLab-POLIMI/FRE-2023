@@ -156,7 +156,7 @@ class MovingAvarageQueue():
     def initialize_queue(self):
         self.queue = deque()
         self.weights.initialize_weigths()
-        self.queue.appendleft(0)
+        self.queue.appendleft(self.reset_value)
         self.weights.update_weights(len(self.queue), self.dimension_queue)
 
     def get_reset_value(self):
@@ -225,7 +225,7 @@ class Line():
         dimension_queue, ma_avarage_flag, is_bisectrice, threshold_line_intercept, threshold_line_slope, reset_value_intercept, reset_value_slope = self.get_parameters_from_config_file(quadrant)
         
         # check ma flag
-        if ma_avarage_flag == True:
+        if ma_avarage_flag == 1:
             self.slope = MovingAvarageQueue(dimension_queue=dimension_queue,reset_value=reset_value_slope)
             self.intercept = MovingAvarageQueue(dimension_queue=dimension_queue,reset_value=reset_value_intercept)
         else:
@@ -236,7 +236,8 @@ class Line():
         self.is_bisectrice = is_bisectrice
         # if not is_bisectrice:
         # min_samples=20, 
-        self.ransac = RANSACRegressor(random_state=42)
+        if not self.is_bisectrice:
+            self.ransac = RANSACRegressor(random_state=42)
         
         # threshold allowed btw two consecutive lines 
         self.threshold_btw_consecutive_lines_intercept = threshold_line_intercept
@@ -283,7 +284,7 @@ class Line():
             if (self.counter_outdated_consecutive_values <= self.window_allowed_outdated_parameters):
                 if slope_time_t_min_1 != False and intercept_time_t_min_1 != False:
                     # same value remain same otherwise take opposite value
-                    intercept_time_t_min_1 = intercept_time_t_min_1 if intercept_time_t_min_1*intercept > 0 else -intercept_time_t_min_1
+                    # intercept = intercept if intercept_time_t_min_1*intercept > 0 else -intercept
                     # only intercept
                     if abs(intercept_time_t_min_1 - intercept) > self.threshold_btw_consecutive_lines_intercept:
                         # update_last_valid_coefficient
@@ -358,7 +359,7 @@ class Prediction():
         self.num_min_points_required_for_fitting = 20
         self.line_with = 0.75
         self.tolerance_intercept = 0.2
-        self.tolerance_slope = 0.17 # 10 degrees
+        self.tolerance_slope = 0.26 # 10 degrees
     
     # initialization of lines
     def initialize_prediction(self):
@@ -388,21 +389,15 @@ class Prediction():
             slope_west, intercept_west = line_west.fitting_line(point_west)
             # compute slope, intercept through fitting
             slope_east, intercept_east = line_east.fitting_line(point_east)
-
-            slope_east = slope_east if slope_east*slope_west>0 else -slope_east
-            
-            # intercept_east = intercept_east if intercept_east*intercept_west > 0 else -intercept_east
+            # print("delta intercept", abs(intercept_west - intercept_east), self.line_with - self.tolerance_intercept, self.line_with + self.tolerance_intercept)
             
             # reviewed
             # check if distanciated enough
-            if(abs(intercept_west - intercept_east) < self.line_with - self.tolerance_intercept) and (abs(intercept_west - intercept_east) > self.line_with + self.tolerance_intercept):
+            if not ((abs(intercept_west - intercept_east) > self.line_with - self.tolerance_intercept) and (abs(intercept_west - intercept_east) < self.line_with + self.tolerance_intercept)):
+                # print("delta intercept 1")
                 slope_west, intercept_west = line_west.get_most_recent_coefficients()
                 slope_east, intercept_east = line_east.get_most_recent_coefficients()
             
-            # check if parallel
-            elif (abs(slope_west - slope_east) > self.tolerance_slope):
-                slope_west, intercept_west = line_west.get_most_recent_coefficients()
-                slope_east, intercept_east = line_east.get_most_recent_coefficients()
         
         elif (len(point_west) < self.num_min_points_required_for_fitting) and (len(point_east) > self.num_min_points_required_for_fitting):
             # compute slope, intercept through fitting
@@ -410,13 +405,8 @@ class Prediction():
             # compute slope, intercept through fitting
             slope_east, intercept_east = line_east.fitting_line(point_east)
 
-            slope_east = slope_east if slope_east*slope_west>0 else -slope_east
-            # intercept_east = intercept_east if intercept_east*intercept_west > 0 else -intercept_east
             # check if distanciated enough
-            if(abs(intercept_west - intercept_east) < self.line_with - self.tolerance_intercept) and (abs(intercept_west - intercept_east) > self.line_with + self.tolerance_intercept):
-                slope_east, intercept_east = line_east.get_most_recent_coefficients()
-            # check if parallel
-            elif (abs(slope_west - slope_east) > self.tolerance_slope):
+            if not (abs(intercept_west - intercept_east) > self.line_with - self.tolerance_intercept) and (abs(intercept_west - intercept_east) < self.line_with + self.tolerance_intercept):
                 slope_east, intercept_east = line_east.get_most_recent_coefficients()
         
         elif (len(point_west) > self.num_min_points_required_for_fitting) and (len(point_east) < self.num_min_points_required_for_fitting):
@@ -424,20 +414,19 @@ class Prediction():
             slope_west, intercept_west = line_west.fitting_line(point_west)
             # compute slope, intercept through fitting
             slope_east, intercept_east = line_east.get_most_recent_coefficients()
-
-            slope_east = slope_east if slope_east*slope_west>0 else -slope_east
-            # intercept_east = intercept_east if intercept_east*intercept_west > 0 else -intercept_east
             # check if distanciated enough
-            if(abs(intercept_west - intercept_east) < self.line_with - self.tolerance_intercept) and (abs(intercept_west - intercept_east) > self.line_with + self.tolerance_intercept):
+            if not (abs(intercept_west - intercept_east) > self.line_with - self.tolerance_intercept) and (abs(intercept_west - intercept_east) < self.line_with + self.tolerance_intercept):
                 slope_west, intercept_west = line_west.get_most_recent_coefficients()
-            # check if parallel
-            elif (abs(slope_west - slope_east) > self.tolerance_slope):
-                slope_west, intercept_west = line_west.get_most_recent_coefficients()
+
         else:
             slope_west, intercept_west = line_west.get_most_recent_coefficients()
             slope_east, intercept_east = line_east.get_most_recent_coefficients()
         
-        print(slope_west, intercept_west, slope_east, intercept_east)
+        print("slope and intercept", slope_west, intercept_west, slope_east, intercept_east)
+        
+        # update lines
+        line_west.update_line_parameters_checking_threshold(slope_west,intercept_west)
+        line_east.update_line_parameters_checking_threshold(slope_east, intercept_east)
         return slope_west, intercept_west, slope_east, intercept_east
         
 
@@ -470,6 +459,7 @@ class InRowNavigation(Node):
         self.south_threshold = -self.area[0]/2
         self.west_threshold = self.area[1]/2
         self.east_threshold = -self.area[1]/2
+        self.distance_goal_point_forward = self.area[0]/4
 
         #define quadrants
         self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
@@ -494,7 +484,9 @@ class InRowNavigation(Node):
         self.line_entered = False
 
         # Display Ransac
-        self.fig, self.ax = plt.subplots()
+        # self.fig, self.ax = plt.subplots()
+        # Display Vectors
+        # self.fig2, self.ax2 = plt.subplots()
 
     def get_parameters_from_config_file(self):
         area = config_json["in_row_navigation"]['area']
@@ -554,8 +546,6 @@ class InRowNavigation(Node):
             points_east = points_east[~np.isinf(points_east).any(axis=1)]
             points_west = points_west[~np.isinf(points_west).any(axis=1)]
 
-
-
             # Drawing
             self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
             self.nord_west_quadrant = [[0,self.nord_threshold],[0,self.west_threshold]]
@@ -614,6 +604,7 @@ class InRowNavigation(Node):
             # to do -> publish goal point
             # to do -> reset values
             # reset values
+            self.prediction_instance.initialize_prediction()
         
         else:
             # enough points to proceed
@@ -622,15 +613,47 @@ class InRowNavigation(Node):
             x, y, theta = self.calculate_goal_point_forward()
             # to do -> publish goal
             # to_do -> update queue with goal pose, add checks
-            # self.display_prediction_forward(points_nord_east, points_nord_west,x,y)
+            self.display_prediction_forward(points_nord_east, points_nord_west,x,y)
 
     def display_reasoning(self, x_goal_robot, y_goal_robot,x_proj_bis, y_proj_bis,x_goal_pose,y_goal_pose):
-        origin = np.array([[0, 0, 0],[0, 0, 0]]) # origin point
-        vector = [[x_goal_robot,y_goal_robot],[x_proj_bis,y_proj_bis], [x_goal_pose,y_goal_pose]]
-        plt.quiver(*origin, vector[:,0], vector[:,1], color=['r','b','g'], scale=21)
-        plt.show()
-    
+        # clear axes
+        # to do -> segment
+        plt.figure(1)
+        plt.gca().clear()
 
+        #plt.rcParams["figure.figsize"] = [7.50, 3.50]
+        #plt.rcParams["figure.autolayout"] = True
+        robot_center_point = [0,0]
+        robot_goal_point = [x_goal_robot, y_goal_robot]
+        proj_bis_point = [x_proj_bis, y_proj_bis]
+        # goal_pose_point = [x_goal_pose, y_goal_pose]
+
+
+
+        x_vector_robot = [robot_center_point[0], robot_goal_point[0]]
+        y_vector_robot = [robot_center_point[1], robot_goal_point[1]]
+        x_vector_projection = [robot_center_point[0], proj_bis_point[0]]
+        y_vector_projection = [robot_center_point[1], proj_bis_point[1]]
+        # x_vector_pose = [robot_center_point[0], goal_pose_point[0]]
+        # y_vector_pose = [robot_center_point[1], goal_pose_point[1]]
+
+        plt.plot(x_vector_robot, y_vector_robot, color="red", linestyle="solid")
+        plt.plot(x_vector_projection, y_vector_projection, color ="orange", linestyle="solid")
+        # plt.plot(x_vector_pose, y_vector_pose, color="green", linestyle="solid")
+        plt.plot(x_goal_robot, y_goal_robot, marker="o", markersize=10, markeredgecolor="red", markerfacecolor="red")
+        plt.plot(x_proj_bis, y_proj_bis, marker="o", markersize=10, markeredgecolor="orange", markerfacecolor="orange")
+        plt.plot(x_goal_pose, y_goal_pose, marker="o", markersize=10, markeredgecolor="green", markerfacecolor="green")
+        # plt.text(robot_center_point[0]-0.015, robot_center_point[1]+0.015, "robot_center_point")
+        plt.text(robot_goal_point[0]-0.015, robot_goal_point[1]-0.015, "robot_goal_point")
+        plt.text(proj_bis_point[0]-0.015, proj_bis_point[1]+0.015, "proj_bis_point")
+        # plt.text(goal_pose_point[0]-0.015, goal_pose_point[1]+0.015, "goal_pose_point")
+
+        plt.xlim(-0.6,0.6)
+        plt.ylim(-0.1,0.1)
+
+        plt.gcf().canvas.draw()
+        plt.pause(0.01) 
+    
     def calculate_goal_point_forward(self):
         # get latest bisectrice coefficients
         slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
@@ -638,27 +661,31 @@ class InRowNavigation(Node):
         # goal pose on robot frame
         theta = math.atan(slope)
         x_goal_robot = self.distance_goal_point_forward * math.cos(theta)
-        y_goal_robot = self.distance_goal_point_forward * math.cos(theta)
+        y_goal_robot = self.distance_goal_point_forward * math.sin(theta)
 
-
-        alpha = math.atan(math.pi/2 - (2*math.pi - theta))
-        delta = math.atan(2*math.pi - theta)
+        # alpha = math.atan(math.pi/2 - (2*math.pi - theta))
+        # delta = math.atan(2*math.pi - theta)
+        delta = - theta
+        alpha = math.atan(math.pi/2 - delta)
 
         # project goal pose on actual bisectrice
         distance_robot_bis = intercept * math.cos(delta)
         x_proj_bis = distance_robot_bis * math.cos(alpha)
-        y_proj_bis = distance_robot_bis * math.cos(alpha)
+        y_proj_bis = distance_robot_bis * math.sin(alpha)
                      
         x_goal_pose = x_goal_robot + x_proj_bis
         y_goal_pose = y_goal_robot + y_proj_bis
 
         self.display_reasoning(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
+        # print(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
 
         return x_goal_pose, y_goal_pose, theta
 
     def display_prediction_forward(self, nord_east_points,nord_west_points,x_goal, y_goal):
         # clear axes
-        self.ax.clear()
+        # self.ax.clear()
+        plt.figure(0)
+        plt.gca().clear()
         # creates scatter plot
         plt.scatter(nord_west_points[:, 0], nord_west_points[:, 1], color='red')
         plt.scatter(nord_east_points[:, 0], nord_east_points[:, 1], color='orange')
@@ -706,10 +733,10 @@ class InRowNavigation(Node):
         y_values_4 = [self.nord_west_quadrant[1][1], self.nord_west_quadrant[1][1]]
         plt.plot(x_values_4, y_values_4,color='red', linestyle="--")
 
-        plt.xlim(-3,3)
-        plt.ylim(-3,3)
+        plt.xlim(0,2)
+        plt.ylim(-1,1)
 
-        self.fig.canvas.draw()
+        plt.gcf().canvas.draw()
         plt.pause(0.01) 
     
 def main(args=None):
