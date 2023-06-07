@@ -31,7 +31,7 @@ class map_filter_approx : public rclcpp::Node{
 
             this->declare_parameter("scanner_height", 0.0); //height of the considered area of the pointcloud <--now is useless, may be used to crop the cloud at certain height
 
-            this->declare_parameter("threshold", 25); //minimum number of neighbors
+            this->declare_parameter("threshold", 20); //minimum number of neighbors
 
             this->declare_parameter("dynamic_range", 50.0); //maximum scaling factor due to distance
 
@@ -41,7 +41,7 @@ class map_filter_approx : public rclcpp::Node{
 
             this->declare_parameter("width", 8.0);  //width of the considered point cloud
 
-            this->declare_parameter("laserscan_range", 1.0); //range in which points from monoplanar lidar are added
+            this->declare_parameter("laserscan_range", 1.5); //range in which points from monoplanar lidar are added
 
             this->declare_parameter("biased", true);   //if biased we sligtly favours points in having the same orientation as the robot
 
@@ -183,7 +183,7 @@ class map_filter_approx : public rclcpp::Node{
                 th=th + laser_scan.angle_increment;
                 if(laser_scan.ranges[i]<=laserscan_range){
                     y = laser_scan.ranges[i]*sin(th);
-                    if((y > 0.22 && y < 0.5)||(y < -0.22 && y > -0.5)){
+                    if((y > 0.22 && y < 0.7)||(y < -0.22 && y > -0.7)){
                         pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th), y, 0));
                     }
                 }

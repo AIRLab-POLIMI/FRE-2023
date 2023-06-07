@@ -37,8 +37,8 @@ import json
 # modified robots
 # string_from_folder = 'ros2_humble/src/FRE-2023'
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
-# absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json'
-absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
+absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
+# absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
 #absolute_path = "/home/airlab/workspace/ros2/src/grasslammer2/grasslammer2_description/config/in_row_params.json"
 print(absolute_path)
 config_file = open(absolute_path, 'r')
@@ -212,8 +212,47 @@ class CustomQueue:
     def initialize_queue(self):
         self.queue = deque()
         self.queue.appendleft(self.reset_value)
+
+
+#################################
+#################### COSTUM QUEUE
+##################################
+class PoseQueue:
+    def __init__(self, dimension_queue):
+        self.dimension_queue = dimension_queue
+        self.queue = deque()
+
+    # update queue regularly
+    def update_queue_regularly(self, value):
+        # print("update_queue_regularly ", len(self.queue),self.dimension_queue)
+        if(len(self.queue) >= self.dimension_queue):
+            self.queue.pop()
+        self.queue.appendleft(value)
+            
+    # initialize queue
+    def initialize_queue(self):
+        self.queue = deque()
     
-    
+    # needed to compute validity data
+    def return_element_time_t(self):
+        if(len(self.queue) > 0):
+            return self.queue[0]
+        else:
+            return PoseStamped()
+
+    # calculate average yaw 
+    def queue_average(self):
+        sum_tetha = 0.0
+        if len(self.queue)>0:
+            for item in self.queue:
+                (_, _, yaw) = euler_from_quaternion([item.pose.orientation.x, item.pose.orientation.y, item.pose.orientation.z, item.pose.orientation.w])
+                sum_tetha += yaw
+            return sum_tetha/len(self.queue)
+        else:
+            return 0.0
+
+
+
 #################################
 #################### LINE
 ##################################    
@@ -445,6 +484,9 @@ class InRowNavigation(Node):
         self.goal_pose_pub # prevent unused variable warning
         self.end_of_line_pose_topic = self.create_publisher(PoseStamped, '/end_of_line_pose', 1)
         self.end_of_line_pose_topic # prevent unused variable warning
+        self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)   
+
+        self.end_of_line_pose_topic # prevent unused variable warning
         # topic to update the boolean variable to publish
         #self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
 
@@ -478,10 +520,20 @@ class InRowNavigation(Node):
         # prediction
         self.prediction_instance = Prediction()
 
+        # pose quee
+        self.end_pose_queue = PoseQueue(dimension_queue)
+
+        # buffer for looking at tf transformations
+        self._tf_buffer = Buffer()
+        self._tf_listener = TransformListener(self._tf_buffer, self)
 
         # save last goal position
         self.end_of_line_pose_message = ''
         self.line_entered = False
+        self.is_in_row_navigation = True
+
+        # last goal position
+        self.last_goal_position_robot_frame = [0,0]
 
         # Display Ransac
         # self.fig, self.ax = plt.subplots()
@@ -594,26 +646,156 @@ class InRowNavigation(Node):
             
         return points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west
 
+    def laser_scan_to_cartesian_dynamic(self, msg):
+        ranges = np.array(msg.ranges)
+        angles = np.arange(start=msg.angle_min, stop=msg.angle_max, step=(msg.angle_max - msg.angle_min)/len(ranges)) 
+
+        x = np.where(ranges == -1, np.inf, ranges * np.cos(angles))
+        y = np.where(ranges == -1, np.inf, ranges * np.sin(angles))
+        # print(x, y)
+        points = np.vstack((x, y)).T
+        # print(type(points))
+        points = points[~np.isinf(points).any(axis=1)]
+
+
+        # if number of points 
+        if(np.size(points) < self.min_num_build_quadrants):
+            x_nord = np.where(((0 <= x) & (x <= self.nord_threshold)),x, np.inf)
+            x_south = np.where(((self.south_threshold <= x)&(x <= 0)), x, np.inf)
+
+            y_west = np.where(((0 <= y)&(y<=self.west_threshold)),y, np.inf)
+            y_east = np.where(((self.east_threshold <= y)&(y <= 0)),y, np.inf)
+
+            points_nord_east = np.vstack((x_nord, y_east)).T
+            points_nord_west = np.vstack((x_nord, y_west)).T
+            points_south_east = np.vstack((x_south, y_east)).T
+            points_south_west = np.vstack((x_south, y_west)).T
+            points_east = np.stack((x, y_east)).T
+            points_west = np.stack((x, y_west)).T
+
+            points_nord_east = points_nord_east[~np.isinf(points_nord_east).any(axis=1)]
+            points_nord_west = points_nord_west[~np.isinf(points_nord_west).any(axis=1)]
+            points_south_east = points_south_east[~np.isinf(points_south_east).any(axis=1)]
+            points_south_west = points_south_west[~np.isinf(points_south_west).any(axis=1)]
+            points_east = points_east[~np.isinf(points_east).any(axis=1)]
+            points_west = points_west[~np.isinf(points_west).any(axis=1)]
+
+            # Drawing
+            self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
+            self.nord_west_quadrant = [[0,self.nord_threshold],[0,self.west_threshold]]
+            self.south_east_quadrant = [[self.south_threshold,0],[self.east_threshold,0]]
+            self.south_west_quadrant = [[self.south_threshold,0],[0,self.east_threshold]]
+
+        else:
+            # take slope, intercept 
+            slope, intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
+
+            distance_east_above = intercept - self.distance_from_bisectrice + self.tolerance_crop_distance
+            distance_east_below = intercept - self.distance_from_bisectrice - self.tolerance_crop_distance
+            distance_west_above = intercept + self.distance_from_bisectrice + self.tolerance_crop_distance
+            distance_west_below = intercept + self.distance_from_bisectrice - self.tolerance_crop_distance
+                
+            threshold_east_above = np.full_like(y, distance_east_above)
+            threshold_east_below = np.full_like(y, distance_east_below)
+            threshold_west_above = np.full_like(y, distance_west_above)
+            threshold_west_below = np.full_like(y, distance_west_below)
+
+            y_west = np.where((y > np.add(slope*x, threshold_west_below))&(y < np.add(slope*x, threshold_west_above)),y, np.inf)
+            y_east = np.where((y > np.add(slope*x, threshold_east_below))&(y < np.add(slope*x,threshold_east_above)),y, np.inf)
+
+            threshold_nord = np.full_like(x, intercept*slope + self.nord_threshold)
+            threshold_south = np.full_like(x, intercept*slope + self.south_threshold)
+
+            m_q = np.full_like(x, slope*intercept)
+            # x = -my+qm
+            x_nord_east = np.where((x > np.add(-slope*y_east, m_q))&(x < np.add(-slope*y_east, threshold_nord)) ,x, np.inf)
+            x_nord_west = np.where((x > np.add(-slope*y_west, m_q))&(x < np.add(-slope*y_west,threshold_nord)),x, np.inf)
+            x_south_east = np.where((x < np.add(-slope*y_east, m_q))&(x > np.add(-slope*y_east, threshold_south)) ,x, np.inf)
+            x_south_west = np.where((x < np.add(-slope*y_west, m_q))&(x > np.add(-slope*y_west,threshold_south)) ,x, np.inf)
+                    
+            points_nord_east = np.vstack((x_nord_east, y_east)).T
+            points_nord_west = np.vstack((x_nord_west, y_west)).T
+            points_south_east = np.vstack((x_south_east, y_east)).T
+            points_south_west = np.vstack((x_south_west, y_west)).T
+
+            points_nord_east = points_nord_east[~np.isinf(points_nord_east).any(axis=1)]
+            points_nord_west = points_nord_west[~np.isinf(points_nord_west).any(axis=1)]
+            points_south_east = points_south_east[~np.isinf(points_south_east).any(axis=1)]
+            points_south_west = points_south_west[~np.isinf(points_south_west).any(axis=1)]
+                
+        return points_nord_east, points_nord_west, points_south_east, points_south_west
+
+    def initialization_quadrants(self):
+        self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
+        self.nord_west_quadrant = [[0,self.nord_threshold],[0,self.west_threshold]]
+        self.south_east_quadrant = [[self.south_threshold,0],[self.east_threshold,0]]
+        self.south_west_quadrant = [[self.south_threshold,0],[0,self.east_threshold]]
+
     def in_row_navigation_forward(self, points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west):
         # get information about emptyness of regions
         is_east_empty = True if np.size(points_east) < self.min_point_direction else False
         is_west_empty = True if np.size(points_west) < self.min_point_direction else False
 
-        if is_east_empty or is_west_empty:
+        if (is_east_empty or is_west_empty) and (self.is_in_row_navigation):
             print("END OF LINE")
             # to do -> publish goal point
+            self.publish_end_pose()
             # to do -> reset values
+            self.end_pose_queue.initialize_queue()
             # reset values
             self.prediction_instance.initialize_prediction()
+            # reset quadrants
+            self.initialization_quadrants()
+            # reset value
+            self.is_in_row_navigation = False
         
         else:
             # enough points to proceed
             # compute bisectrice
             self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
-            x, y, theta = self.calculate_goal_point_forward()
-            # to do -> publish goal
+            # calculate goal point
+            goal_pose, x, y = self.calculate_goal_point_forward()
+            # publish goal pose
+            self.publish_goal_pose(x, y)
             # to_do -> update queue with goal pose, add checks
-            self.display_prediction_forward(points_nord_east, points_nord_west,x,y)
+            self.validate_end_pose(goal_pose, points_nord_east, points_nord_west)
+            # display prediction
+            self.display_prediction_forward_static(points_nord_east, points_nord_west, x, y)
+  # update bool value   
+    def callback_update_bool(self, msg):
+        if(not self.is_in_row_navigation):
+            time.sleep(2)
+        self.is_in_row_navigation = msg.data
+
+    def validate_end_pose(self, goal_pose, points_nord_east, points_nord_west):
+        is_east_empty = True if np.size(points_nord_east) < self.min_point_direction else False
+        is_west_empty = True if np.size(points_nord_west) < self.min_point_direction else False
+        if not is_east_empty and not is_west_empty:
+            self.end_pose_queue.update_queue_regularly(goal_pose)
+    
+    def publish_end_pose(self):
+        end_pose = self.end_pose_queue.return_element_time_t()
+        avg_thetha = self.end_pose_queue.queue_average()
+        (x, y, z, w) = quaternion_from_euler(0, 0, avg_thetha)
+        end_pose.pose.orientation.x = x
+        end_pose.pose.orientation.y = y
+        end_pose.pose.orientation.z = z
+        end_pose.pose.orientation.w = w
+
+        # update timestamp and frame
+        #transform from of the received odom to the current map
+        transform = self._tf_buffer.lookup_transform('map', 'odom', end_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
+        self.end_of_line_pose_topic.publish(do_transform_pose_stamped(end_pose, transform))
+    
+    def publish_goal_pose(self, x, y):
+        # create message Float64MultiArray
+        goal_pose = Float64MultiArray()
+        theta = math.atan2(y,x)
+        # update content
+        goal_pose.data = [float(x), float(y), float(theta)]
+        if(self.is_in_row_navigation):
+            # publish goal pose
+            self.goal_pose_pub.publish(goal_pose)
 
     def display_reasoning(self, x_goal_robot, y_goal_robot,x_proj_bis, y_proj_bis,x_goal_pose,y_goal_pose):
         # clear axes
@@ -679,9 +861,30 @@ class InRowNavigation(Node):
         self.display_reasoning(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
         # print(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
 
-        return x_goal_pose, y_goal_pose, theta
+        # goal as a pose in odom frame from velodyne 
+        end_of_line_pose = PoseStamped()
+        
+        # update timestamp and frame
+        time_now = Time()
+        end_of_line_pose.header.stamp = time_now.to_msg()
+        end_of_line_pose.header.frame_id = "velodyne2"
 
-    def display_prediction_forward(self, nord_east_points,nord_west_points,x_goal, y_goal):
+        # get x,y
+        end_of_line_pose.pose.position.x = float(x_goal_pose)
+        end_of_line_pose.pose.position.y = float(y_goal_pose)
+        end_of_line_pose.pose.position.z = float(0.0)
+        # get orientation
+        quaternion = quaternion_from_euler(0, 0, theta)
+        end_of_line_pose.pose.orientation.x = quaternion[0]
+        end_of_line_pose.pose.orientation.y = quaternion[1]
+        end_of_line_pose.pose.orientation.z = quaternion[2]
+        end_of_line_pose.pose.orientation.w = quaternion[3]
+
+        #transform from of the received odom to the current map
+        transform = self._tf_buffer.lookup_transform('odom', 'velodyne2', end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
+        return do_transform_pose_stamped(end_of_line_pose, transform), x_goal_pose, y_goal_pose
+
+    def display_prediction_forward_static(self, nord_east_points,nord_west_points,x_goal, y_goal):
         # clear axes
         # self.ax.clear()
         plt.figure(0)
@@ -732,6 +935,59 @@ class InRowNavigation(Node):
         x_values_4 = self.nord_west_quadrant[0]
         y_values_4 = [self.nord_west_quadrant[1][1], self.nord_west_quadrant[1][1]]
         plt.plot(x_values_4, y_values_4,color='red', linestyle="--")
+
+        plt.xlim(0,2)
+        plt.ylim(-1,1)
+
+        plt.gcf().canvas.draw()
+        plt.pause(0.01) 
+    
+    def display_prediction_forward_dynamic(self, nord_east_points,nord_west_points,x_goal, y_goal):
+        # clear axes
+        # self.ax.clear()
+        plt.figure(0)
+        plt.gca().clear()
+        # creates scatter plot
+        plt.scatter(nord_west_points[:, 0], nord_west_points[:, 1], color='red')
+        plt.scatter(nord_east_points[:, 0], nord_east_points[:, 1], color='orange')
+        
+        # takes 3 values btw 0/2
+        x = np.linspace(0, 1.5, 3)
+
+        # get proper slope, intercept for each value
+        nord_west_slope, nord_west_intercept = self.prediction_instance.nord_west_line.get_most_recent_coefficients()
+        nord_east_slope, nord_east_intercept = self.prediction_instance.nord_east_line.get_most_recent_coefficients()
+        bisectrice_slope, bisectrice_intercept = self.prediction_instance.navigation_line.get_most_recent_coefficients()
+
+        # creates line
+        y_nord_west = nord_west_slope * x + nord_west_intercept
+        y_nord_east = nord_east_slope * x + nord_east_intercept
+
+        # plot line
+        plt.plot(x, y_nord_west, color='red')
+        plt.plot(x, y_nord_east, color='orange')
+
+        # robot line
+        y = bisectrice_slope * x + bisectrice_intercept
+
+        # bisectrice
+        plt.plot(x, y, color='green')
+
+        # goal point 
+        plt.plot(x_goal, y_goal, marker="o", markersize=10, markeredgecolor="green", markerfacecolor="green")
+
+        # nord east
+        y_nord_west_below = bisectrice_slope * x + bisectrice_intercept + self.distance_from_bisectrice - self.tolerance_crop_distance
+        y_nord_west_above = bisectrice_slope * x + bisectrice_intercept + self.distance_from_bisectrice + self.tolerance_crop_distance
+        y_nord_east_below = bisectrice_slope * x + bisectrice_intercept - self.distance_from_bisectrice - self.tolerance_crop_distance
+        y_nord_east_above = bisectrice_slope * x + bisectrice_intercept - self.distance_from_bisectrice + self.tolerance_crop_distance
+        
+        # plot line
+        plt.plot(x, y_nord_west_below, color='red', linestyle="--")
+        plt.plot(x, y_nord_west_above, color='red', linestyle="--")
+        plt.plot(x, y_nord_east_below, color='orange', linestyle="--")
+        plt.plot(x, y_nord_east_above, color='orange', linestyle="--")
+
 
         plt.xlim(0,2)
         plt.ylim(-1,1)
