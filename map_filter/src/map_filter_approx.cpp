@@ -27,13 +27,9 @@ class map_filter_approx : public rclcpp::Node{
     public:
         map_filter_approx() : Node("map_filter_approx"){
 
-            this->declare_parameter("height_threshold", 0.1); //height of the considered area of the pointcloud
+            this->declare_parameter("threshold", 60); //minimum number of neighbors
 
-            this->declare_parameter("scanner_height", 0.0); //height of the considered area of the pointcloud <--now is useless, may be used to crop the cloud at certain height
-
-            this->declare_parameter("threshold", 25); //minimum number of neighbors
-
-            this->declare_parameter("dynamic_range", 50.0); //maximum scaling factor due to distance
+            this->declare_parameter("dynamic_range", 40.0); //maximum scaling factor due to distance
 
             this->declare_parameter("precision",0.04);  //size of a unit measure. Decreasing it increase quadratically the performance but increase precision
 

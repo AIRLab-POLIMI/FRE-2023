@@ -80,6 +80,9 @@ def generate_launch_description():
 
     pointcloud_converter = Node(package='map_filter',
                                 executable='cloud_to_scan',
+                                parameters=[
+                                    {"points_number": 5000},
+                                    ]
                                 )
         
         
