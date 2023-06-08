@@ -622,7 +622,7 @@ class InRowNavigation(Node):
             x, y, theta = self.calculate_goal_point_forward()
             # to do -> publish goal
             # to_do -> update queue with goal pose, add checks
-            # self.display_prediction_forward(points_nord_east, points_nord_west,x,y)
+            self.display_prediction_forward(points_nord_east, points_nord_west,x,y)
 
     def display_reasoning(self, x_goal_robot, y_goal_robot,x_proj_bis, y_proj_bis,x_goal_pose,y_goal_pose):
         origin = np.array([[0, 0, 0],[0, 0, 0]]) # origin point
@@ -654,7 +654,8 @@ class InRowNavigation(Node):
         x_goal_pose = x_goal_robot + x_proj_bis
         y_goal_pose = y_goal_robot + y_proj_bis
 
-        self.display_reasoning(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
+
+        #self.display_reasoning(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
 
         return x_goal_pose, y_goal_pose, theta
 
