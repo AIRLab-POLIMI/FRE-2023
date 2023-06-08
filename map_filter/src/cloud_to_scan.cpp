@@ -18,18 +18,22 @@ class cloud_to_scan : public rclcpp::Node{
         rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr pub;
 
 
+
     public:
         cloud_to_scan() : Node("cloud_to_scan"){
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/filtered_point_cloud", 10, std::bind(&cloud_to_scan::callback, this, std::placeholders::_1));
                         
             pub = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan_final", 1);
+            this->declare_parameter("points_number", 5000); //height of the considered area of the pointcloud
 
         }
 
         void callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& input){     
             pcl::PCLPointCloud2 pc2; //intermediate pointcloud transformations
-            pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_in(new pcl::PointCloud<pcl::PointXYZ>); //input cloud obtained from /selected            
+            pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_in(new pcl::PointCloud<pcl::PointXYZ>); //input cloud obtained from /selected    
+            const int points_number = this->get_parameter("points_number").as_int();
+        
 
             //Conversion from input pointcloud2 to pcl_cloud_in PointCloud
             pcl_conversions::toPCL(*input, pc2);
@@ -40,13 +44,13 @@ class cloud_to_scan : public rclcpp::Node{
 
             scan_msg->angle_min = -M_PI;
             scan_msg->angle_max = M_PI;
-            scan_msg->angle_increment = M_PI/2500;
+            scan_msg->angle_increment = (M_PI/points_number)*2;
             scan_msg->time_increment = 0.0;
             scan_msg->scan_time = pcl_cloud_in->header.stamp;
             scan_msg->range_min = 0.0;
             scan_msg->range_max = std::numeric_limits<double>::infinity();
 
-            scan_msg->ranges.assign(5000, std::numeric_limits<double>::infinity());
+            scan_msg->ranges.assign(points_number, std::numeric_limits<double>::infinity());
 
             // Iterate through pointcloud
             pcl::PointXYZ point;

@@ -15,10 +15,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
-#parser = argparse.ArgumentParser(description = "aut_nav")
-#parser.add_argument('--a', type =float, default = 5.0)
-#parser.add_argument('--b', type =float, default = 0.5)
-#args = parser.parse_args()
+parser = argparse.ArgumentParser(description = "aut_nav")
+parser.add_argument('--a', type =float, default = 3.0)
+parser.add_argument('--b', type =float, default = 0.3)
+args = parser.parse_args()
 
 
 class Navigation(Node):
@@ -28,9 +28,9 @@ class Navigation(Node):
         self.goal_point_sub = self.create_subscription(Float64MultiArray, '/goal_position', self.goal_callback, 1)
         self.goal_point_sub #prevent unused variable warning 
 
-        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_row_nav', 1)
-        self.a = 1.1
-        self.b = 0.3
+        self.cmd_pub = self.create_publisher(Twist, '/grasslammer_velocity_controller/cmd_vel_unstamped', 1)
+        self.a = args.a
+        self.b = args.b
 
     def goal_callback(self, goal):
         #self.a = args.a # proportional gain on angular velocity
@@ -48,7 +48,7 @@ class Navigation(Node):
             coef = 1
 
         cmd_msg.linear.x = coef * self.b * math.cos(theta)
-        cmd_msg.angular.z = self.a * math.sin(theta)
+        cmd_msg.angular.z = self.a * theta # math.sin(theta)
 
         self.cmd_pub.publish(cmd_msg)
   
