@@ -626,11 +626,9 @@ class InRowNavigation(Node):
 
     def display_reasoning(self, x_goal_robot, y_goal_robot,x_proj_bis, y_proj_bis,x_goal_pose,y_goal_pose):
         origin = np.array([[0, 0, 0],[0, 0, 0]]) # origin point
-<<<<<<< HEAD
+
         vector = np.array([[x_goal_robot,y_goal_robot],[x_proj_bis,y_proj_bis], [x_goal_pose,y_goal_pose]])
-=======
-        vector = [[x_goal_robot,y_goal_robot],[x_proj_bis,y_proj_bis], [x_goal_pose,y_goal_pose]]
->>>>>>> 748485ab6f28b5b71ccf1fd215c8bbd321781f66
+
         plt.quiver(*origin, vector[:,0], vector[:,1], color=['r','b','g'], scale=21)
         plt.show()
     
