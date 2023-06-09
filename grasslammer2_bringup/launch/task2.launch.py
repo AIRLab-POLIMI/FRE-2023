@@ -41,6 +41,12 @@ def generate_launch_description():
         name='switcher',
         #output='screen'
         )
+    spray_switch = Node(
+        package='grasslammer2_nav_py',
+        executable='spray_switch',
+        name='spray_switch',
+        #output='screen'
+        )
 
 
     return LaunchDescription([
@@ -48,6 +54,6 @@ def generate_launch_description():
         navigation,
         mapping,
         turning,
+        spray_switch,
         switcher,
-        
     ])

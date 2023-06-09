@@ -41,6 +41,13 @@ def generate_launch_description():
         name='switcher',
         #output='screen'
         )
+    
+    obstacle_detector = Node(
+        package='obstacle_detector',
+        executable='obstacle_detector',
+        name='obstacle_detector',
+        #output='screen'
+        )
 
 
     return LaunchDescription([
@@ -48,6 +55,7 @@ def generate_launch_description():
         navigation,
         mapping,
         turning,
+        obstacle_detector,
         switcher,
         
     ])

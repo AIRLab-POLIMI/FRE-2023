@@ -15,13 +15,14 @@ class LedComunicator(Node):
 
     def sendColor(self, message):
 
-    	if(self.output != message.data):
-    		self.ser.write(self.output.encode() + b'\n')
+        if(self.output != message.data):
+            self.ser.write(self.output.encode() + b'\n')
 
-    	if message.data == "HUMAN":
-    		self.output = "H"
-    	elif message.data == "DEER":
-    		self.output = "D"
+
+        if message.data == "HUMAN":
+        	self.output = "H"
+        elif message.data == "DEER":
+        	self.output = "D"
 
 
 

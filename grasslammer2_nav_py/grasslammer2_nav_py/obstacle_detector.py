@@ -26,7 +26,7 @@ class ObstacleDetector(Node):
         width = message.width
         values = np.asarray(message.data, dtype=np.int8)
         pixels = values.reshape(-1, 4)
-        points = pixels.view(dtype=np.uint16)
+        points = pixels.view(dtype=np.float32)
         depths = points.reshape((height, width))
         up = (int)((height/2 - self.offset))
         down = (int)((height/2 + self.offset))
@@ -43,6 +43,8 @@ class ObstacleDetector(Node):
                 msg = Char()
                 msg.data = self.detectionData[0]
                 self.Obstacle_detection_pub.publish(msg)
+        else:
+            self.errorTreshold = 20
 
     def subset_exists(self, arr, condition, threshold):
         # Apply the condition to the array and check if any group of elements satisfies it and is bigger than the threshold
@@ -51,12 +53,6 @@ class ObstacleDetector(Node):
         print(len(subset_satisfies_condition))
         return len(subset_satisfies_condition) >= threshold
     
-    def send_to_plotter(self, mat):
-        for point in mat:
-            print(point)
-            #data = Float32()
-            #data.data = (float)(point)
-            #self.pub.publish(data)
     
     def saveData(self, msg):
         self.detectionData = msg.data

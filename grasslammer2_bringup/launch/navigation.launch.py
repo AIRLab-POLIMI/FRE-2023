@@ -48,6 +48,5 @@ def generate_launch_description():
         in_row_navigation,
         #end_of_line_detection,
         aut_nav_cmd, 
-
         
     ])
