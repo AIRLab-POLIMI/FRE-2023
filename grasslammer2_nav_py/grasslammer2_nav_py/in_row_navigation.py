@@ -539,7 +539,7 @@ class InRowNavigation(Node):
         self.is_end_line_backward = False
 
         # move forward
-        self.moving_forward = False
+        self.moving_forward = True
 
         # prediction
         self.prediction_instance = Prediction()

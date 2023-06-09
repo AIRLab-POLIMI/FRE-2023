@@ -102,8 +102,8 @@ def generate_launch_description():
         velodyne_launch, 
         #oak_d_launch, 
         scan_rotation,
-        #remove_ground_node,
-        #density_filter,
-        #pointcloud_converter,
+        remove_ground_node,
+        density_filter,
+        pointcloud_converter,
 
     ])
