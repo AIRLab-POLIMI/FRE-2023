@@ -18,6 +18,8 @@ class ObstacleDetector(Node):
         self.yolo_sub = self.create_subscription(String, "/yolotor", self.saveData, 1)
         self.detectionData = ""
         self.errorTreshold = 20
+        self.free = 5
+        self.sentIndication = False
 
     def detection(self, message):
         #message = (Image)(msg)
@@ -35,16 +37,32 @@ class ObstacleDetector(Node):
         subdepths = depths[up: down, left:right]
         #self.send_to_plotter(subdepths)
         near = lambda x: x <= self.depthTrashold
-        if(self.subset_exists(subdepths, near, self.consistencyTrashold)):
-            if(self.errorTreshold >= 0):
-                self.errorTreshold -= 1
-            else:
-                self.errorTreshold = 20
-                msg = Char()
-                msg.data = self.detectionData[0]
-                self.Obstacle_detection_pub.publish(msg)
+        foundSomething = self.subset_exists(subdepths, near, self.consistencyTrashold))
+        if foundSomething:
+            if not self.sentIndication:
+                if(self.errorTreshold >= 0):
+                    self.errorTreshold -= 1
+                else:
+                    msg = Char()
+                    msg.data = 'S'
+                    self.Obstacle_detection_pub.publish(msg)
+                        
+                    time.sleep(1)
+
+                    if detectionData[0] != 'U':
+                        self.errorTreshold = 20
+                        indication = Char()
+                        indication.data = detectionData[0]
+                        self.Obstacle_detection_pub.publish(indication)
+                        #comunicate with leds
+                        self.sentIndication = True
         else:
-            self.errorTreshold = 20
+            if self.free <= 0 :
+                self.errorTreshold = 20
+                self.free = 5
+                self.sentIndication = False
+            else:
+                self.free -= 1   
 
     def subset_exists(self, arr, condition, threshold):
         # Apply the condition to the array and check if any group of elements satisfies it and is bigger than the threshold
@@ -56,6 +74,7 @@ class ObstacleDetector(Node):
     
     def saveData(self, msg):
         self.detectionData = msg.data
+        
 
 
 
