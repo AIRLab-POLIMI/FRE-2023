@@ -67,50 +67,6 @@
       </link>
     </model>
 
-    <model name='custom_terrain'>
-      <static>1</static>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <mesh>
-              <uri>model://custom_terrain/meshes/terrain.stl</uri>
-            </mesh>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <mesh>
-              <uri>model://custom_terrain/meshes/terrain.stl</uri>
-            </mesh>
-          </geometry>
-          <material>
-            <script>
-              <uri>model://custom_terrain/materials/scripts</uri>
-              <uri>model://custom_terrain/materials/textures</uri>
-              <name>custom_terrain/terrain</name>
-            </script>
-          </material>
-        </visual>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <pose>-1.53507 2.74629 0 0 -0 0</pose>
-    </model>
-
     <include>
       <uri>model://maize_02</uri>
       <pose>-2.0882179592162764 -2.4733762198667075 0.0 0.0 0.0 3.28987661320356</pose>
