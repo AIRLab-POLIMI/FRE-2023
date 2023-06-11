@@ -98,9 +98,9 @@ def create_camera_pipeline(config_path, model_path, camera_dim):
 	lr_check = True
 
 	# Properties
-	monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+	monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_800_P)
 	monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
-	monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+	monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_800_P)
 	monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
 
 	# Create a node that will produce the depth map (using disparity output as it's easier to visualize depth this way)

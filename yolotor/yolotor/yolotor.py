@@ -76,8 +76,8 @@ class Yolotor(Node):
 
             if depth_data is not None:
                 depth_frame = depth_data.getCvFrame()
-                depth_frame = (depth_frame * (255 / 95)).astype(np.uint8) # 95 = max disparity value for normalization
-                depth_msg = self.bridge.cv2_to_imgmsg(depth_frame, 'mono8')
+                #depth_frame = (depth_frame * (255 / 95)).astype(np.uint8) # 95 = max disparity value for normalization
+                depth_msg = self.bridge.cv2_to_imgmsg(depth_frame, '8UC1')
                 self.depth_pub.publish(depth_msg)
 
             # to measure inference time performance
