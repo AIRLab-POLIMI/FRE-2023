@@ -3,12 +3,12 @@
     "line_width" : 0.75,
     "in_row_navigation": {
         "dimension_queue" : 8,
-        "min_num_EOL" : 30,
+        "min_num_EOL" : 20,
         "tolerance_crop_distance_filtering": 0.225,
         "distance_goal_point_forward" : 0.6,
         "distance_goal_point_backward" : -0.6,
-        "nord_threshold": 1.5,
-        "south_threshold": -1.5
+        "nord_threshold": 0.75,
+        "south_threshold": -0.75
 
     },
 
@@ -64,7 +64,7 @@
                 "reset_value_slope": 0  
             } 
         },
-        "min_num_ransac": 35,
+        "min_num_ransac": 15,
         "tolerance_intercept" : 0.2
     },
 
