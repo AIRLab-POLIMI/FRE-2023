@@ -29,7 +29,7 @@ class Navigation(Node):
         self.goal_point_sub #prevent unused variable warning 
 
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_row_nav', 1)
-        self.a = 3.0
+        self.a = 1.0
         self.b = 0.5
 
     def goal_callback(self, goal):
@@ -48,6 +48,8 @@ class Navigation(Node):
             coef = 1
 
         cmd_msg.linear.x = coef * self.b * math.cos(theta)
+        if theta > math.pi/6:
+        	theta = math.pi/6 
         cmd_msg.angular.z = self.a * theta # math.sin(theta)
 
         self.cmd_pub.publish(cmd_msg)
