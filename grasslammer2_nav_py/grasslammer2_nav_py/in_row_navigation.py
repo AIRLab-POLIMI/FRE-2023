@@ -39,9 +39,9 @@ import json
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
 # absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
 # absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
-absolute_path = "/home/carlo/Documenti/robotics/src/FRE-2023/grasslammer2_description/config/in_row_params.json"
-print(absolute_path)
-config_file = open(absolute_path, 'r')
+pkg_path = os.path.realpath("src/FRE-2023/grasslammer2_description")
+config_file = open(pkg_path + '/config/in_row_params.json', 'r')
+print(config_file)
 # dict_config = config_file.read()
 config_json = json.loads(config_file.read())
 
@@ -565,7 +565,7 @@ class InRowNavigation(Node):
         # self.fig2, self.ax2 = plt.subplots()
 
     def get_parameters_from_config_file(self):
-        area = config_json["in_row_navigation"]['area']
+        area = config_json["area"]
         dimension_queue = config_json["in_row_navigation"]['dimension_queue']
         min_number_required_points_per_quadrants = config_json["in_row_navigation"]['min_number_required_points_per_quadrants']
         line_width = config_json["in_row_navigation"]['line_width']

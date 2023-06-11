@@ -1,4 +1,5 @@
 {
+    "area":[1.5, 1.5], 
     "in_row_navigation": {
         "area": [1.5,1.5] ,
         "dimension_queue" : 8,
