@@ -8,19 +8,12 @@
   <license>TODO: License declaration</license>
 
 
-  <exec_depend>rospy</exec_depend>
-  <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>tf_transformations</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
-  <exec_depend>prediction</exec_depend>
-  <exec_depend>moving_avarage</exec_depend>
-  <exec_depend>costume_queue</exec_depend>
-  <exec_depend>moving_avarage_queue</exec_depend>
-  <exec_depend>line</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   
   <test_depend>ament_copyright</test_depend>

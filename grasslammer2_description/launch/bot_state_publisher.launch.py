@@ -14,6 +14,7 @@ def generate_launch_description():
     
 
     #Find the urdf in order to be published by robot state publisher
+
     pkg_path = os.path.join(get_package_share_directory('grasslammer2_description'))
     urdf_file = os.path.join(pkg_path, 'urdf', 'model_short.urdf') # 'model_short.urdf' if you want to use the short legs configuration, remember to change also params in the config/controller.yaml
     robot_description_config = xacro.process_file(urdf_file)
