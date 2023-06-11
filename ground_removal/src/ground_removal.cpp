@@ -128,7 +128,7 @@ class plane_filter : public rclcpp::Node{
                 ransac.getModelCoefficients(coefficients); //store new coefficients
                 //uses the new coefficients to select the points of the pointcloud at time t
                 //belonging to the plane
-                model_p->selectWithinDistance(coefficients, 2*threshold, *new_inliers);
+                model_p->selectWithinDistance(coefficients, 3*threshold, *new_inliers);
                 inliers = *new_inliers;
             }
             else {
