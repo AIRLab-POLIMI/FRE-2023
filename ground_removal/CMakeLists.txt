@@ -4,7 +4,7 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -Wno-dev)
 endif()
 
 
@@ -22,7 +22,8 @@ find_package(tf2_sensor_msgs REQUIRED)#
 find_package(tf2_geometry_msgs REQUIRED)#
 
 ## pcl install
-cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
+#cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
+cmake_policy(SET CMP0074 NEW)
 find_package(PCL 1.3 REQUIRED COMPONENTS common io)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
