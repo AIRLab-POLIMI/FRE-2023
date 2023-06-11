@@ -38,12 +38,12 @@ def create_camera_pipeline(config_path, model_path, camera_dim):
 	"""
 	pipeline = dai.Pipeline()
 
-	print("[INFO] loading model config...")
+	print("[OAK-D/INFO] loading model config...")
 	configPath = Path(config_path)
 	model_config = load_config(configPath)
 	nnConfig = model_config.get("nn_config", {})
 
-	print("[INFO] extracting metadata from model config...")
+	print("[OAK-D/INFO] extracting metadata from model config...")
 	metadata = nnConfig.get("NN_specific_metadata", {})
 	classes = metadata.get("classes", {})
 	coordinates = metadata.get("coordinates", {})
@@ -53,24 +53,32 @@ def create_camera_pipeline(config_path, model_path, camera_dim):
 	confidenceThreshold = metadata.get("confidence_threshold", {})
 	print(metadata)
 
-	print("[INFO] configuring source and outputs...")
+	print("[OAK-D/INFO] initializing OAK modules (camera, stereo, network)...")
 	camRgb = pipeline.create(dai.node.ColorCamera)
 	detectionNetwork = pipeline.create(dai.node.YoloDetectionNetwork)
-	xoutRgb = pipeline.create(dai.node.XLinkOut)
-	nnOut = pipeline.create(dai.node.XLinkOut)
+	monoLeft = pipeline.create(dai.node.MonoCamera)
+	monoRight = pipeline.create(dai.node.MonoCamera)
+	depth = pipeline.create(dai.node.StereoDepth)
 
-	print("[INFO] setting stream names for queues...")
+	print("[OAK-D/INFO] configuring modules outputs...")
+	# camera
+	xoutRgb = pipeline.create(dai.node.XLinkOut)
 	xoutRgb.setStreamName("rgb")
+	# depth
+	xoutDep = pipeline.create(dai.node.XLinkOut)
+	xoutDep.setStreamName("depth")
+	# network
+	nnOut = pipeline.create(dai.node.XLinkOut)
 	nnOut.setStreamName("nn")
 
-	print("[INFO] setting camera properties...")
+	print("[OAK-D/INFO](camera) setting module properties...")
 	camRgb.setPreviewSize(camera_dim)
 	camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
 	camRgb.setInterleaved(False)
 	camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
 	camRgb.setFps(40)
 
-	print("[INFO] setting YOLO network properties...")
+	print("[OAK-D/INFO](network) setting module properties...")
 	detectionNetwork.setConfidenceThreshold(confidenceThreshold)
 	detectionNetwork.setNumClasses(classes)
 	detectionNetwork.setCoordinateSize(coordinates)
@@ -81,10 +89,36 @@ def create_camera_pipeline(config_path, model_path, camera_dim):
 	detectionNetwork.setNumInferenceThreads(2)
 	detectionNetwork.input.setBlocking(False)
 
-	print("[INFO] creating links...")
+	print("[OAK-D/INFO](stereo) setting module properties...")
+	# Closer-in minimum depth, disparity range is doubled (from 95 to 190):
+	extended_disparity = False
+	# Better accuracy for longer distance, fractional disparity 32-levels:
+	subpixel = False
+	# Better handling for occlusions:
+	lr_check = True
+
+	# Properties
+	monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+	monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
+	monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+	monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
+
+	# Create a node that will produce the depth map (using disparity output as it's easier to visualize depth this way)
+	depth.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
+
+	# Options: MEDIAN_OFF, KERNEL_3x3, KERNEL_5x5, KERNEL_7x7 (default)
+	depth.initialConfig.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
+	depth.setLeftRightCheck(lr_check)
+	depth.setExtendedDisparity(extended_disparity)
+	depth.setSubpixel(subpixel)
+
+	print("[OAK-D/INFO] creating links among modules...")
 	camRgb.preview.link(detectionNetwork.input)
 	detectionNetwork.passthrough.link(xoutRgb.input)
 	detectionNetwork.out.link(nnOut.input)
+	monoLeft.out.link(depth.left)
+	monoRight.out.link(depth.right)
+	depth.disparity.link(xoutDep.input)
 
 	return pipeline
 
