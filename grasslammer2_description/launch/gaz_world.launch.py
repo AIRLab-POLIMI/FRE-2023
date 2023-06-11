@@ -20,12 +20,7 @@ def generate_launch_description():
     path_gz = os.path.join(get_package_share_directory('gazebo_ros'))
 
     #set path to world file 
-    world_file = 'cust_fre_nav_1.world' # World options are the ones in /worlds folder 
-
-    
-
-
-
+    world_file = 'fre23_5_w_gaps_light.world' # World options are the ones in /worlds folder 
 
     path_world = os.path.join(path_pkg, 'worlds', world_file) # uncomment if you want to use you're custom world 
     #path_world='' # uncomment if you want to use the empty world
