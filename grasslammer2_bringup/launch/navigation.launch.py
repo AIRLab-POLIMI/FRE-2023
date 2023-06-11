@@ -41,8 +41,6 @@ def generate_launch_description():
         )
 
 
-
-
     return LaunchDescription([
         laser_reader, 
         in_row_navigation,
