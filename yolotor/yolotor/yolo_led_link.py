@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
+from std_msgs.msg import Char
 import serial
 
 
@@ -9,20 +9,19 @@ import serial
 class LedComunicator(Node):
     def __init__(self):
         super().__init__('led_link_yolo')
-        self.yolo_sub = self.create_subscription(String, "/yolotor", self.sendColor, 1)
+        self.yolo_sub = self.create_subscription(Char, "/obstacle_detection", self.sendColor, 1)
         self.ser = serial.Serial('/dev/arduino', 9600)
-        self.output = ""
+        self.output = ''
 
     def sendColor(self, message):
 
-        if(self.output != message.data):
-            self.ser.write(self.output.encode() + b'\n')
+        if message.data != 'S':
+
+            if(self.output != message.data):
+                self.ser.write(self.output.encode() + b'\n')
 
 
-        if message.data == "HUMAN":
-        	self.output = "H"
-        elif message.data == "DEER":
-        	self.output = "D"
+            self.output = message.data
 
 
 

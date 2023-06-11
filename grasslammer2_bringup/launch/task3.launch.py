@@ -13,8 +13,8 @@ def generate_launch_description():
 
     yolo = Node(
         package='yolotor',
-        executable='yolo_node',
-        name='yolo_node',
+        executable='yolotor_node',
+        name='yolotor_node',
         #output='screen'
         )
     led_link = Node(
@@ -24,7 +24,7 @@ def generate_launch_description():
         #output='screen'
         )
     obstacle_detector = Node(
-        package='obstacle_detector',
+        package='grasslammer2_nav_py',
         executable='obstacle_detector',
         name='obstacle_detector',
         #output='screen'
@@ -33,5 +33,5 @@ def generate_launch_description():
     return LaunchDescription([
         yolo,
         led_link,
-        obstacle_detector,
+        #obstacle_detector,
     ])

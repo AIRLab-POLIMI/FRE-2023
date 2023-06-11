@@ -43,7 +43,7 @@ def generate_launch_description():
         )
     
     obstacle_detector = Node(
-        package='obstacle_detector',
+        package='grasslammer2_nav_py',
         executable='obstacle_detector',
         name='obstacle_detector',
         #output='screen'

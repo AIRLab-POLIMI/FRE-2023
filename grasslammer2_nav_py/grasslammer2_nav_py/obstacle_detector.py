@@ -17,7 +17,7 @@ class ObstacleDetector(Node):
         self.pub = self.create_publisher(Float32, "/to_plot", 1)
         self.Obstacle_detection_pub = self.create_publisher(Char, "/obstacle_detection", 1)
         self.yolo_sub = self.create_subscription(String, "/yolotor", self.saveData, 1)
-        self.detectionData = ""
+        self.detectionData = "UNKNOWN"
         self.errorTreshold = 20
         self.free = 5
         self.sentIndication = False
@@ -28,8 +28,8 @@ class ObstacleDetector(Node):
         height = message.height
         width = message.width
         values = np.asarray(message.data, dtype=np.int8)
-        pixels = values.reshape(-1, 4)
-        points = pixels.view(dtype=np.float32)
+        pixels = values.reshape(-1, 2)
+        points = pixels.view(dtype=np.uint16)
         depths = points.reshape((height, width))
         up = (int)((height/2 - self.offset))
         down = (int)((height/2 + self.offset))
@@ -38,7 +38,7 @@ class ObstacleDetector(Node):
         subdepths = depths[up: down, left:right]
         #self.send_to_plotter(subdepths)
         near = lambda x: x <= self.depthTrashold
-        foundSomething = self.subset_exists(subdepths, near, self.consistencyTrashold))
+        foundSomething = self.subset_exists(subdepths, near, self.consistencyTrashold)
         if foundSomething:
             if not self.sentIndication:
                 if(self.errorTreshold >= 0):
@@ -59,8 +59,12 @@ class ObstacleDetector(Node):
                         print(self.detectionData[0])
                         #comunicate with leds
                         self.sentIndication = True
+                        self.detectionData = "UNKNOWN"
                     else:
-                        print("U")
+                        indication = Char()
+                        indication.data = self.detectionData[0]
+                        self.Obstacle_detection_pub.publish(indication)
+                        print(self.detectionData[0])
         else:
             if self.free <= 0 :
                 self.errorTreshold = 20

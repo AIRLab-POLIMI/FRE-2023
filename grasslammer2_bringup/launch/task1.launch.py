@@ -45,9 +45,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         sensors,
-        navigation,
         mapping,
         turning,
+        navigation,
         switcher,
-        
     ])

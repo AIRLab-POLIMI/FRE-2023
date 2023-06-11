@@ -525,7 +525,7 @@ class InRowNavigation(Node):
         self.south_threshold = -self.area[0]/2
         self.west_threshold = self.area[1]/2
         self.east_threshold = -self.area[1]/2
-        self.distance_goal_point_forward = self.area[0]/4
+        self.distance_goal_point_forward = self.distance_goal_point_forward
 
         #define quadrants
         self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
@@ -914,8 +914,13 @@ class InRowNavigation(Node):
         end_of_line_pose.pose.orientation.w = quaternion[3]
 
         #transform from of the received odom to the current map
-        transform = self._tf_buffer.lookup_transform('odom', 'velodyne', end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
-        return do_transform_pose_stamped(end_of_line_pose, transform), x_goal_pose, y_goal_pose
+        try:
+            transform = self._tf_buffer.lookup_transform('odom', 'velodyne', end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
+            return do_transform_pose_stamped(end_of_line_pose, transform), x_goal_pose, y_goal_pose
+        except:
+            self.get_logger().info("ERROR IN POSE CALCULATION")
+            pose_error = PoseStamped()
+            return (pose_error, None, None)
 
     def display_prediction_forward_static(self, nord_east_points,nord_west_points,x_goal, y_goal):
         # clear axes
@@ -1052,12 +1057,13 @@ class InRowNavigation(Node):
             self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
             # calculate goal point
             goal_pose, x, y = self.calculate_goal_point_forward()
-            # publish goal pose
-            self.publish_goal_pose(x, y)
-            # to_do -> update queue with goal pose, add checks
-            self.validate_end_pose(goal_pose, points_nord_east, points_nord_west)
-            # display prediction
-            self.display_prediction_forward_dynamic(points_nord_east, points_nord_west, x, y)
+            if(x != None and y != None):
+                # publish goal pose
+                self.publish_goal_pose(x, y)
+                # to_do -> update queue with goal pose, add checks
+                self.validate_end_pose(goal_pose, points_nord_east, points_nord_west)
+                # display prediction
+                self.display_prediction_forward_dynamic(points_nord_east, points_nord_west, x, y)
 
     def display_prediction_backup_dynamic(self, south_east_points,south_west_points,x_goal, y_goal):
         # clear axes
@@ -1133,7 +1139,7 @@ class InRowNavigation(Node):
         else:
             # enough points to proceed
             # compute bisectrice
-            self.prediction_instance.compute_bisectrice_coefficients_backward(points_nord_east,points_nord_west,points_south_east,points_south_west)
+            self.predictiis_in_row_navigationon_instance.compute_bisectrice_coefficients_backward(points_nord_east,points_nord_west,points_south_east,points_south_west)
             # calculate goal point
             goal_pose, x, y = self.calculate_goal_point_backward()
             # publish goal pose

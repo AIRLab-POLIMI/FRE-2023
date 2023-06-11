@@ -100,7 +100,7 @@ def generate_launch_description():
         t265,
         mono_lidar_launch,
         velodyne_launch, 
-        oak_d_launch, 
+        #oak_d_launch, 
         scan_rotation,
         remove_ground_node,
         density_filter,

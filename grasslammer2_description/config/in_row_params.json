@@ -1,12 +1,12 @@
 {
     "in_row_navigation": {
-        "area": [2,2] ,
+        "area": [1.2,1.2] ,
         "dimension_queue" : 8 ,
-        "min_number_required_points_per_quadrants" : 10,
-        "line_width": 0.7,
+        "min_number_required_points_per_quadrants" : 50,
+        "line_width": 0.75,
         "tolerance_crop_distance_filtering": 0.225,
-        "distance_goal_point_forward" : 1,
-        "distance_goal_point_backward" : -1,
+        "distance_goal_point_forward" : 0.4,
+        "distance_goal_point_backward" : -0.4,
         "nord_threshold": 1,
         "south_threshold": 1
 

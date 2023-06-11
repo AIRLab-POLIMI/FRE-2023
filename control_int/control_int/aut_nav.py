@@ -33,7 +33,7 @@ class Navigation(Node):
         # self.b = args.b
         # self.declare_parameter('a', 3.0)
         # self.declare_parameter('b', 0.3)
-        self.a = 3.0
+        self.a = 2.5
         self.b = 0.3
 
     def goal_callback(self, goal):
@@ -42,16 +42,18 @@ class Navigation(Node):
         cmd_msg = Twist()
 
         theta = goal.data[2]
-        if(theta > math.pi/2 or theta < -math.pi/2):
-            if(theta > 0):
-                theta = theta - math.pi
-            else:
-                theta = theta + math.pi
-            coef = -1
-        else:
-            coef = 1
+        # if(theta > math.pi/2 or theta < -math.pi/2):
+            # if(theta > 0):
+                # theta = theta - math.pi
+            # else:
+                # theta = theta + math.pi
+            # coef = -1
+        # else:
+            # coef = 1
 
-        cmd_msg.linear.x = coef * self.b * math.cos(theta)
+        cmd_msg.linear.x = self.b * math.cos(theta)
+        if theta > math.pi/4:
+            theta = math.pi/4
         cmd_msg.angular.z = self.a * theta # math.sin(theta)
 
         self.cmd_pub.publish(cmd_msg)
