@@ -40,7 +40,7 @@ import json
 # absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
 # absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
 pkg_path = os.path.realpath("src/FRE-2023/grasslammer2_description")
-config_file = open(pkg_path + '/config/in_row_params.json', 'r')
+config_file = open(pkg_path + '/config/in_row_params_sim.json', 'r')
 print(config_file)
 # dict_config = config_file.read()
 config_json = json.loads(config_file.read())
@@ -407,11 +407,11 @@ class Prediction():
         self.south_west_line = Line('line_south_west')
         self.navigation_line =  Line('line_navigation')
         
+
         # min_point_for_predition + threshold
-        self.num_min_points_required_for_fitting = 20
-        self.line_with = 0.75
-        self.tolerance_intercept = 0.2
-        self.tolerance_slope = 0.26 # 10 degrees
+        # line_width, min_num_ransac, tolerance_intercept
+        # TODO tolerance slope
+        self.line_with, self.num_min_points_required_for_fitting, self.tolerance_intercept = self.get_parameters_from_config_file()
     
     # initialization of lines
     def initialize_prediction(self):
@@ -491,7 +491,13 @@ class Prediction():
         line_west.update_line_parameters_checking_threshold(slope_west,intercept_west)
         line_east.update_line_parameters_checking_threshold(slope_east, intercept_east)
         return slope_west, intercept_west, slope_east, intercept_east
-        
+    
+    def get_parameters_from_config_file(self):
+        line_width = config_json['line_width']
+        min_num_ransac = config_json['prediction']['min_num_ransac']
+        tolerance_intercept = config_json['prediction']['tolerance_intercept']
+        return line_width, min_num_ransac, tolerance_intercept
+
 
 class InRowNavigation(Node):
     # assume type are exponentials
@@ -514,18 +520,17 @@ class InRowNavigation(Node):
         # topic to update the boolean variable to publish
         #self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
 
-        self.area, dimension_queue, self.min_points, self.line_width, self.tolerance_crop_distance, self.distance_goal_point_forward, distance_goal_point_backward, nord_threshold, south_threshold = self.get_parameters_from_config_file()
+        self.area, dimension_queue, self.min_num_EOL, self.line_width, self.tolerance_crop_distance, self.distance_goal_point_forward, self.distance_goal_point_backward, nord_threshold, south_threshold = self.get_parameters_from_config_file()
         self.distance_from_bisectrice = self.line_width/2
 
         # min points required per direction
-        self.min_point_direction = self.min_points * 2 -1
+        self.min_point_direction = int(self.min_num_EOL/2)
 
         # define thresholds
         self.nord_threshold = self.area[0]/2
         self.south_threshold = -self.area[0]/2
         self.west_threshold = self.area[1]/2
         self.east_threshold = -self.area[1]/2
-        self.distance_goal_point_forward = self.distance_goal_point_forward
 
         #define quadrants
         self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
@@ -567,14 +572,14 @@ class InRowNavigation(Node):
     def get_parameters_from_config_file(self):
         area = config_json["area"]
         dimension_queue = config_json["in_row_navigation"]['dimension_queue']
-        min_number_required_points_per_quadrants = config_json["in_row_navigation"]['min_number_required_points_per_quadrants']
-        line_width = config_json["in_row_navigation"]['line_width']
+        min_num_EOL = config_json["in_row_navigation"]['min_num_EOL']
+        line_width = config_json['line_width']
         tolerance_crop_distance_filtering = config_json["in_row_navigation"]['tolerance_crop_distance_filtering']
         distance_goal_point_forward = config_json["in_row_navigation"]['distance_goal_point_forward']
         distance_goal_point_backward = config_json["in_row_navigation"]['distance_goal_point_backward']
         nord_threshold = config_json["in_row_navigation"]['nord_threshold']
         south_threshold = config_json["in_row_navigation"]['south_threshold']
-        return area, dimension_queue, min_number_required_points_per_quadrants, line_width, tolerance_crop_distance_filtering, distance_goal_point_forward, distance_goal_point_backward, nord_threshold, south_threshold
+        return area, dimension_queue, min_num_EOL, line_width, tolerance_crop_distance_filtering, distance_goal_point_forward, distance_goal_point_backward, nord_threshold, south_threshold
     
     def scan_callback(self, scan_msg):
         self.start_computation = time.perf_counter()
@@ -601,7 +606,7 @@ class InRowNavigation(Node):
         points = points[~np.isinf(points).any(axis=1)]
 
         # if number of points 
-        if(np.size(points) < self.min_points):
+        if(np.size(points) < self.min_num_EOL):
             x_nord = np.where(((0 <= x) & (x <= self.nord_threshold)),x, np.inf)
             x_south = np.where(((self.south_threshold <= x)&(x <= 0)), x, np.inf)
 
@@ -683,7 +688,7 @@ class InRowNavigation(Node):
 
 
         # if number of points 
-        if(np.size(points) < self.min_points):
+        if(np.size(points) < self.min_num_EOL):
             x_nord = np.where(((0 <= x) & (x <= self.nord_threshold)),x, np.inf)
             x_south = np.where(((self.south_threshold <= x)&(x <= 0)), x, np.inf)
 
@@ -732,7 +737,9 @@ class InRowNavigation(Node):
             threshold_south = np.full_like(x, intercept*slope + self.south_threshold)
 
             m_q = np.full_like(x, slope*intercept)
+
             # x = -my+qm
+            # error multiply infinity
             x_nord_east = np.where((x > np.add(-slope*y_east, m_q))&(x < np.add(-slope*y_east, threshold_nord)) ,x, np.inf)
             x_nord_west = np.where((x > np.add(-slope*y_west, m_q))&(x < np.add(-slope*y_west,threshold_nord)),x, np.inf)
             x_south_east = np.where((x < np.add(-slope*y_east, m_q))&(x > np.add(-slope*y_east, threshold_south)) ,x, np.inf)

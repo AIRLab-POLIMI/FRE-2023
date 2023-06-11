@@ -1,0 +1,76 @@
+{
+    "area":[1.5, 1.5],
+    "line_width" : 0.75,
+    "in_row_navigation": {
+        "dimension_queue" : 8,
+        "min_num_EOL" : 30,
+        "tolerance_crop_distance_filtering": 0.225,
+        "distance_goal_point_forward" : 0.6,
+        "distance_goal_point_backward" : -0.6,
+        "nord_threshold": 1.5,
+        "south_threshold": -1.5
+
+    },
+
+    "prediction":{
+        "lines":{
+            "line_nord_east": {
+                "dimension_queue": 8,
+                "ma_avarage_flag": 0,
+                "is_bisectrice": 0 ,
+                "threshold_line_intercept": 0.3,
+                "threshold_line_slope": 0.26,
+                "reset_value_intercept": -0.375,
+                "reset_value_slope": 0 
+            },
+
+            "line_nord_west": {
+                "dimension_queue": 8,
+                "ma_avarage_flag": 0,
+                "is_bisectrice": 0 ,
+                "threshold_line_intercept": 0.3,
+                "threshold_line_slope": 0.26,
+                "reset_value_intercept": 0.375,
+                "reset_value_slope": 0  
+            },
+
+            "line_south_east": {
+                "dimension_queue": 8,
+                "ma_avarage_flag": 0,
+                "is_bisectrice": 0 ,
+                "threshold_line_intercept": 0.3,
+                "threshold_line_slope": 0.26,
+                "reset_value_intercept": -0.375,
+                "reset_value_slope": 0  
+            },
+
+            "line_south_west": {
+                "dimension_queue": 8,
+                "ma_avarage_flag": 0,
+                "is_bisectrice": 0 ,
+                "threshold_line_intercept": 0.3,
+                "threshold_line_slope": 0.26,
+                "reset_value_intercept": 0.375,
+                "reset_value_slope": 0  
+            },
+
+            "line_navigation": {
+                "dimension_queue": 8,
+                "ma_avarage_flag": 1,
+                "is_bisectrice": 1,
+                "threshold_line_intercept": 0.3,
+                "threshold_line_slope": 0.26,
+                "reset_value_intercept": 0,
+                "reset_value_slope": 0  
+            } 
+        },
+        "min_num_ransac": 35,
+        "tolerance_intercept" : 0.2
+    },
+
+    "moving_avarage":{
+        "base_exp": 100,
+        "start": 0,
+        "stop": 4
+    }
+}
