@@ -1,0 +1,7 @@
+{
+    "yolo_blob": "src/grasslammer2/yolotor/yolotor/small/best.blob",
+    "yolo_config": "src/grasslammer2/yolotor/yolotor/small/best.json",
+    "img_dim": 416,
+    "labels": ["HUMAN", "DEER"],
+    "debug": true
+}

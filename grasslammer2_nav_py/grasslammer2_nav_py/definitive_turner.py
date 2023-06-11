@@ -15,9 +15,10 @@ from std_msgs.msg import Bool
 class TurnerFinal(Node):
     def __init__(self):
         super().__init__('turner_final')
-        self.lineDimension = 0.70
-        self.y_movement = -1.0
+        self.lineDimension = 0.75
+        self.y_movement = 0.20
         self.turnNum = 0;
+        self.side = "right"
         self._tf_buffer = Buffer()
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self.starting_pose_sub = self.create_subscription(PoseStamped, '/end_of_line_pose', self.elaborate_goal_point, 1)
@@ -35,44 +36,25 @@ class TurnerFinal(Node):
 
         turningInfo = self.turningCommands[self.turnNum]
         self.turnNum += 1
-        
-        staged_from_bf_to_odom = self.get_tf_of_frames("base_footprint", "map")
-
-        #yawpose = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
-        yawtf = euler_from_quaternion([staged_from_bf_to_odom.transform.rotation.x, staged_from_bf_to_odom.transform.rotation.y, staged_from_bf_to_odom.transform.rotation.z, staged_from_bf_to_odom.transform.rotation.w])
-        print(yawtf)
-
-        yaw = yawtf[2] + math.pi/2
 
         if(turningInfo[1] == "L"):
-            if(yaw <= 1.57): #wrong but solve first the yaw not visible problem
-                coeff = float(turningInfo[0])
-                print(coeff)
-            else:
-                coeff = -float(turningInfo[0])
-                print(coeff)
-        else :
-            if(yaw <=  1.57):
-                coeff = -float(turningInfo[0])
-                print(coeff)
+            self.side = "left"
+        else:
+            self.side = "right"
 
-            else:
-                coeff = float(turningInfo[0])
-                print(coeff)
+        yaw = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
 
-
+        (x, y, theta) = self.turning(msg.pose.position.x, msg.pose.position.y, yaw[2], int(turningInfo[0]), self.side)
 
         poseToNavigate.header.stamp = time_now.to_msg()
-        poseToNavigate.header.frame_id = "map"
+        poseToNavigate.header.frame_id = "odom"
         
 
-        qt = quaternion_from_euler((yawtf[0]), (yawtf[1]), yaw + math.pi)
+        qt = quaternion_from_euler(0, 0, theta)
 
-
-        poseToNavigate.pose.position.x = staged_from_bf_to_odom.transform.translation.x + self.lineDimension*float(coeff)*math.cos(      yaw      ) + self.y_movement*math.cos(math.pi/2 - yaw)
-        poseToNavigate.pose.position.y = staged_from_bf_to_odom.transform.translation.y + self.lineDimension*float(coeff)*math.cos(math.pi/2 - yaw) + self.y_movement*math.cos(      yaw      )
+        poseToNavigate.pose.position.x = x
+        poseToNavigate.pose.position.y = y
         poseToNavigate.pose.position.z = 0.0
-
 
         poseToNavigate.pose.orientation.x = qt[0]
         poseToNavigate.pose.orientation.y = qt[1]
@@ -80,8 +62,7 @@ class TurnerFinal(Node):
         poseToNavigate.pose.orientation.w = qt[3]
 
         self.navigator.goToPose(poseToNavigate)
-        print(staged_from_bf_to_odom.transform.translation.x, staged_from_bf_to_odom.transform.translation.y)
-        print(poseToNavigate.pose.position.x, poseToNavigate.pose.position.y)
+        print("Pose to Go: ",poseToNavigate.pose.position.x, poseToNavigate.pose.position.y)
         print("goal pubblished")
 
 
@@ -115,6 +96,48 @@ class TurnerFinal(Node):
         trans = self._tf_buffer.lookup_transform(second_name_, first_name_, rclpy.time.Time(), timeout=Duration(seconds=4, nanoseconds=0))
         return trans
         
+    def turning(self, x_s, y_s, theta_s, num_rows, side):
+        """
+        Turning method which takes as input a starting pose and returns the corresponding turning final pose to be
+        exploited as goal point in Nav2.
+
+        :param x_s:
+            x-coordinate of the robot expressed in the /odom reference system
+
+        :param y_s:
+            x-coordinate of the robot expressed in the /odom reference system
+
+        :param theta_s:
+            heading of the robot expressed in the /odom reference system
+
+        :param num_rows:
+            number of the rows to be skipped by the robot before the proper turning
+
+        :param side:
+            which side to be used for the turning ("left" or "right")
+
+        :return:
+            final pose x_f, y_f, theta_f
+        """
+        # pre-conditions
+        assert num_rows > 0, "Invalid number of maize rows! It must be greater than zero."
+        assert side in ["left", "right"], "Invalid turning side! Please choose between: ['left', 'right']"
+
+        # angle sign direction of turning
+        turn = (+1) if side == "left" else (-1)
+
+        # shifting towards maize row width
+        theta_g = (theta_s + math.pi / 2 * turn) % (2 * math.pi)
+        x_g = x_s + (self.lineDimension * num_rows) * math.cos(theta_g)
+        y_g = y_s + (self.lineDimension * num_rows) * math.sin(theta_g)
+
+        # correcting the position
+        theta_f = (theta_g + math.pi / 2 * turn) % (2 * math.pi)
+        x_f = x_g + self.y_movement * math.cos(theta_f)
+        y_f = y_g + self.y_movement * math.sin(theta_f)
+
+        # final pose
+        return x_f, y_f, theta_f
 
 
 
