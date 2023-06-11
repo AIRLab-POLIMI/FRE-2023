@@ -4,6 +4,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
 from std_msgs.msg import Char, String
 import numpy as np
+import time
 
 
 class ObstacleDetector(Node):
@@ -46,14 +47,16 @@ class ObstacleDetector(Node):
                     msg = Char()
                     msg.data = 'S'
                     self.Obstacle_detection_pub.publish(msg)
+                    print("STOP")
                         
                     time.sleep(1)
 
-                    if detectionData[0] != 'U':
+                    if self.detectionData[0] != 'U':
                         self.errorTreshold = 20
                         indication = Char()
-                        indication.data = detectionData[0]
+                        indication.data = self.detectionData[0]
                         self.Obstacle_detection_pub.publish(indication)
+                        print(self.detectionData[0])
                         #comunicate with leds
                         self.sentIndication = True
         else:
