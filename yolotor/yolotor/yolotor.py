@@ -12,7 +12,7 @@ import depthai as dai
 
 
 class Yolotor(Node):
-    def __init__(self, blob, config, img_dim, labels, debug):
+    def __init__(self, blob, config, img_dim, queue, confidence, interval, labels, debug):
         """
         Yolotor class in charge of loading the OAK pipeline to make inference on YOLO blob file.
 
@@ -44,7 +44,7 @@ class Yolotor(Node):
         self.yolo_pub = self.create_publisher(String, 'yolotor', 100)
 
         # yolo classifier
-        self.classifier = YolotorClassifier()
+        self.classifier = YolotorClassifier(queue_size=queue, confidence_threshold=confidence, interval=interval)
 
         # Initialize OpenCV bridge
         self.bridge = CvBridge()

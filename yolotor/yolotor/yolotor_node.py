@@ -6,13 +6,16 @@ from yolotor.yolotor import Yolotor
 def main(args=None):
     rclpy.init(args=args)
 
-    with open("src/FRE-2023/yolotor/yolotor/yolotor_config.json") as f:
+    with open("src/grasslammer2/yolotor/yolotor/yolotor_config.json") as f:
         param = json.load(f)
 
     yolotor = Yolotor(
         param["yolo_blob"], 
         param["yolo_config"], 
         param["img_dim"], 
+        param["queue"],
+        param["confidence"],
+        param["interval"],
         param["labels"], 
         param["debug"]
     )

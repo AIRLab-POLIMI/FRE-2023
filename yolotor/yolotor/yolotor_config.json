@@ -1,7 +1,10 @@
 {
-    "yolo_blob": "src/FRE-2023/yolotor/yolotor/small/best.blob",
-    "yolo_config": "src/FRE-2023/yolotor/yolotor/small/best.json",
+    "yolo_blob": "src/grasslammer2/yolotor/yolotor/small/best.blob",
+    "yolo_config": "src/grasslammer2/yolotor/yolotor/small/best.json",
     "img_dim": 416,
     "labels": ["HUMAN", "DEER"],
+    "queue": 10,
+    "confidence": 0.30,
+    "interval": 2,
     "debug": true
 }
