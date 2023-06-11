@@ -544,7 +544,7 @@ class InRowNavigation(Node):
         self.is_end_line_backward = False
 
         # move forward
-        self.moving_forward = True
+        self.moving_forward = False
 
         # prediction
         self.prediction_instance = Prediction()
@@ -1146,7 +1146,7 @@ class InRowNavigation(Node):
         else:
             # enough points to proceed
             # compute bisectrice
-            self.predictiis_in_row_navigationon_instance.compute_bisectrice_coefficients_backward(points_nord_east,points_nord_west,points_south_east,points_south_west)
+            self.prediction_instance.compute_bisectrice_coefficients_backward(points_nord_east,points_nord_west,points_south_east,points_south_west)
             # calculate goal point
             goal_pose, x, y = self.calculate_goal_point_backward()
             # publish goal pose
