@@ -1,8 +1,8 @@
 {
     "in_row_navigation": {
-        "area": [2,2] ,
+        "area": [1.5,1.5] ,
         "dimension_queue" : 8,
-        "min_number_required_points_per_quadrants" : 10,
+        "min_number_required_points_per_quadrants" : 30,
         "line_width": 0.7,
         "tolerance_crop_distance_filtering": 0.225,
         "distance_goal_point_forward" : 1,
