@@ -59,6 +59,8 @@ class ObstacleDetector(Node):
                         print(self.detectionData[0])
                         #comunicate with leds
                         self.sentIndication = True
+                    else:
+                        print("U")
         else:
             if self.free <= 0 :
                 self.errorTreshold = 20
