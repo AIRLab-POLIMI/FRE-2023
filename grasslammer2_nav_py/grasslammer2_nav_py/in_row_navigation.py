@@ -1066,7 +1066,8 @@ class InRowNavigation(Node):
         # modify position
         end_pose.pose.position.x = avg_x
         end_pose.pose.position.y = avg_y
-        print("POSE: ", avg_x, avg_y, avg_thetha)
+        print("POSE: ", avg_x, avg_y, avg_thetha)    
+        
         # update timestamp and frame
         # transform from of the received odom to the current map
         transform = self._tf_buffer.lookup_transform('map', 'odom', end_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
