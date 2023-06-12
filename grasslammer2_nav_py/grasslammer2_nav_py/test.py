@@ -30,6 +30,9 @@ def test_deque():
         print(test)
         test.appendleft(1)
         print(test)
+        for item in test:
+                print(item)
+        print(len(test))
 
 def test_numpy_comparison():
         A = [[1, 2, 3],[4, 5, 6]]
@@ -114,6 +117,7 @@ def test():
         # m_perp = -1/m
         print(math.tan(math.radians(90)))
         #print(m, m_perp)
+        
 # calculate_weigths()
 # test_line_ma()
-test()
+test_deque()
