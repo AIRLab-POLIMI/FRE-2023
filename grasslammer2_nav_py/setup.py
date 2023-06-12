@@ -34,7 +34,8 @@ setup(
             'in_row_navigation = grasslammer2_nav_py.in_row_navigation:main',
             'end_of_line_detection = grasslammer2_nav_py.end_of_line_detection:main',
             'spray_switch = grasslammer2_nav_py.spray_switch:main',
-            'obstacle_detector = grasslammer2_nav_py.obstacle_detector:main',
+            'obstacle_detector3 = grasslammer2_nav_py.obstacle_detector:main',
+            'obstacle_detector4 = grasslammer2_nav_py.obstacle_detectorintegrated:main',
         ],
     },
 )
