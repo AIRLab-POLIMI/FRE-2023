@@ -1,5 +1,5 @@
 {
-    "area":[1.5, 2.5],
+    "area":[1.5, 1.5],
     "line_width" : 0.75,
     "min_num_point_EOL_quad": 30,
     "min_num_point_extended_region": 100,
