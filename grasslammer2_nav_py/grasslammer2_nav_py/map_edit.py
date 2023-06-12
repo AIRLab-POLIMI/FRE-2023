@@ -15,6 +15,7 @@ class ExtendMapNode(Node):
 
     def listener_callback(self, msg):
         padding = 10.0 #meters
+        threshold = 6
         # Determine number of cells to add based on resolution and desired extension in meters
         cells_to_add = int(padding / msg.info.resolution) 
         print(cells_to_add)
@@ -30,12 +31,20 @@ class ExtendMapNode(Node):
         new_msg.data = [-1] * (new_msg.info.width * new_msg.info.height)  # -1 represents unknown in the OccupancyGrid
         # copy the old data into the new OccupancyGrid
         for i in range(msg.info.height):
-            # print('here', msg.info.width * msg.info.height)
-            # print('here', new_msg.info.width * new_msg.info.height)
             for j in range(msg.info.width):
                 old_index = i * msg.info.width + j
-                new_index = (i + cells_to_add) * new_msg.info.width + (j + cells_to_add)
-                new_msg.data[new_index] = msg.data[old_index]
+                old = int(msg.data[old_index])
+                if(old == 100 and i!=0 and i!=msg.info.height-1 and j!=0 and j!=msg.info.height-1):
+                    count = 0
+                    for h in range(i-1,i+2):
+                        for k in range(j-1,j+2):
+                            if(msg.data[h * msg.info.width + k]==0):
+                                count+=1
+                    if (count >= threshold):
+                        old = -1
+                if(old == 100 or old == 0):
+                    new_index = (i + cells_to_add) * new_msg.info.width + (j + cells_to_add)
+                    new_msg.data[new_index] = msg.data[old_index]
 
         # publish the new OccupancyGrid
         self.publisher.publish(new_msg)

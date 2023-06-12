@@ -32,7 +32,8 @@ def generate_launch_description():
         output='screen',
         remappings=[
             ('/map', '/st_map'),
-        ])
+        ]
+        )
 
     ld = LaunchDescription()
 
