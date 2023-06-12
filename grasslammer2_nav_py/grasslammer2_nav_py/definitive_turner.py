@@ -16,7 +16,7 @@ class TurnerFinal(Node):
     def __init__(self):
         super().__init__('turner_final')
         self.lineDimension = 0.75
-        self.y_movement = 0.20
+        self.y_movement = -0.3
         self.turnNum = 0
         self.side = "right"
         self._tf_buffer = Buffer()
@@ -25,6 +25,7 @@ class TurnerFinal(Node):
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self.starting_pose_sub = self.create_subscription(PoseStamped, '/end_of_line_pose', self.elaborate_goal_point, 1)
         self.done = self.create_publisher(Bool, '/end_of_turning', 1)
+        self.pose = self.create_publisher(Bool, '/nav2_goal_pose', 1)
         pkg_path = os.path.realpath("src/FRE-2023/grasslammer2_description")
         with open(pkg_path + "/config/pathTask1.txt") as path:
             self.turningInput = path.readline().split(" - ")
@@ -54,7 +55,7 @@ class TurnerFinal(Node):
         (x, y, theta) = self.turning(msg.pose.position.x, msg.pose.position.y, yaw[2], int(turningInfo[0]), self.side)
 
         poseToNavigate.header.stamp = time_now.to_msg()
-        poseToNavigate.header.frame_id = "odom"
+        poseToNavigate.header.frame_id = "map"
         
 
         qt = quaternion_from_euler(0, 0, theta)
@@ -71,6 +72,7 @@ class TurnerFinal(Node):
         self.navigator.goToPose(poseToNavigate)
         print("Pose to Go: ",poseToNavigate.pose.position.x, poseToNavigate.pose.position.y)
         print("goal pubblished")
+        self.pose.publish(poseToNavigate)
 
 
         while not self.navigator.isTaskComplete():
@@ -85,23 +87,7 @@ class TurnerFinal(Node):
         else:
             if result == TaskResult.FAILED:
                 print("Failed To Reach The Goal")
-                
 
-
-
-
-    def get_tf_of_frames(self, frameEnd, frameStart):
-        first_name_ = frameEnd
-        second_name_ = frameStart
-        print("Transforming from {} to {}".format(second_name_, first_name_))
-        #the problem should not be the frequency at which the tf is pubblished, or the number of tf between the two frames 
-        #the only time it gives no error is tìwhen you pass the same frames (obviously)
-        #it gives error even changing the order of the frame in the function call
-        #time.sleep(2) maybe it takes sometime to listen
-        #https://answers.ros.org/question/397914/tf2-lookup_transform-target_frame-does-not-exist/ 
-        #page where i found this
-        trans = self._tf_buffer.lookup_transform(second_name_, first_name_, rclpy.time.Time(), timeout=Duration(seconds=4, nanoseconds=0))
-        return trans
         
     def turning(self, x_s, y_s, theta_s, num_rows, side):
         """

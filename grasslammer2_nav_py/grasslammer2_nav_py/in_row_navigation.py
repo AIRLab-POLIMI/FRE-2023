@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy.ma as ma
 import os
 
-# QUEUE
+# QUEUEfile
 from collections import deque
 # LINE
 import math
@@ -379,7 +379,7 @@ class Line():
     
     def get_oldest_coefficients(self):
         slope = float64(self.slope.return_oldest_element())
-        intercept =float64(self.intercept.return_oldest_element())
+        intercept = float64(self.intercept.return_oldest_element())
         return slope, intercept
 
     def get_parameters_from_config_file(self, quadrant):
@@ -521,11 +521,11 @@ class InRowNavigation(Node):
         # topic to update the boolean variable to publish
         #self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
 
-        self.area, dimension_queue, self.min_num_EOL, self.min_num_quad, self.line_width, self.tolerance_crop_distance, self.distance_goal_point_forward, self.distance_goal_point_backward, self.nord_threshold, self.south_threshold, self.nord_threshold_fw, self.south_threshold_bw = self.get_parameters_from_config_file()
+        self.area, self.min_num_quad_EOL, self.min_num_point_extended_region, self.dimension_queue, self.min_num_points_use_bis, self.line_width, self.tolerance_crop_distance, self.distance_goal_point_forward, self.distance_goal_point_backward, self.nord_threshold, self.south_threshold, self.nord_threshold_fw, self.south_threshold_bw = self.get_parameters_from_config_file()
         self.distance_from_bisectrice = self.line_width/2
 
         # min points required per direction
-        self.min_point_direction = int(self.min_num_EOL/2)
+        self.min_point_direction = int(self.min_num_points_use_bis/2)
 
         # define thresholds
         self.nord_threshold = self.area[0]/2
@@ -551,7 +551,7 @@ class InRowNavigation(Node):
         self.prediction_instance = Prediction()
 
         # pose quee
-        self.end_pose_queue = PoseQueue(dimension_queue)
+        self.end_pose_queue = PoseQueue(self.dimension_queue)
 
         # buffer for looking at tf transformations
         self._tf_buffer = Buffer()
@@ -560,7 +560,7 @@ class InRowNavigation(Node):
         # save last goal position
         self.end_of_line_pose_message = ''
         self.is_in_row_navigation = True
-
+        self.flag_publish_goal_pose = True
         # last goal position
         self.last_goal_position_robot_frame = [0,0]
 
@@ -571,9 +571,10 @@ class InRowNavigation(Node):
 
     def get_parameters_from_config_file(self):
         area = config_json["area"]
+        min_num_point_quad_EOL = config_json["min_num_point_EOL_quad"]
+        min_num_point_extended_region = config_json["min_num_point_extended_region"]
         dimension_queue = config_json["in_row_navigation"]['dimension_queue']
-        min_num_EOL = config_json["in_row_navigation"]['min_num_EOL']
-        min_num_quad = config_json["min_num_quad"]
+        min_num_points_use_bis = config_json["in_row_navigation"]['min_num_points_use_bis']
         line_width = config_json['line_width']
         tolerance_crop_distance_filtering = config_json["in_row_navigation"]['tolerance_crop_distance_filtering']
         distance_goal_point_forward = config_json["in_row_navigation"]['distance_goal_point_forward']
@@ -582,7 +583,7 @@ class InRowNavigation(Node):
         south_threshold = config_json["in_row_navigation"]['south_threshold']
         nord_threshold_fw = config_json["in_row_navigation"]['nord_threshold_fw']
         south_threshold_bw = config_json["in_row_navigation"]['south_threshold_bw']
-        return area, dimension_queue, min_num_EOL, min_num_quad, line_width, tolerance_crop_distance_filtering, distance_goal_point_forward, distance_goal_point_backward, nord_threshold, south_threshold, nord_threshold_fw, south_threshold_bw
+        return area, min_num_point_quad_EOL, min_num_point_extended_region,dimension_queue, min_num_points_use_bis, line_width, tolerance_crop_distance_filtering, distance_goal_point_forward, distance_goal_point_backward, nord_threshold, south_threshold, nord_threshold_fw, south_threshold_bw
     
     def scan_callback(self, scan_msg):
         self.start_computation = time.perf_counter()
@@ -611,7 +612,7 @@ class InRowNavigation(Node):
         points = points[~np.isinf(points).any(axis=1)]
 
         # if number of points 
-        if(np.size(points) < self.min_num_EOL):
+        if(np.size(points) < self.min_num_points_use_bis):
             x_nord = np.where(((0 <= x) & (x <= self.nord_threshold)),x, np.inf)
             x_south = np.where(((self.south_threshold <= x)&(x <= 0)), x, np.inf)
 
@@ -693,7 +694,7 @@ class InRowNavigation(Node):
 
 
         # if number of points 
-        if(np.size(points) < self.min_num_EOL):
+        if(np.size(points) < self.min_num_points_use_bis):
             x_nord = np.where(((0 <= x) & (x <= self.nord_threshold)),x, np.inf)
             x_south = np.where(((self.south_threshold <= x)&(x <= 0)), x, np.inf)
 
@@ -776,8 +777,8 @@ class InRowNavigation(Node):
         points = points[~np.isinf(points).any(axis=1)]
 
         # if number of points 
-        if(np.size(points) < self.min_num_EOL):
-            x_nord = np.where(((0 <= x) & (x <= self.nord_threshold)),x, np.inf)
+        if(np.size(points) < self.min_num_points_use_bis):
+            x_nord = np.where(((0 <= x) & (x <= self.nord_threshold_fw)),x, np.inf)
             x_south = np.where(((self.south_threshold <= x)&(x <= 0)), x, np.inf)
 
             y_west = np.where(((0 <= y)&(y<=self.west_threshold)),y, np.inf)
@@ -796,6 +797,20 @@ class InRowNavigation(Node):
             points_south_west = points_south_west[~np.isinf(points_south_west).any(axis=1)]
             points_east = points_east[~np.isinf(points_east).any(axis=1)]
             points_west = points_west[~np.isinf(points_west).any(axis=1)]
+            
+            # check have enough number of points
+            is_backward_full = True if np.size(points_south_west) > self.min_num_point_extended_region and np.size(points_south_east) > self.min_num_point_extended_region else False
+            is_forward_full = True if np.size(points_nord_west) > self.min_num_point_extended_region and np.size(points_nord_east) > self.min_num_point_extended_region else False
+        
+            # shrink region in case you have enough points
+            if is_backward_full or is_forward_full:
+                # recompute the nord points
+                x_nord = np.where(((0 <= x) & (x <= self.nord_threshold)),x, np.inf)
+                points_nord_east = np.vstack((x_nord, y_east)).T
+                points_nord_west = np.vstack((x_nord, y_west)).T
+                points_nord_east = points_nord_east[~np.isinf(points_nord_east).any(axis=1)]
+                points_nord_west = points_nord_west[~np.isinf(points_nord_west).any(axis=1)]
+
 
 
         else:
@@ -815,20 +830,24 @@ class InRowNavigation(Node):
             y_west = np.where((y > np.add(slope*x, threshold_west_below))&(y < np.add(slope*x, threshold_west_above)),y, np.inf)
             y_east = np.where((y > np.add(slope*x, threshold_east_below))&(y < np.add(slope*x,threshold_east_above)),y, np.inf)
 
-            threshold_nord = np.full_like(x, intercept*slope + self.nord_threshold)
+            threshold_nord = np.full_like(x, intercept*slope + self.nord_threshold_fw)
             threshold_south = np.full_like(x, intercept*slope + self.south_threshold)
 
             m_q = np.full_like(x, slope*intercept)
 
             # x = -my+qm
             # error multiply infinity
+            # updated
+            x_east = np.where((x > np.add(-slope*y_east, threshold_south))&(x < np.add(-slope*y_east, threshold_nord)) ,x, np.inf)
+            x_west = np.where((x > np.add(-slope*y_west, threshold_south))&(x < np.add(-slope*y_west,threshold_nord)),x, np.inf)
+            points_east = np.stack((x_east, y_east)).T
+            points_west = np.stack((x_west, y_west)).T
+
             x_nord_east = np.where((x > np.add(-slope*y_east, m_q))&(x < np.add(-slope*y_east, threshold_nord)) ,x, np.inf)
             x_nord_west = np.where((x > np.add(-slope*y_west, m_q))&(x < np.add(-slope*y_west,threshold_nord)),x, np.inf)
             x_south_east = np.where((x < np.add(-slope*y_east, m_q))&(x > np.add(-slope*y_east, threshold_south)) ,x, np.inf)
             x_south_west = np.where((x < np.add(-slope*y_west, m_q))&(x > np.add(-slope*y_west,threshold_south)) ,x, np.inf)
             
-            points_east = np.stack((x, y_east)).T
-            points_west = np.stack((x, y_west)).T
             points_nord_east = np.vstack((x_nord_east, y_east)).T
             points_nord_west = np.vstack((x_nord_west, y_west)).T
             points_south_east = np.vstack((x_south_east, y_east)).T
@@ -839,15 +858,24 @@ class InRowNavigation(Node):
             points_south_east = points_south_east[~np.isinf(points_south_east).any(axis=1)]
             points_south_west = points_south_west[~np.isinf(points_south_west).any(axis=1)]
 
-        is_backward_empty = True if np.size(points_south_west) < self.min_num_quad and np.size(points_south_east) < self.min_num_quad else False
+            # check have enough number of points
+            is_backward_full = True if np.size(points_south_west) > self.min_num_point_extended_region and np.size(points_south_east) > self.min_num_point_extended_region else False
+            is_forward_full = True if np.size(points_nord_west) > self.min_num_point_extended_region and np.size(points_nord_east) > self.min_num_point_extended_region else False
         
-        # update nord points -> more points
-        if is_backward_empty:
-            x_nord = np.where(((0 <= x) & (x <= self.nord_threshold_fw)),x, np.inf)
-            points_nord_east = np.vstack((x_nord, y_east)).T
-            points_nord_west = np.vstack((x_nord, y_west)).T
-            points_nord_east = points_nord_east[~np.isinf(points_nord_east).any(axis=1)]
-            points_nord_west = points_nord_west[~np.isinf(points_nord_west).any(axis=1)]
+            # shrink region in case you have enough points
+            # update only nord regions
+            if is_backward_full or is_forward_full:
+                # recompute the nord points
+                threshold_nord = np.full_like(x, intercept*slope + self.nord_threshold)
+
+                x_nord_east = np.where((x > np.add(-slope*y_east, m_q))&(x < np.add(-slope*y_east, threshold_nord)) ,x, np.inf)
+                x_nord_west = np.where((x > np.add(-slope*y_west, m_q))&(x < np.add(-slope*y_west,threshold_nord)),x, np.inf)
+
+                points_nord_east = np.vstack((x_nord_east, y_east)).T
+                points_nord_west = np.vstack((x_nord_west, y_west)).T
+
+                points_nord_east = points_nord_east[~np.isinf(points_nord_east).any(axis=1)]
+                points_nord_west = points_nord_west[~np.isinf(points_nord_west).any(axis=1)]
 
         return points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west
 
@@ -864,7 +892,7 @@ class InRowNavigation(Node):
 
 
         # if number of points 
-        if(np.size(points) < self.min_num_EOL):
+        if(np.size(points) < self.min_num_points_use_bis):
             x_nord = np.where(((0 <= x) & (x <= self.nord_threshold)),x, np.inf)
             x_south = np.where(((self.south_threshold <= x)&(x <= 0)), x, np.inf)
 
@@ -932,7 +960,7 @@ class InRowNavigation(Node):
             points_south_east = points_south_east[~np.isinf(points_south_east).any(axis=1)]
             points_south_west = points_south_west[~np.isinf(points_south_west).any(axis=1)]
         
-        is_forward_empty = True if np.size(points_nord_east) < self.min_num_quad and np.size(points_nord_east) < self.min_num_quad else False
+        is_forward_empty = True if np.size(points_nord_east) < self.min_num_quad_EOL and np.size(points_nord_east) < self.min_num_quad_EOL else False
         
         # update south points -> more points for prediction
         if is_forward_empty:
@@ -952,10 +980,12 @@ class InRowNavigation(Node):
 
     def in_row_navigation_forward(self, points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west):
         # get information about emptyness of regions
-        is_east_empty = True if np.size(points_east) < self.min_point_direction else False
-        is_west_empty = True if np.size(points_west) < self.min_point_direction else False
+        is_nord_east_empty = True if np.size(points_nord_east) < self.min_num_quad_EOL else False
+        is_nord_west_empty = True if np.size(points_nord_west) < self.min_num_quad_EOL else False
+        is_south_east_empty = True if np.size(points_south_east) < self.min_num_point_extended_region else False
+        is_south_west_empty = True if np.size(points_south_west) < self.min_num_point_extended_region else False
 
-        if (is_east_empty or is_west_empty) and (self.is_in_row_navigation):
+        if (is_nord_east_empty or is_nord_west_empty) and (not is_south_east_empty and not is_south_west_empty)  and (self.is_in_row_navigation):
             print("END OF LINE")
             # to do -> publish goal point
             self.publish_end_pose()
@@ -974,34 +1004,38 @@ class InRowNavigation(Node):
             self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
             # calculate goal point
             goal_pose, x, y = self.calculate_goal_point_forward()
-            # publish goal pose
-            self.publish_goal_pose(x, y)
-            # to_do -> update queue with goal pose, add checks
-            self.validate_end_pose(goal_pose, points_nord_east, points_nord_west)
-            # display prediction
-            self.display_prediction_forward_dynamic(points_nord_east, points_nord_west, x, y)
+            # only 
+            if self.flag_publish_goal_pose:
+                # publish goal pose
+                self.publish_goal_pose(x, y)
+                # to_do -> update queue with goal pose, add checks
+                self.validate_end_pose(goal_pose, points_nord_east, points_nord_west)
+                # display prediction
+                self.display_prediction_forward_dynamic(points_nord_east, points_nord_west, x, y)
 
     # update bool value   
     def callback_update_bool(self, msg):
         if(not self.is_in_row_navigation):
             time.sleep(2)
         self.is_in_row_navigation = msg.data
-    
+        self.flag_publish_goal_pose = True
+        
     # modify behaviour 
     def callback_update_moving(self, msg):
         if msg.data == 'S':
-            self.publish_goal_pose = False
+            self.flag_publish_goal_pose = False
         elif msg.data == 'D':
             time.sleep(5)
             self.prediction_instance.initialize_prediction()
-            self.publish_goal_pose = True
+            self.flag_publish_goal_pose = True
         elif msg.data == 'H':
             self.moving_forward = False
-            self.publish_goal_pose = True
+            self.flag_publish_goal_pose = True
 
+    # accept points enough in terms of quadrants
     def validate_end_pose(self, goal_pose, point_east, point_west):
-        is_east_empty = True if np.size(point_east) < self.min_point_direction else False
-        is_west_empty = True if np.size(point_west) < self.min_point_direction else False
+        is_east_empty = True if np.size(point_east) < self.min_num_quad_EOL else False
+        is_west_empty = True if np.size(point_west) < self.min_num_quad_EOL else False
         if not is_east_empty and not is_west_empty:
             self.end_pose_queue.update_queue_regularly(goal_pose)
     
@@ -1020,7 +1054,7 @@ class InRowNavigation(Node):
         end_pose.pose.position.y = avg_y
 
         # update timestamp and frame
-        #transform from of the received odom to the current map
+        # transform from of the received odom to the current map
         transform = self._tf_buffer.lookup_transform('map', 'odom', end_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
         self.end_of_line_pose_topic.publish(do_transform_pose_stamped(end_pose, transform))
     
