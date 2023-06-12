@@ -21,17 +21,36 @@ def generate_launch_description():
 
     remove_ground_node = Node(package='ground_removal', executable='plane_filter',)
 
-    density_filter = Node(package='map_filter', executable='map_filter_approx',)
+    density_filter = Node(
+                            package='map_filter', 
+                            executable='map_filter_approx',
+                            parameters=[
+                                {'threshold': 120},
+                                {'dynamic_range' : 50.0},
+                                {'precision': 0.0375},
+                                {'height': 8.0},
+                                {'width': 8.0},
+                                {'laserscan_range': 1.5},
+                                {'biased': True},
+                                {'max_threshold': 200}
+                            ],
+                        )
 
     pointcloud_converter = Node(package='map_filter',
                                 executable='cloud_to_scan',
-                                )
+                                parameters=[
+                                    {'size': 5000}
+                                ],
+                            )
 
     start_slam = IncludeLaunchDescription(
                             PythonLaunchDescriptionSource(
                                 os.path.join(pkg_path, 'launch', 'online_sync_launch.py')
                             ),
                 )
+    expand_map = Node(package='grasslammer2_nav_py',
+                                executable='map_edit',
+                            )
     """start_nav2 = IncludeLaunchDescription(
                             PythonLaunchDescriptionSource(
                                 os.path.join(pkg_path, 'launch', 'navigation_launch.py')
@@ -44,5 +63,6 @@ def generate_launch_description():
         density_filter,
         pointcloud_converter,
         start_slam,
+        expand_map,
         #start_nav2,
     ])

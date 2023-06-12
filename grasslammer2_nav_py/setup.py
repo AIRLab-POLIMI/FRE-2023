@@ -36,6 +36,7 @@ setup(
             'pose_publisher = grasslammer2_nav_py.pose_publisher:main',
             'end_of_line_detection = grasslammer2_nav_py.end_of_line_detection:main',
             'spray_switch = grasslammer2_nav_py.spray_switch:main',
+            'map_edit = grasslammer2_nav_py.map_edit:main',
         ],
     },
 )

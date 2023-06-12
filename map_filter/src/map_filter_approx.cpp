@@ -27,17 +27,13 @@ class map_filter_approx : public rclcpp::Node{
     public:
         map_filter_approx() : Node("map_filter_approx"){
 
-            this->declare_parameter("height_threshold", 0.1); //height of the considered area of the pointcloud
-
-            this->declare_parameter("scanner_height", 0.0); //height of the considered area of the pointcloud <--now is useless, may be used to crop the cloud at certain height
-
-            this->declare_parameter("threshold", 20); //minimum number of neighbors
+            this->declare_parameter("threshold", 120); //minimum number of neighbors
 
             this->declare_parameter("dynamic_range", 50.0); //maximum scaling factor due to distance
 
-            this->declare_parameter("precision",0.04);  //size of a unit measure. Decreasing it increase quadratically the performance but increase precision
+            this->declare_parameter("precision",0.0375);  //size of a unit measure. Decreasing it increase quadratically the performance but increase precision
 
-            this->declare_parameter("height", 6.0); //height of the considered point cloud
+            this->declare_parameter("height", 8.0); //height of the considered point cloud
 
             this->declare_parameter("width", 8.0);  //width of the considered point cloud
 
@@ -45,7 +41,7 @@ class map_filter_approx : public rclcpp::Node{
 
             this->declare_parameter("biased", true);   //if biased we sligtly favours points in having the same orientation as the robot
 
-            this->declare_parameter("max_threshold",160); //maximum threshold for valid points
+            this->declare_parameter("max_threshold", 200); //maximum threshold for valid points
 
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/selected", 10, std::bind(&map_filter_approx::callback, this, std::placeholders::_1));
@@ -84,7 +80,10 @@ class map_filter_approx : public rclcpp::Node{
             neighborData zero;
             zero.here = 0;
             zero.neighbors = 0;
-            neighborData matrix[size] = {zero};
+            neighborData * matrix = (neighborData *) malloc(sizeof(neighborData)*size);
+            for(int i = 0; i < size; i++){
+                matrix[i] = zero;
+            }
             count_adjaciency(pcl_cloud_in, height, width, matrix); //cropped_cloud
             
             //apply the density based filter
@@ -99,7 +98,6 @@ class map_filter_approx : public rclcpp::Node{
 
         void count_adjaciency( const pcl::PointCloud<pcl::PointXYZ>::Ptr input, const int height, const int width, neighborData output[]){
             pcl::PointXYZ cur;
-            //double height_threshold = this->get_parameter("height_threshold").as_double();
             double precision = this->get_parameter("precision").as_double();
 
             for (long unsigned int i=0; i < input->points.size(); i++){

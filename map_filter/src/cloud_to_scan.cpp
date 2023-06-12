@@ -21,6 +21,8 @@ class cloud_to_scan : public rclcpp::Node{
     public:
         cloud_to_scan() : Node("cloud_to_scan"){
 
+            this->declare_parameter("size", 5000); //minimum number of neighbors
+
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/filtered_point_cloud", 10, std::bind(&cloud_to_scan::callback, this, std::placeholders::_1));
                         
             pub = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan_final", 1);
@@ -28,6 +30,7 @@ class cloud_to_scan : public rclcpp::Node{
         }
 
         void callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& input){     
+            const int size = this->get_parameter("size").as_int();
             pcl::PCLPointCloud2 pc2; //intermediate pointcloud transformations
             pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_in(new pcl::PointCloud<pcl::PointXYZ>); //input cloud obtained from /selected            
 
@@ -40,7 +43,7 @@ class cloud_to_scan : public rclcpp::Node{
 
             scan_msg->angle_min = -M_PI;
             scan_msg->angle_max = M_PI;
-            scan_msg->angle_increment = M_PI/2500;
+            scan_msg->angle_increment = M_PI/size * 2;
             scan_msg->time_increment = 0.0;
             scan_msg->scan_time = pcl_cloud_in->header.stamp;
             scan_msg->range_min = 0.0;
@@ -71,6 +74,7 @@ class cloud_to_scan : public rclcpp::Node{
 
 int main(int argc, char **argv)
 {
+    srand (time(NULL));
     rclcpp::init(argc, argv);
  	rclcpp::spin(std::make_shared<cloud_to_scan>());
     rclcpp::shutdown();
