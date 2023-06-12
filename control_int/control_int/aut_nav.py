@@ -29,8 +29,8 @@ class Navigation(Node):
         self.goal_point_sub #prevent unused variable warning 
 
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_row_nav', 1)
-        self.a = 1.0
-        self.b = 0.5
+        self.a = 5.0
+        self.b = 1.0
 
     def goal_callback(self, goal):
         #self.a = args.a # proportional gain on angular velocity
@@ -47,9 +47,12 @@ class Navigation(Node):
         else:
             coef = 1
 
-        cmd_msg.linear.x = coef * self.b * math.cos(theta)
-        if theta > math.pi/6:
-        	theta = math.pi/6 
+        cmd_msg.linear.x = coef * self.b * (math.cos(theta))**4
+        if abs(theta) > math.pi/3:
+        	if theta > 0:
+        		theta = math.pi/3
+        	else:
+        		theta = -math.pi/3
         cmd_msg.angular.z = self.a * theta # math.sin(theta)
 
         self.cmd_pub.publish(cmd_msg)
