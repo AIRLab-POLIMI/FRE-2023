@@ -20,12 +20,16 @@ class TurnerFinal(Node):
         self.turnNum = 0
         self.side = "right"
         self._tf_buffer = Buffer()
+        self.turningInput = None
+        self.turningCommands = []
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self.starting_pose_sub = self.create_subscription(PoseStamped, '/end_of_line_pose', self.elaborate_goal_point, 1)
         self.done = self.create_publisher(Bool, '/end_of_turning', 1)
         pkg_path = os.path.realpath("src/FRE-2023/grasslammer2_description")
         with open(pkg_path + "/config/pathTask1.txt") as path:
-            self.turningCommands = path.readlines()
+            self.turningInput = path.readline().split(" - ")
+        for i in range(1, len(self.turningInput)):
+            self.turningCommands.append([self.turningInput[i][:-1], self.turningInput[i][-1]])
         print(self.turningCommands)
         self.navigator = BasicNavigator()
     
@@ -35,6 +39,9 @@ class TurnerFinal(Node):
         poseToNavigate = PoseStamped()
 
         turningInfo = self.turningCommands[self.turnNum]
+        if(turningInfo[0] == "F"):
+            self.get_logger().info("Navigation Ended")
+            return
         self.turnNum += 1
 
         if(turningInfo[1] == "L"):

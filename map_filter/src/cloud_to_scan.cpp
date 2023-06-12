@@ -22,6 +22,8 @@ class cloud_to_scan : public rclcpp::Node{
         cloud_to_scan() : Node("cloud_to_scan"){
 
             this->declare_parameter("size", 5000); //minimum number of neighbors
+            
+            this->declare_parameter("max_range", 20.0); //minimum number of neighbors
 
             sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/filtered_point_cloud", 10, std::bind(&cloud_to_scan::callback, this, std::placeholders::_1));
                         
@@ -31,6 +33,7 @@ class cloud_to_scan : public rclcpp::Node{
 
         void callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& input){     
             const int size = this->get_parameter("size").as_int();
+            const float max_range = this->get_parameter("max_range").as_double();
             pcl::PCLPointCloud2 pc2; //intermediate pointcloud transformations
             pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_in(new pcl::PointCloud<pcl::PointXYZ>); //input cloud obtained from /selected            
 
@@ -38,7 +41,7 @@ class cloud_to_scan : public rclcpp::Node{
             pcl_conversions::toPCL(*input, pc2);
             pcl::fromPCLPointCloud2(pc2, *pcl_cloud_in);   
 
-            auto scan_msg = std::make_shared<sensor_msgs::msg::LaserScan>();;
+            auto scan_msg = std::make_shared<sensor_msgs::msg::LaserScan>();
             scan_msg->header = input->header;
 
             scan_msg->angle_min = -M_PI;
@@ -47,9 +50,10 @@ class cloud_to_scan : public rclcpp::Node{
             scan_msg->time_increment = 0.0;
             scan_msg->scan_time = pcl_cloud_in->header.stamp;
             scan_msg->range_min = 0.0;
-            scan_msg->range_max = std::numeric_limits<double>::infinity();
+            scan_msg->range_max = max_range;
 
-            scan_msg->ranges.assign(5000, std::numeric_limits<double>::infinity());
+            scan_msg->ranges.assign(size, std::numeric_limits<double>::infinity());
+            //scan_msg->ranges.assign(size, max_range);
 
             // Iterate through pointcloud
             pcl::PointXYZ point;
