@@ -46,7 +46,7 @@
       
 
   <!-- Gazebo plugin for depth camera (ficticious, used instead of stereo ) -->
-  <!-- <gazebo reference="oakd_${mount_point}">
+   <gazebo reference="oakd_${mount_point}">
     <sensor type="depth" name="oakd_depth">
 
         
@@ -80,7 +80,7 @@
             <max_depth>9.0</max_depth>
         </plugin>
     </sensor>
-  </gazebo> -->
+  </gazebo>
 
  <!-- Gazebo plugin for center RGB camera -->
 
