@@ -982,8 +982,10 @@ class InRowNavigation(Node):
         # get information about emptyness of regions
         is_nord_east_empty = True if np.size(points_nord_east) < self.min_num_quad_EOL else False
         is_nord_west_empty = True if np.size(points_nord_west) < self.min_num_quad_EOL else False
+        is_south_east_empty = True if np.size(points_south_east) < self.min_num_point_extended_region else False
+        is_south_west_empty = True if np.size(points_south_west) < self.min_num_point_extended_region else False
 
-        if (is_nord_east_empty or is_nord_west_empty) and (self.is_in_row_navigation):
+        if (is_nord_east_empty or is_nord_west_empty) and (not is_south_east_empty and not is_south_west_empty)  and (self.is_in_row_navigation):
             print("END OF LINE")
             # to do -> publish goal point
             self.publish_end_pose()
