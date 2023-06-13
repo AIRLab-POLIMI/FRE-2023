@@ -488,7 +488,7 @@ class Prediction():
     
     def get_parameters_from_config_file(self):
         line_width = config_json['line_width']
-        min_num_ransac = config_json['prediction']['min_num_ransac']
+        min_num_ransac = config_json['min_num_ransac']
         tolerance_intercept = config_json['prediction']['tolerance_intercept']
         return line_width, min_num_ransac, tolerance_intercept
 
@@ -513,7 +513,7 @@ class InRowNavigation(Node):
         self.change_moving_direction_sub = self.create_subscription(Char, "/obstacle_detection", self.callback_update_moving, 1)
         self.end_of_line_pose_topic # prevent unused variable warning
 
-        self.area, self.min_num_quad_EOL, self.min_num_point_extended_region, self.dimension_queue, self.min_num_points_use_bis, self.line_width, self.tolerance_crop_distance, self.distance_goal_point_forward, self.distance_goal_point_backward, self.nord_threshold, self.south_threshold, self.nord_threshold_fw, self.south_threshold_bw = self.get_parameters_from_config_file()
+        self.area, self.min_num_quad_EOL, self.min_num_point_extended_region, self.min_num_ransac, self.dimension_queue, self.min_num_points_use_bis, self.line_width, self.tolerance_crop_distance, self.distance_goal_point_forward, self.distance_goal_point_backward, self.nord_threshold, self.south_threshold, self.nord_threshold_fw, self.south_threshold_bw = self.get_parameters_from_config_file()
         self.distance_from_bisectrice = self.line_width/2
 
         # min points required per direction
@@ -556,8 +556,8 @@ class InRowNavigation(Node):
 
         # consistency queue check
         self.threshold_start = 0.4
-        self.threshold_end = 0.1
-        self.consistency_EOL = 0.0
+        self.threshold_end = 0.01
+        self.consistency_EOL = 10000.0
 
 
         # last goal position
@@ -572,6 +572,7 @@ class InRowNavigation(Node):
         area = config_json["area"]
         min_num_point_quad_EOL = config_json["min_num_point_EOL_quad"]
         min_num_point_extended_region = config_json["min_num_point_extended_region"]
+        min_num_ransac = config_json["min_num_ransac"]
         dimension_queue = config_json["in_row_navigation"]['dimension_queue']
         min_num_points_use_bis = config_json["in_row_navigation"]['min_num_points_use_bis']
         line_width = config_json['line_width']
@@ -582,7 +583,7 @@ class InRowNavigation(Node):
         south_threshold = config_json["in_row_navigation"]['south_threshold']
         nord_threshold_fw = config_json["in_row_navigation"]['nord_threshold_fw']
         south_threshold_bw = config_json["in_row_navigation"]['south_threshold_bw']
-        return area, min_num_point_quad_EOL, min_num_point_extended_region,dimension_queue, min_num_points_use_bis, line_width, tolerance_crop_distance_filtering, distance_goal_point_forward, distance_goal_point_backward, nord_threshold, south_threshold, nord_threshold_fw, south_threshold_bw
+        return area, min_num_point_quad_EOL, min_num_point_extended_region,min_num_ransac, dimension_queue, min_num_points_use_bis, line_width, tolerance_crop_distance_filtering, distance_goal_point_forward, distance_goal_point_backward, nord_threshold, south_threshold, nord_threshold_fw, south_threshold_bw
     
     def scan_callback(self, scan_msg):
         self.start_computation = time.perf_counter()
@@ -967,45 +968,41 @@ class InRowNavigation(Node):
         return points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west
 
     def initialization_quadrants(self):
-        self.nord_east_quadrant = [[0,self.nord_threshold_fw],[self.east_threshold,0]]
-        self.nord_west_quadrant = [[0,self.nord_threshold_fw],[0,self.west_threshold]]
+        self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
+        self.nord_west_quadrant = [[0,self.nord_threshold],[0,self.west_threshold]]
         self.south_east_quadrant = [[self.south_threshold,0],[self.east_threshold,0]]
-        self.south_west_quadrant = [[self.south_threshold,0],[0,self.west_threshold]]
+        self.south_west_quadrant = [[self.south_threshold,0],[0,self.east_threshold]]
 
     def in_row_navigation_forward(self, points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west):
         
-        is_end_of_line, update_goal_pose_queue = self.check_consistency_on_eol(points_east, points_west, points_nord_east, points_nord_east)
-	
-        if is_end_of_line:
-
-            print("END OF LINE")
-            # to do -> publish goal point
-            self.publish_end_pose()
-            # to do -> reset values
-            self.end_pose_queue.initialize_queue()
-            # reset values
-            self.prediction_instance.initialize_prediction()
-            # reset quadrants
-            self.initialization_quadrants()
-            # reset value
-            self.is_in_row_navigation = False
-        
-        else:
-            # enough points to proceed
-            # compute bisectrice
-            self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
-            # calculate goal point
-            goal_pose, x, y = self.calculate_goal_point_forward()
-            # check if goal pose can be added to the queue
-            if update_goal_pose_queue:
-                self.end_pose_queue.update_queue_regularly(goal_pose)
-            else:
+        is_end_of_line = self.check_consistency_on_eol(points_nord_east, points_nord_east, points_south_east, points_south_west)
+        if (self.is_in_row_navigation):
+            if is_end_of_line:
+                print("END OF LINE")
+                # to do -> publish goal point
+                self.publish_end_pose()
+                # to do -> reset values
                 self.end_pose_queue.initialize_queue()
+                # reset values
+                self.prediction_instance.initialize_prediction()
+                # reset quadrants
+                self.initialization_quadrants()
+                # reset value
+                self.is_in_row_navigation = False
             
-            # publish goal pose
-            self.publish_goal_pose(x, y)
-            # display prediction
-            self.display_prediction_forward_dynamic(points_nord_east, points_nord_west, x, y)
+            else:
+                # enough points to proceed
+                # compute bisectrice
+                self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
+                # calculate goal point
+                goal_pose, x, y = self.calculate_goal_point_forward()
+                # check if goal pose can be added to the queue
+                self.check_validity_pose(points_nord_east, points_nord_west, goal_pose)
+                
+                # publish goal pose
+                self.publish_goal_pose(x, y)
+                # display prediction
+                self.display_prediction_forward_dynamic(points_nord_east, points_nord_west, x, y)
             
     # update bool value   
     def callback_update_bool(self, msg):
@@ -1026,34 +1023,43 @@ class InRowNavigation(Node):
             self.moving_forward = False
             self.flag_publish_goal_pose = True
     
-    def check_consistency_on_eol(self, points_east, points_west, points_nord_east, points_nord_west):
+    def check_consistency_on_eol(self, points_nord_east, points_nord_west, south_east, south_west):
         # proportion between nord and all direction
         number_nord_points = np.size(points_nord_east) + np.size(points_nord_west)
-        number_overall_point = np.size(points_east)/ np.size(points_west)
+        number_overall_point = np.size(south_east) + np.size(south_west) + number_nord_points
+        print("nord, overall", number_nord_points, number_overall_point)
         proportion = number_nord_points/number_overall_point
 
         # flag 
         is_end_of_line = False
-        update_end_pose_queue = False
 
         if proportion <= self.threshold_start:
             # is end of line if the latest element is smaller that the last element
             number_fw_point_decreased = True if proportion <= self.consistency_EOL else False
-
+            print(number_fw_point_decreased)
             if number_fw_point_decreased:
+                print("PROPORTION", proportion)
                 # append proportion as the last element
                 self.consistency_EOL = proportion
                 # for enough time you've seen less element
                 if (proportion <= self.threshold_end):
                     is_end_of_line = True
-                update_end_pose_queue = True
                 
             else:
                 # reset list
-                self.consistency_EOL = 0.0
+                self.consistency_EOL = 10000.0
         
-        return is_end_of_line, update_end_pose_queue
+        return is_end_of_line
 
+    def check_validity_pose(self, points_nord_east, points_nord_west, goal):
+        is_nord_east_empty = True if np.size(points_nord_east) < self.min_num_ransac else False
+        is_nord_west_empty = True if np.size(points_nord_west) < self.min_num_ransac else False
+
+        if is_nord_east_empty and is_nord_west_empty:
+            self.end_pose_queue.update_queue_regularly(goal)
+        else:
+            self.end_pose_queue.initialize_queue()
+    
     def publish_end_pose(self):
         end_pose = self.end_pose_queue.return_element_time_t()
         avg_thetha = self.end_pose_queue.queue_average_theta()
@@ -1067,8 +1073,9 @@ class InRowNavigation(Node):
         # modify position
         end_pose.pose.position.x = avg_x
         end_pose.pose.position.y = avg_y
-        print("POSE: ", avg_x, avg_y, avg_thetha)    
-        
+
+        # print("POSE: ", avg_x, avg_y, avg_thetha)    
+
         # update timestamp and frame
         # transform from of the received odom to the current map
         transform = self._tf_buffer.lookup_transform('map', 'odom', end_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
