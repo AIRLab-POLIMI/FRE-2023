@@ -134,91 +134,91 @@ controller_server:
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.2
       stateful: True
-    
+
     FollowPath:
-      plugin: "nav2_rotation_shim_controller::RotationShimController"
-      primary_controller: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 0.5
-      lookahead_dist: 0.6
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.4
+      lookahead_dist: 0.25
       min_lookahead_dist: 0.1
-      max_lookahead_dist: 0.3
-      lookahead_time: 1.5
+      max_lookahead_dist: 0.4
+      lookahead_time: 1.0
       rotate_to_heading_angular_vel: 1.8
       transform_tolerance: 0.1
       use_velocity_scaled_lookahead_dist: false
       min_approach_linear_velocity: 0.05
       approach_velocity_scaling_dist: 0.6
-      use_collision_detection: true
+      use_collision_detection: False #
       max_allowed_time_to_collision_up_to_carrot: 1.0
       use_regulated_linear_velocity_scaling: true
       use_fixed_curvature_lookahead: false
       curvature_lookahead_dist: 0.25
       use_cost_regulated_linear_velocity_scaling: false
-      regulated_linear_scaling_min_radius: 0.01
+      regulated_linear_scaling_min_radius: 0.7
       regulated_linear_scaling_min_speed: 0.25
-      use_rotate_to_heading: true
+      use_rotate_to_heading: false
       allow_reversing: false
-      rotate_to_heading_min_angle: 0.2
+      rotate_to_heading_min_angle: 0.785
       max_angular_accel: 3.2
       max_robot_pose_search_dist: 10.0
       use_interpolation: false
-      # primary_controller: "dwb_core::DWBLocalPlanner"
-      # angular_dist_threshold: 0.4
-      # forward_sampling_distance: 0.2
-      # rotate_to_heading_angular_vel: 3.8
-      # max_angular_accel: 4.2
-      # simulate_ahead_time: 1.0
+    # FollowPath:
+    #   primary_controller: "dwb_core::DWBLocalPlanner"
+    #   angular_dist_threshold: 0.4
+    #   forward_sampling_distance: 0.1
+    #   rotate_to_heading_angular_vel: 3.8
+    #   max_angular_accel: 4.2
+    #   simulate_ahead_time: 0.5
 
-      # # primary controller settings 
-      # debug_trajectory_details: True
-      # min_vel_x: -1.0
-      # min_vel_y: 0.0
-      # max_vel_x: 1.0 #changed from 0.56
-      # max_vel_y: 0.0
-      # max_vel_theta: 2.5
-      # min_speed_xy: -1.0
-      # max_speed_xy: 1.0
-      # min_speed_theta: -2.5
-      # # Add high threshold velocity for turtlebot 3 issue.
-      # # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
-      # acc_lim_x: 1.0
-      # acc_lim_y: 0.0
-      # acc_lim_theta: 2.0
-      # decel_lim_x: -1.0
-      # decel_lim_y: 0.0
-      # decel_lim_theta: -2.0
-      # vx_samples: 20
-      # vy_samples: 5
-      # vtheta_samples: 20
-      # sim_time: 2.0
-      # linear_granularity: 0.0375
-      # angular_granularity: 0.025
-      # transform_tolerance: 0.2
-      # xy_goal_tolerance: 0.15
-      # trans_stopped_velocity: 0.25
-      # short_circuit_trajectory_evaluation: false
-      # stateful: True
-      # critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "PathAlign", "PathDist", "GoalDist"]
-      # BaseObstacle.scale: 0.02
-      # PathAlign.scale: 64.0
-      # PathAlign.forward_point_distance: 0.1
-      # PathDist.scale: 32.0
-      # GoalDist.scale: 64.0
-      # RotateToGoal.scale: 200.0
-      # RotateToGoal.slowing_factor: 2.0
-      # RotateToGoal.lookahead_time: 0.5
-      # RotateToGoal.xy_goal_tolerance: 0.5
-      # critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "PathAlign", "PathDist", "GoalDist"] #, "PathAlign"
-      # BaseObstacle.scale: 0.02 #0.02
-      # PathAlign.scale: 64.0
-      # PathAlign.forward_point_distance: 0.6
-      # PathDist.scale: 64.0
+    #   # primary controller settings 
+    #   debug_trajectory_details: True
+    #   min_vel_x: 0.1
+    #   min_vel_y: 0.0
+    #   max_vel_x: 0.5 #changed from 0.56
+    #   max_vel_y: 0.0
+    #   max_vel_theta: 1.5
+    #   min_speed_xy: -1.0
+    #   max_speed_xy: 1.0
+    #   min_speed_theta: -1.5
+    #   # Add high threshold velocity for turtlebot 3 issue.
+    #   # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
+    #   acc_lim_x: 1.0
+    #   acc_lim_y: 0.0
+    #   acc_lim_theta: 2.0
+    #   decel_lim_x: -1.0
+    #   decel_lim_y: 0.0
+    #   decel_lim_theta: -2.0
+    #   vx_samples: 20
+    #   vy_samples: 5
+    #   vtheta_samples: 20
+    #   sim_time: 2.0
+    #   linear_granularity: 0.0375
+    #   angular_granularity: 0.025
+    #   transform_tolerance: 0.2
+    #   xy_goal_tolerance: 0.15
+    #   trans_stopped_velocity: 0.25
+    #   short_circuit_trajectory_evaluation: false
+    #   stateful: True
+    #   # critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "PathAlign", "PathDist", "GoalDist"]
+    #   # BaseObstacle.scale: 0.02
+    #   # PathAlign.scale: 64.0
+    #   # PathAlign.forward_point_distance: 0.1
+    #   # PathDist.scale: 32.0
+    #   # GoalDist.scale: 64.0
+    #   # RotateToGoal.scale: 200.0
+    #   # RotateToGoal.slowing_factor: 2.0
+    #   # RotateToGoal.lookahead_time: 0.5
+    #   RotateToGoal.xy_goal_tolerance: 0.5
+    #   critics: ["RotateToGoal", "PathAlign", "PathDist"]
+    #   BaseObstacle.scale: 0.02 #0.02
+    #   PathAlign.scale: 64.0
+    #   PathAlign.forward_point_distance: 0.6
+    #   PathDist.scale: 64.0
 
-      # GoalDist.scale: 4.0
-      # RotateToGoal.scale: 64.0
-      # RotateToGoal.slowing_factor: 2.0
-      # RotateToGoal.lookahead_time: -1.0
-      # RotateToGoal.xy_goal_tolerance: 0.2 # 0.25
+    #   GoalDist.scale: 4.0
+    #   RotateToGoal.scale: 32.0
+    #   RotateToGoal.slowing_factor: 2.0
+    #   RotateToGoal.lookahead_time: 0.5
+    #   RotateToGoal.xy_goal_tolerance: 0.2 # 0.25
 
 local_costmap:
   local_costmap:
