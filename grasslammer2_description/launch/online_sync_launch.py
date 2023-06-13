@@ -29,6 +29,9 @@ def generate_launch_description():
         package='slam_toolbox',
         executable='sync_slam_toolbox_node',
         name='slam_toolbox',
+        remappings=[
+            ('/map', '/st_map'),
+        ]
         output='screen')
 
     ld = LaunchDescription()

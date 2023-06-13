@@ -27,7 +27,7 @@ class map_filter_approx : public rclcpp::Node{
     public:
         map_filter_approx() : Node("map_filter_approx"){
 
-            this->declare_parameter("threshold", 60); //minimum number of neighbors
+            this->declare_parameter("threshold", 20); //minimum number of neighbors
 
             this->declare_parameter("dynamic_range", 40.0); //maximum scaling factor due to distance
 
@@ -37,7 +37,7 @@ class map_filter_approx : public rclcpp::Node{
 
             this->declare_parameter("width", 8.0);  //width of the considered point cloud
 
-            this->declare_parameter("laserscan_range", 1.0); //range in which points from monoplanar lidar are added
+            this->declare_parameter("laserscan_range", 2.0); //range in which points from monoplanar lidar are added
 
             this->declare_parameter("biased", true);   //if biased we sligtly favours points in having the same orientation as the robot
 

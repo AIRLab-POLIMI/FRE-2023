@@ -26,10 +26,13 @@ def generate_launch_description():
                                 os.path.join(pkg_path, 'launch', 'online_sync_launch.py')
                             ),
                 )
-
+    expand_map = Node(package='grasslammer2_nav_py',
+                                executable='map_edit',
+                            )
     return LaunchDescription([
         #remove_ground_node, 
         #density_filter,
         #pointcloud_converter,
         start_slam,
+        expand_map,
     ])

@@ -190,7 +190,7 @@ def generate_launch_description():
                             {'node_names': lifecycle_nodes}]),
             Node(
                 package='grasslammer2_nav_py',
-                executable='turner',
+                executable='turner_simple',
                 name='turner',
                 #output='screen'
                 ),
