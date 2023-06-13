@@ -74,7 +74,7 @@ def generate_launch_description():
 
     pkg_path = os.path.join(get_package_share_directory('grasslammer2_description'))
 
-    remove_ground_node = Node(package='ground_removal', executable='plane_filter',)
+    remove_ground_node = Node(package='ground_removal', executable='plane_filter')
 
     density_filter = Node(package='map_filter', executable='map_filter_approx',)
 
