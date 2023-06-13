@@ -3,6 +3,7 @@
     "line_width" : 0.75,
     "min_num_point_EOL_quad": 30,
     "min_num_point_extended_region": 100,
+    "min_num_ransac" : 70,
     "in_row_navigation": {
         "dimension_queue" : 8,
         "min_num_points_use_bis" : 90,
@@ -68,7 +69,6 @@
                 "reset_value_slope": 0  
             } 
         },
-        "min_num_ransac" : 70,
         "tolerance_intercept" : 0.2
     },
 

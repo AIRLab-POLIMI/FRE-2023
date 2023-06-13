@@ -69,7 +69,7 @@ class LaserReader(Node):
         x = ranges * np.cos(angles) # array of all the x coordinates in 2D
         y = ranges * np.sin(angles) # array of all the y coordinates in 2D
         
-        
+        # print(np.size(x))
         return np.vstack((x, y, ranges)).T #Stack arrays in sequence vertically ([len(), 2]) ndarray
     
     def mask(self, points: np.ndarray):
