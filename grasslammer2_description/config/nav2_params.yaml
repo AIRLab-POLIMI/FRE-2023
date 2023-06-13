@@ -292,7 +292,7 @@ planner_server:
       cost_penalty: 3.0
       rotation_penalty: 0.1 #<-----               
       retrospective_penalty: 0.015
-      lattice_filepath: "/home/ceru/robotics/src/FRE-2023/grasslammer2_description/config/output.json" 
+      lattice_filepath: "/home/carlo/Documenti/robotics/src/FRE-2023/grasslammer2_description/config/output.json" 
       lookup_table_size: 20.0  
       cache_obstacle_heuristic: False
       allow_reverse_expansion: false
