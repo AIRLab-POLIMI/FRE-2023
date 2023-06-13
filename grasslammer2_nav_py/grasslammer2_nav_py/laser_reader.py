@@ -2,6 +2,8 @@ import rclpy
 from rclpy.node import Node
 import math
 from sensor_msgs.msg import LaserScan
+import os
+import json
 
 from visualization_msgs.msg import MarkerArray, Marker
 
@@ -9,13 +11,18 @@ from visualization_msgs.msg import MarkerArray, Marker
 # laser_mono = /scan_initial
 # laser = /scan
 
+pkg_path = os.path.realpath("src/FRE-2023/grasslammer2_description")
+config_file = open(pkg_path + '/config/in_row_params_sim.json', 'r')
+print(config_file)
+config_json = json.loads(config_file.read())
+
 import numpy as np 
 
 class LaserReader(Node):
     def __init__(self):
         super().__init__('laser_reader')
 
-        self.area = np.array([1.2,1.2]) # rect shape x,y
+        self.area = config_json["area"] # rect shape x,y
         self.area_end_of_line = np.array([1.2, 0.75]) # rect shape x,y
         # scan_out
         # scan final
@@ -62,7 +69,7 @@ class LaserReader(Node):
         x = ranges * np.cos(angles) # array of all the x coordinates in 2D
         y = ranges * np.sin(angles) # array of all the y coordinates in 2D
         
-        
+        # print(np.size(x))
         return np.vstack((x, y, ranges)).T #Stack arrays in sequence vertically ([len(), 2]) ndarray
     
     def mask(self, points: np.ndarray):
@@ -157,3 +164,4 @@ if __name__ == '__main__':
     main()
 
     
+

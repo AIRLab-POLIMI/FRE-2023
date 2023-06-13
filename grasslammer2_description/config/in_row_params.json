@@ -1,14 +1,19 @@
 {
+    "area":[1.5, 1.5],
+    "line_width" : 0.75,
+    "min_num_point_EOL_quad": 30,
+    "min_num_point_extended_region": 100,
+    "min_num_ransac" : 70,
     "in_row_navigation": {
-        "area": [1.2,1.2] ,
-        "dimension_queue" : 8 ,
-        "min_number_required_points_per_quadrants" : 50,
-        "line_width": 0.75,
+        "dimension_queue" : 8,
+        "min_num_points_use_bis" : 90,
         "tolerance_crop_distance_filtering": 0.225,
-        "distance_goal_point_forward" : 0.4,
-        "distance_goal_point_backward" : -0.4,
-        "nord_threshold": 1,
-        "south_threshold": 1
+        "distance_goal_point_forward" : 0.6,
+        "distance_goal_point_backward" : -0.6,
+        "nord_threshold": 0.75,
+        "south_threshold": -0.75,
+        "nord_threshold_fw": 1.25,
+        "south_threshold_bw": 1.25
 
     },
 
@@ -17,7 +22,7 @@
             "line_nord_east": {
                 "dimension_queue": 8,
                 "ma_avarage_flag": 0,
-                "is_bisectrice": 0,
+                "is_bisectrice": 0 ,
                 "threshold_line_intercept": 0.3,
                 "threshold_line_slope": 0.26,
                 "reset_value_intercept": -0.375,
@@ -62,8 +67,9 @@
                 "threshold_line_slope": 0.26,
                 "reset_value_intercept": 0,
                 "reset_value_slope": 0  
-            }
-        }
+            } 
+        },
+        "tolerance_intercept" : 0.2
     },
 
     "moving_avarage":{
@@ -72,3 +78,4 @@
         "stop": 4
     }
 }
+
