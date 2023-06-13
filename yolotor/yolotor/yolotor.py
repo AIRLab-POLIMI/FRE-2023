@@ -52,6 +52,46 @@ class Yolotor(Node):
         # storing YOLO info for run-time execution
         self.labels = labels
         self.debug = debug
+        self.valid_area = (158, 108, 258, 416)
+
+    def is_valid(frame, detection):
+        """
+        Check if a bounding box stays mostly inside another bounding box.
+
+        Args:
+            box1 (tuple): Coordinates of the first bounding box in the format (x1, y1, x2, y2).
+            box2 (tuple): Coordinates of the second bounding box in the format (x1, y1, x2, y2).
+
+        Returns:
+            bool: True if box1 stays mostly inside box2, False otherwise.
+        """
+        # internal method used only here
+        def frameNorm(frame, bbox):
+            normVals = np.full(len(bbox), frame.shape[0])
+            normVals[::2] = frame.shape[1]
+            return (np.clip(np.array(bbox), 0, 1) * normVals).astype(int)
+
+        # bounding boxes display
+        bbox = frameNorm(frame, (detection.xmin, detection.ymin, detection.xmax, detection.ymax))
+
+        # Extract the coordinates of the first bounding box
+        x1_1, y1_1, x2_1, y2_1 = bbox[0], bbox[1], bbox[2], bbox[3]
+
+        # Extract the coordinates of the second bounding box
+        x1_2, y1_2, x2_2, y2_2 = self.valid_area
+
+        # Calculate the area of the first bounding box
+        area_box = (x2_1 - x1_1) * (y2_1 - y1_1)
+
+        # Calculate the area of the intersection between the two bounding boxes
+        intersection_width = min(x2_1, x2_2) - max(x1_1, x1_2)
+        intersection_height = min(y2_1, y2_2) - max(y1_1, y1_2)
+        intersection_area = max(0, intersection_width) * max(0, intersection_height)
+
+        # Check if the ratio of the intersection area to the area of box1 is above a threshold
+        threshold = 0.9  # Adjust this threshold as needed
+        return intersection_area / area_box >= threshold
+
 
     def run(self):
         """
@@ -62,6 +102,11 @@ class Yolotor(Node):
         rgb_reader = self.device.getOutputQueue(name="rgb", maxSize=30, blocking=False)
         depth_reader = self.device.getOutputQueue(name="depth", maxSize=30, blocking=False)
         yolo_reader = self.device.getOutputQueue(name="nn", maxSize=30, blocking=False)
+
+        # to measure inference time performance
+        if self.debug:
+            start_time = time.monotonic()
+            counter = 0
 
         while rclpy.ok():
             rgb_data = rgb_reader.get()
@@ -80,11 +125,6 @@ class Yolotor(Node):
                 depth_msg = self.bridge.cv2_to_imgmsg(depth_frame, '8UC1')
                 self.depth_pub.publish(depth_msg)
 
-            # to measure inference time performance
-            if self.debug:
-                start_time = time.monotonic()
-                counter = 0
-
             if yolo_data is not None:
                 # If inDet is not None, fetch all the detections for a frame
                 detections = yolo_data.detections
@@ -99,9 +139,8 @@ class Yolotor(Node):
 
                 # find the most confident detection made by YOLO
                 for out in detections:
-                    box_confidence = out.confidence
-                    if box_confidence > highest_confidence:
-                        highest_confidence = box_confidence
+                    if is_valid(frame, out) and out.confidence > highest_confidence:
+                        highest_confidence = out.confidence
                         highest_confidence_box = out
 
                 if highest_confidence_box is not None:
