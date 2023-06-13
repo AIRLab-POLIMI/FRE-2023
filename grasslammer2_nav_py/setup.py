@@ -30,7 +30,8 @@ setup(
             'laser_reader = grasslammer2_nav_py.laser_reader:main',
             'switcher = grasslammer2_nav_py.convert_cmd_vel_for_sim:main',
             'starting_pose_pub = grasslammer2_nav_py.end_of_line_pose:main',
-            'turner = grasslammer2_nav_py.definitive_turner:main',
+            'turner_simple = grasslammer2_nav_py.turner_simple:main',
+            'turner_intermediate = grasslammer2_nav_py.turner_intermediate:main',
             'test_turner = grasslammer2_nav_py.turner_from_line:main',
             'in_row_navigation = grasslammer2_nav_py.in_row_navigation:main',
             'pose_publisher = grasslammer2_nav_py.pose_publisher:main',
@@ -38,6 +39,7 @@ setup(
             'spray_switch = grasslammer2_nav_py.spray_switch:main',
             'map_edit = grasslammer2_nav_py.map_edit:main',
             'oak_test = grasslammer2_nav_py.oak_test:main',
+            'nav2_enabler = grasslammer2_nav_py.nav2_enabler:main',
         ],
     },
 )
