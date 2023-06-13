@@ -31,7 +31,7 @@ def generate_launch_description():
         name='slam_toolbox',
         remappings=[
             ('/map', '/st_map'),
-        ]
+        ],
         output='screen')
 
     ld = LaunchDescription()
