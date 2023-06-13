@@ -38,6 +38,7 @@ setup(
             'spray_switch = grasslammer2_nav_py.spray_switch:main',
             'map_edit = grasslammer2_nav_py.map_edit:main',
             'oak_test = grasslammer2_nav_py.oak_test:main',
+            'nav2_enabler = grasslammer2_nav_py.nav2_enabler:main',
         ],
     },
 )

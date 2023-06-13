@@ -967,16 +967,17 @@ class InRowNavigation(Node):
         return points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west
 
     def initialization_quadrants(self):
-        self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
-        self.nord_west_quadrant = [[0,self.nord_threshold],[0,self.west_threshold]]
+        self.nord_east_quadrant = [[0,self.nord_threshold_fw],[self.east_threshold,0]]
+        self.nord_west_quadrant = [[0,self.nord_threshold_fw],[0,self.west_threshold]]
         self.south_east_quadrant = [[self.south_threshold,0],[self.east_threshold,0]]
-        self.south_west_quadrant = [[self.south_threshold,0],[0,self.east_threshold]]
+        self.south_west_quadrant = [[self.south_threshold,0],[0,self.west_threshold]]
 
     def in_row_navigation_forward(self, points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west):
         
         is_end_of_line, update_goal_pose_queue = self.check_consistency_on_eol(points_east, points_west, points_nord_east, points_nord_east)
 	
         if is_end_of_line:
+
             print("END OF LINE")
             # to do -> publish goal point
             self.publish_end_pose()
