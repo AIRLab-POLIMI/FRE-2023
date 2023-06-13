@@ -976,7 +976,7 @@ class InRowNavigation(Node):
         self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
         self.nord_west_quadrant = [[0,self.nord_threshold],[0,self.west_threshold]]
         self.south_east_quadrant = [[self.south_threshold,0],[self.east_threshold,0]]
-        self.south_west_quadrant = [[self.south_threshold,0],[0,self.east_threshold]]
+        self.south_west_quadrant = [[self.south_threshold,0],[0,self.west_threshold]]
 
     def in_row_navigation_forward(self, points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west):
         # get information about emptyness of regions
@@ -1138,7 +1138,7 @@ class InRowNavigation(Node):
         # update timestamp and frame
         time_now = Time()
         end_of_line_pose.header.stamp = time_now.to_msg()
-        end_of_line_pose.header.frame_id = "velodyne2"
+        end_of_line_pose.header.frame_id = "velodyne"
 
         # get x,y
         end_of_line_pose.pose.position.x = float(x_goal_pose)
@@ -1153,7 +1153,7 @@ class InRowNavigation(Node):
 
         #transform from of the received odom to the current map
         try:
-            transform = self._tf_buffer.lookup_transform('odom', 'velodyne2', end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
+            transform = self._tf_buffer.lookup_transform('odom', 'velodyne', end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
             return do_transform_pose_stamped(end_of_line_pose, transform), x_goal_pose, y_goal_pose
         except:
             self.get_logger().info("ERROR IN POSE CALCULATION")

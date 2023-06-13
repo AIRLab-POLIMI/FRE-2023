@@ -33,8 +33,8 @@ class Navigation(Node):
         # self.b = args.b
         # self.declare_parameter('a', 3.0)
         # self.declare_parameter('b', 0.3)
-        self.a = 2.5
-        self.b = 0.3
+        self.a = 3.0
+        self.b = 1.0
 
     def goal_callback(self, goal):
         #self.a = args.a # proportional gain on angular velocity
@@ -51,7 +51,7 @@ class Navigation(Node):
         # else:
             # coef = 1
 
-        cmd_msg.linear.x = self.b * math.cos(theta)
+        cmd_msg.linear.x = self.b * pow(math.cos(theta),4)
         if theta > math.pi/4:
             theta = math.pi/4
         cmd_msg.angular.z = self.a * theta # math.sin(theta)
