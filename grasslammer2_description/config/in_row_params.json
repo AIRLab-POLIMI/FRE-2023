@@ -1,18 +1,18 @@
 {
-    "area":[1.5, 2.5],
+    "area":[2.5, 1.5],
     "line_width" : 0.75,
-    "min_num_point_EOL_quad": 20,
-    "min_num_point_extended_region": 70,
+    "min_num_point_EOL_quad": 5,
+    "min_num_point_extended_region": 150,
     "in_row_navigation": {
         "dimension_queue" : 8,
         "min_num_points_use_bis" : 80,
         "tolerance_crop_distance_filtering": 0.225,
         "distance_goal_point_forward" : 0.6,
         "distance_goal_point_backward" : -0.6,
-        "nord_threshold": 0.75,
-        "south_threshold": -0.75,
+        "nord_threshold": 1,
+        "south_threshold": -1,
         "nord_threshold_fw": 1.25,
-        "south_threshold_bw": 1.25
+        "south_threshold_bw": -1.25
 
     },
 
@@ -68,7 +68,7 @@
                 "reset_value_slope": 0  
             } 
         },
-        "min_num_ransac" : 35,
+        "min_num_ransac" : 50,
         "tolerance_intercept" : 0.2
     },
 
