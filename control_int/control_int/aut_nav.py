@@ -10,15 +10,9 @@ from std_msgs.msg import Float64MultiArray
 
 import math
 
-import numpy as np 
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-
-# parser = argparse.ArgumentParser(description = "aut_nav")
-# parser.add_argument('--a', type =float, default = 3.0)
-# parser.add_argument('--b', type =float, default = 0.3)
-# args = parser.parse_args()
 
 
 class Navigation(Node):
@@ -29,31 +23,24 @@ class Navigation(Node):
         self.goal_point_sub #prevent unused variable warning 
 
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_row_nav', 1)
-        # self.a = args.a
-        # self.b = args.b
-        # self.declare_parameter('a', 3.0)
-        # self.declare_parameter('b', 0.3)
-        self.a = 3.0
+
+        self.a = 4.0
         self.b = 1.0
 
     def goal_callback(self, goal):
-        #self.a = args.a # proportional gain on angular velocity
-        #self.b = args.b # proportional gain on linear velocity
+
         cmd_msg = Twist()
 
         theta = goal.data[2]
-        # if(theta > math.pi/2 or theta < -math.pi/2):
-            # if(theta > 0):
-                # theta = theta - math.pi
-            # else:
-                # theta = theta + math.pi
-            # coef = -1
-        # else:
-            # coef = 1
+
 
         cmd_msg.linear.x = self.b * pow(math.cos(theta),4)
-        if theta > math.pi/4:
-            theta = math.pi/4
+        if abs(theta) > math.pi/5:
+        	if theta > 0:
+        		theta = math.pi/5
+        	else:
+        		theta = -math.pi/5
+            
         cmd_msg.angular.z = self.a * theta # math.sin(theta)
 
         self.cmd_pub.publish(cmd_msg)
