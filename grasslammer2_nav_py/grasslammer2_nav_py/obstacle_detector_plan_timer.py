@@ -9,7 +9,7 @@ import time
 
 class ObstacleDetector(Node):
     def __init__(self):
-        super().__init__('obstacle_detector3')
+        super().__init__('obstacle_detector3_plan_timer')
         self.depthTrashold = 170
         self.consistencyTrashold = 3430
         self.offset = 35
@@ -26,6 +26,9 @@ class ObstacleDetector(Node):
         self.firstDetectionTime = self.get_clock().now() 
         self.firstDetection = False
         self.window = 8000000000
+        self.firstResetTimerEntered = False
+        self.windowReset = 2000000000
+        self.firstResetTimeEnter = self.get_clock().now()
 
     def detection(self, message):
         #message = (Image)(msg)
@@ -57,9 +60,13 @@ class ObstacleDetector(Node):
                     if not self.firstDetection:
                         self.firstDetectionTime = self.get_clock().now()
                         self.firstDetection = True
-                        return
                     elif self.get_clock().now().nanoseconds - self.firstDetectionTime.nanoseconds <= self.window:
                         return
+
+                    msg = String()
+                    msg.data = "S"
+                    self.Obstacle_detection_pub.publish(msg)
+                    print("STOP")
                         
                     #time.sleep(2.1)
 
@@ -79,18 +86,27 @@ class ObstacleDetector(Node):
                         indication.data = "U"
                         self.Obstacle_detection_pub.publish(indication)
                         self.get_logger().info("UNKNOWN")
-                    
-                    #self.get_logger().info("DETECTED: " + self.detectionData)
+                        
                     self.sentIndication = True
                     self.firstDetection = False
-        else:
-            if self.free <= 0 :
-                self.errorTreshold = 20
-                self.free = 5
-                self.sentIndication = False
-                self.firstDetection = False
             else:
-                self.free -= 1   
+                if not self.firstResetTimerEntered:
+                        self.firstResetTimeEnter = self.get_clock().now()
+                        self.firstResetTimerEntered = True
+                elif self.get_clock().now().nanoseconds - self.firstResetTimeEnter.nanoseconds >= self.windowReset:
+                        self.sentIndication = False
+                        self.errorTreshold = 20
+                        self.firstResetTimerEntered = False
+
+
+        
+        #else:
+        #    if self.free <= 0 :
+        #        self.errorTreshold = 20
+        #        self.free = 5
+        #        self.sentIndication = False
+        #    else:
+        #        self.free -= 1   
 
     def subset_exists(self, arr, condition, threshold):
         # Apply the condition to the array and check if any group of elements satisfies it and is bigger than the threshold

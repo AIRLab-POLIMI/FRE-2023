@@ -38,6 +38,7 @@ setup(
             'spray_switch = grasslammer2_nav_py.spray_switch:main',
             'obstacle_detector3 = grasslammer2_nav_py.obstacle_detector:main',
             'obstacle_detector4 = grasslammer2_nav_py.obstacle_detectorintegrated:main',
+            'obstacle_detector3_plan_b = grasslammer2_nav_py.obstacle_detector_plan_timer:main',
         ],
     },
 )
