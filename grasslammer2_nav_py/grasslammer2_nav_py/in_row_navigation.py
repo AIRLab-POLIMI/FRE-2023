@@ -88,7 +88,6 @@ class MovingAvarage():
 
     def get_weigths(self):
         return self.weigths
-    
 
     def initialize_weigths(self):
         self.weights = []
@@ -971,7 +970,7 @@ class InRowNavigation(Node):
         self.nord_east_quadrant = [[0,self.nord_threshold],[self.east_threshold,0]]
         self.nord_west_quadrant = [[0,self.nord_threshold],[0,self.west_threshold]]
         self.south_east_quadrant = [[self.south_threshold,0],[self.east_threshold,0]]
-        self.south_west_quadrant = [[self.south_threshold,0],[0,self.east_threshold]]
+        self.south_west_quadrant = [[self.south_threshold,0],[0,self.west_threshold]]
 
     def in_row_navigation_forward(self, points_east, points_west, points_nord_east, points_nord_west, points_south_east, points_south_west):
         
@@ -998,7 +997,6 @@ class InRowNavigation(Node):
                 goal_pose, x, y = self.calculate_goal_point_forward()
                 # check if goal pose can be added to the queue
                 self.check_validity_pose(points_nord_east, points_nord_west, goal_pose)
-                
                 # publish goal pose
                 self.publish_goal_pose(x, y)
                 # display prediction
