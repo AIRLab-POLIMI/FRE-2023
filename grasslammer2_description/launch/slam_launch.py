@@ -60,7 +60,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value='/home/carlo/robotics/src/FRE-2023/nav2_parameters/nav2_params.yaml',
+        default_value='/home/airlab/workspace/ros2/src/grasslammer2/grasslammer2_description/config/nav2_params.yaml',
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(

@@ -39,7 +39,7 @@ import json
 #absolute_path = os.path.realpath(string_from_folder+'/grasslammer2_nav_py/grasslammer2_nav_py/in_row_navigation_config/cornaredo.json')
 # absolute_path = '/home/ceru/robotics/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
 # absolute_path = '/home/alba/ros2_ws/src/FRE-2023/grasslammer2_description/config/in_row_params.json'
-pkg_path = os.path.realpath("src/grasslammer_2/grasslammer2_description")
+pkg_path = os.path.realpath("src/grasslammer2/grasslammer2_description")
 config_file = open(pkg_path + '/config/in_row_params_sim.json', 'r')
 print(config_file)
 # dict_config = config_file.read()

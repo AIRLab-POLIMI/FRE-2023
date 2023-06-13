@@ -16,8 +16,10 @@ class TurnerFinal(Node):
     def __init__(self):
         super().__init__('turner_final')
         self.lineDimension = 0.75
-        self.y_movement = -0.6
+        self.y_movement = 0.20
         self.turnNum = 0
+        self.HOffset = 0
+        self.VOffset = 0.75
         self.side = "right"
         self._tf_buffer = Buffer()
         self.turningInput = None
@@ -25,7 +27,7 @@ class TurnerFinal(Node):
         self._tf_listener = TransformListener(self._tf_buffer, self)
         self.starting_pose_sub = self.create_subscription(PoseStamped, '/end_of_line_pose', self.elaborate_goal_point, 1)
         self.done = self.create_publisher(Bool, '/end_of_turning', 1)
-        self.pose = self.create_publisher(PoseStamped, '/nav2_goal_pose', 1)
+        self.rviz_viewer = self.create_publisher(PoseStamped, '/waypoint_pose', 1)
         pkg_path = os.path.realpath("src/grasslammer2/grasslammer2_description")
         with open(pkg_path + "/config/pathTask1.txt") as path:
             self.turningInput = path.readline().split(" - ")
@@ -40,6 +42,9 @@ class TurnerFinal(Node):
         poseToNavigate = PoseStamped()
 
         turningInfo = self.turningCommands[self.turnNum]
+        if(turningInfo[0] == "F"):
+            self.get_logger().info("Navigation Ended")
+            return
         self.turnNum += 1
 
         if(turningInfo[1] == "L"):
@@ -49,41 +54,48 @@ class TurnerFinal(Node):
 
         yaw = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
 
-        (x, y, theta) = self.turning(msg.pose.position.x, msg.pose.position.y, yaw[2], int(turningInfo[0]), self.side)
-
-        poseToNavigate.header.stamp = time_now.to_msg()
-        poseToNavigate.header.frame_id = "map"
-        
-
-        qt = quaternion_from_euler(0, 0, theta)
-
-        poseToNavigate.pose.position.x = x
-        poseToNavigate.pose.position.y = y
-        poseToNavigate.pose.position.z = 0.0
-
-        poseToNavigate.pose.orientation.x = qt[0]
-        poseToNavigate.pose.orientation.y = qt[1]
-        poseToNavigate.pose.orientation.z = qt[2]
-        poseToNavigate.pose.orientation.w = qt[3]
-
-        self.navigator.goToPose(poseToNavigate)
-        print("Pose to Go: ",poseToNavigate.pose.position.x, poseToNavigate.pose.position.y)
-        print("goal pubblished")
+        #(x, y, theta) = self.turning(msg.pose.position.x, msg.pose.position.y, yaw[2], int(turningInfo[0]), self.side)
 
 
-        while not self.navigator.isTaskComplete():
-            continue
+        waypoints = self.elaborateWayPointedPath(msg.pose.position.x, msg.pose.position.y, yaw[2], int(turningInfo[0]), self.side)
 
-        result = self.navigator.getResult()
-        if result == TaskResult.SUCCEEDED:
-            mess = Bool()
-            mess.data = True
-            self.done.publish(mess)
-            print("Goal Succeded")
-        else:
-            if result == TaskResult.FAILED:
-                print("Failed To Reach The Goal")
-                
+
+        for i in range(0, len(waypoints)):
+            poseToNavigate.header.stamp = time_now.to_msg()
+            poseToNavigate.header.frame_id = "map"
+            
+
+            qt = quaternion_from_euler(0, 0, waypoints[i][2])
+
+            poseToNavigate.pose.position.x = waypoints[i][0]
+            poseToNavigate.pose.position.y = waypoints[i][1]
+            poseToNavigate.pose.position.z = 0.0
+
+            poseToNavigate.pose.orientation.x = qt[0]
+            poseToNavigate.pose.orientation.y = qt[1]
+            poseToNavigate.pose.orientation.z = qt[2]
+            poseToNavigate.pose.orientation.w = qt[3]
+            self.rviz_viewer.publish(poseToNavigate)
+            self.navigator.goToPose(poseToNavigate)
+            self.get_logger().info("Goal Pubblished")
+
+
+            while not self.navigator.isTaskComplete():
+                continue
+
+            result = self.navigator.getResult()
+            if result == TaskResult.SUCCEEDED:
+                if(i == len(waypoints)-1):
+                    mess = Bool()
+                    mess.data = True
+                    self.done.publish(mess)
+                    self.get_logger().info("Final Goal Succeded")
+                else:    
+                    self.get_logger().info("Goal N°" + str(i) + " Succeded")
+            else:
+                if result == TaskResult.FAILED:
+                    self.get_logger().info("Failed To Reach The Goal")
+                    
 
 
 
@@ -144,6 +156,34 @@ class TurnerFinal(Node):
         # final pose
         return x_f, y_f, theta_f
 
+
+    def calculatePoseWithOffset(self, x_s, y_s, theta_s, HOffset, VOffset, thetaOffset):
+        
+        x_g = x_s + (HOffset) * math.sin(theta_s)
+        y_g = y_s + (HOffset) * math.cos(theta_s)
+
+        # correcting the position
+        theta_f  = theta_s + thetaOffset
+        x_f = x_g + VOffset * math.cos(theta_s)
+        y_f = y_g + VOffset * math.sin(theta_s)
+
+        # final pose
+        return x_f, y_f, theta_f
+
+
+    def elaborateWayPointedPath(self, x_s, y_s, theta_s, num_rows, side):
+        turn = -1 if side == "left" else 1
+        (x_last, y_last, theta_last) = self.turning(x_s, y_s, theta_s, num_rows, side)
+        (x_si, y_si, theta_si) = self.calculatePoseWithOffset(x_s, y_s, theta_s, self.HOffset, self.VOffset, 0 if self.HOffset == 0 else (-math.pi/2)*turn)
+        (x_ff, y_ff, theta_ff) = self.calculatePoseWithOffset(x_last, y_last, theta_last, -self.HOffset, -self.VOffset, 0 if self.HOffset == 0 else (math.pi/2)*turn)
+        if(self.HOffset == 0):
+            (x_sii, y_sii, theta_sii) = self.calculatePoseWithOffset(x_si, y_si, theta_si, 0, 0, (-math.pi/2)*turn)
+            (x_fff, y_fff, theta_fff) = self.calculatePoseWithOffset(x_ff, y_ff, theta_ff, 0, 0, (math.pi/2)*turn)
+
+            return [(x_si, y_si, theta_si), (x_sii, y_sii, theta_sii), (x_fff, y_fff, theta_fff), (x_ff, y_ff, theta_ff), (x_last, y_last, theta_last)] 
+
+        return [(x_si, y_si, theta_si), (x_ff, y_ff, theta_ff), (x_last, y_last, theta_last)] 
+ 
 
 
 def main(args=None):

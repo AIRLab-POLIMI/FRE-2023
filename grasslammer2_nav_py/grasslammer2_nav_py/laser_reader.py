@@ -11,7 +11,7 @@ from visualization_msgs.msg import MarkerArray, Marker
 # laser_mono = /scan_initial
 # laser = /scan
 
-pkg_path = os.path.realpath("src/FRE-2023/grasslammer2_description")
+pkg_path = os.path.realpath("src/grasslammer2/grasslammer2_description")
 config_file = open(pkg_path + '/config/in_row_params_sim.json', 'r')
 print(config_file)
 config_json = json.loads(config_file.read())
