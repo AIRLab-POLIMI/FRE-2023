@@ -563,9 +563,9 @@ class InRowNavigation(Node):
         # last goal position
         self.last_goal_position_robot_frame = [0,0]
 
-        # Display Ransac
+        # #display Ransac
         # self.fig, self.ax = plt.subplots()
-        # Display Vectors
+        # #display Vectors
         # self.fig2, self.ax2 = plt.subplots()
 
     def get_parameters_from_config_file(self):
@@ -1001,9 +1001,11 @@ class InRowNavigation(Node):
                 
                 # publish goal pose
                 self.publish_goal_pose(x, y)
-                # display prediction
-                self.display_prediction_forward_dynamic(points_nord_east, points_nord_west, x, y)
-            
+                # to_do -> update queue with goal pose, add checks
+                self.validate_end_pose(goal_pose, points_nord_east, points_nord_west)
+                # #display prediction
+               # self.display_prediction_forward_dynamic(points_nord_east, points_nord_west, x, y)
+
     # update bool value   
     def callback_update_bool(self, msg):
         if(not self.is_in_row_navigation):
@@ -1153,7 +1155,7 @@ class InRowNavigation(Node):
         x_goal_pose = x_goal_robot + x_proj_bis
         y_goal_pose = y_goal_robot + y_proj_bis
 
-        self.display_reasoning(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
+        # self.display_reasoning(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
         # print(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
 
         # goal as a pose in odom frame from velodyne 
@@ -1376,8 +1378,8 @@ class InRowNavigation(Node):
             self.publish_goal_pose(x, y)
             # to_do -> update queue with goal pose, add checks
             self.validate_end_pose(goal_pose, points_south_east, points_south_west)
-            # display prediction
-            self.display_prediction_backup_dynamic(points_south_east, points_south_west, x, y)
+            # #display prediction
+            # self.display_prediction_backup_dynamic(points_south_east, points_south_west, x, y)
     
     def calculate_goal_point_backward(self):
         # get latest bisectrice coefficients
@@ -1401,7 +1403,7 @@ class InRowNavigation(Node):
         x_goal_pose = x_goal_robot + x_proj_bis
         y_goal_pose = y_goal_robot + y_proj_bis
 
-        self.display_reasoning(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
+        # self.display_reasoning(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
         # print(x_goal_robot, y_goal_robot, x_proj_bis, y_proj_bis, x_goal_pose, y_goal_pose)
 
         # goal as a pose in odom frame from velodyne 
