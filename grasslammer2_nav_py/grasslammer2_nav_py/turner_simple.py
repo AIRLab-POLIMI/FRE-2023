@@ -19,7 +19,7 @@ class TurnerFinal(Node):
         self.y_movement = 0.20
         self.turnNum = 0
         self.HOffset = 0
-        self.VOffset = 0.75
+        self.VOffset = 1.2
         self.side = "right"
         self._tf_buffer = Buffer()
         self.turningInput = None

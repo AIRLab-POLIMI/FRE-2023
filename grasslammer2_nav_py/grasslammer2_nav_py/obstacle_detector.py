@@ -18,14 +18,14 @@ class ObstacleDetector(Node):
         self.Obstacle_detection_pub = self.create_publisher(String, "/obstacle_detection", 1)
         self.yolo_sub = self.create_subscription(String, "/yolotor", self.saveData, 10)
         self.detectionData = "UNKNOWN"
-        self.errorTreshold = 10
-        self.free = 5
+        self.errorTreshold = 5
+        self.free = 2
         self.sentIndication = False
         self.timeStamp = self.get_clock().now()
-        self.timeSlip = 1000000000
+        self.timeSlip = 1500000000
         self.firstDetectionTime = self.get_clock().now() 
         self.firstDetection = False
-        self.window = 4000000000
+        self.window = 1000000000
 
     def detection(self, message):
         #message = (Image)(msg)
@@ -53,7 +53,6 @@ class ObstacleDetector(Node):
                 if(self.errorTreshold >= 0):
                     self.errorTreshold -= 1
                 else:
-
                     if not self.firstDetection:
                         self.firstDetectionTime = self.get_clock().now()
                         self.firstDetection = True
@@ -65,10 +64,10 @@ class ObstacleDetector(Node):
 
                     #print("NOW: ", self.get_clock().now().nanoseconds)
                     #print("LAST: ", self.timeStamp.nanoseconds)
-                    self.get_logger().info(str((self.get_clock().now().nanoseconds - self.timeStamp.nanoseconds)/1000000000))
+                    #self.get_logger().info((self.get_clock().now().nanoseconds - self.timeStamp.nanoseconds)/1000000000)
                     if self.get_clock().now().nanoseconds - self.timeStamp.nanoseconds <= self.timeSlip:
                         
-                        self.errorTreshold = 10
+                        self.errorTreshold = 5
                         indication = String()
                         indication.data = self.detectionData[0]
                         self.Obstacle_detection_pub.publish(indication)
@@ -79,14 +78,12 @@ class ObstacleDetector(Node):
                         indication.data = "U"
                         self.Obstacle_detection_pub.publish(indication)
                         self.get_logger().info("UNKNOWN")
-                    
-                    #self.get_logger().info("DETECTED: " + self.detectionData)
+                        
                     self.sentIndication = True
-                    #self.firstDetection = False
         else:
             if self.free <= 0 :
-                self.errorTreshold = 10
-                self.free = 5
+                self.errorTreshold = 5
+                self.free = 2
                 self.sentIndication = False
                 self.firstDetection = False
             else:

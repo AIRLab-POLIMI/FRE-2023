@@ -8,7 +8,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 
-find_package(ament_cmake REQUIRED)  
+find_package(ament_cmake REQUIRED)	
 find_package(rclcpp REQUIRED)#
 find_package(pcl_ros REQUIRED)#
 find_package(pcl_conversions REQUIRED)#
@@ -92,6 +92,48 @@ ament_target_dependencies(
 )
 install(TARGETS
   cloud_to_scan
+  DESTINATION lib/${PROJECT_NAME}/
+)
+
+add_executable(cloud_to_scan_ransac src/cloud_to_scan_ransac.cpp)
+target_link_libraries(cloud_to_scan_ransac ${PCL_LIBRARIES})
+target_link_libraries(cloud_to_scan_ransac
+  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
+)
+ament_target_dependencies(
+  cloud_to_scan_ransac
+  geometry_msgs #
+  pcl_conversions#
+  rcl_interfaces#
+  pcl_ros#
+  rclcpp #
+  rcutils
+  sensor_msgs#
+  std_msgs
+)
+install(TARGETS
+  cloud_to_scan_ransac
+  DESTINATION lib/${PROJECT_NAME}/
+)
+
+add_executable(map_filter_approx_ransac src/map_filter_approx_ransac.cpp)
+target_link_libraries(map_filter_approx_ransac ${PCL_LIBRARIES})
+target_link_libraries(map_filter_approx_ransac
+  ${Boost_SYSTEM_LIBRARY}  # pcl_conversions requires this
+)
+ament_target_dependencies(
+  map_filter_approx_ransac
+  geometry_msgs #
+  pcl_conversions#
+  rcl_interfaces#
+  pcl_ros#
+  rclcpp #
+  rcutils
+  sensor_msgs#
+  std_msgs
+)
+install(TARGETS
+  map_filter_approx_ransac
   DESTINATION lib/${PROJECT_NAME}/
 )
 

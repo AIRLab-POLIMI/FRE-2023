@@ -13,7 +13,7 @@ typedef struct neighborData{
 }neighborData;
 
 
-class map_filter_approx : public rclcpp::Node{
+class map_filter_approx_ransac : public rclcpp::Node{
     private:
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub;
@@ -25,13 +25,13 @@ class map_filter_approx : public rclcpp::Node{
         sensor_msgs::msg::LaserScan laser_scan;
 
     public:
-        map_filter_approx() : Node("map_filter_approx"){
+        map_filter_approx_ransac() : Node("map_filter_approx_ransac"){
 
-            this->declare_parameter("threshold", 120); //minimum number of neighbors
+            this->declare_parameter("threshold", 10); //minimum number of neighbors
 
-            this->declare_parameter("dynamic_range", 50.0); //maximum scaling factor due to distance
+            this->declare_parameter("dynamic_range", 15.0); //maximum scaling factor due to distance
 
-            this->declare_parameter("precision",0.0375);  //size of a unit measure. Decreasing it increase quadratically the performance but increase precision
+            this->declare_parameter("precision", 0.0375);  //size of a unit measure. Decreasing it increase quadratically the performance but increase precision
 
             this->declare_parameter("height", 8.0); //height of the considered point cloud
 
@@ -41,14 +41,14 @@ class map_filter_approx : public rclcpp::Node{
 
             this->declare_parameter("biased", true);   //if biased we sligtly favours points in having the same orientation as the robot
 
-            this->declare_parameter("max_threshold", 200); //maximum threshold for valid points
+            this->declare_parameter("max_threshold", 20); //maximum threshold for valid points
 
 
-            sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/selected", 10, std::bind(&map_filter_approx::callback, this, std::placeholders::_1));
+            sub = this->create_subscription<sensor_msgs::msg::PointCloud2>("/ransac_points", 10, std::bind(&map_filter_approx_ransac::callback, this, std::placeholders::_1));
 
-            sub_scanner = this->create_subscription<sensor_msgs::msg::LaserScan>("/scan", 10, std::bind(&map_filter_approx::populate_scan, this, std::placeholders::_1));
+            sub_scanner = this->create_subscription<sensor_msgs::msg::LaserScan>("/scan", 10, std::bind(&map_filter_approx_ransac::populate_scan, this, std::placeholders::_1));
                         
-            pub_filter = this->create_publisher<sensor_msgs::msg::PointCloud2>("/filtered_point_cloud", 1);
+            pub_filter = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ransac_final_cloud", 1);
 
         }
 
@@ -103,12 +103,12 @@ class map_filter_approx : public rclcpp::Node{
             for (long unsigned int i=0; i < input->points.size(); i++){
                 cur=input->points[i];
                 double r = pow(cur.x, 2)+pow(cur.y,2);
-                double alpha = atan2(cur.y,cur.x)*180/M_PI;
+                double alpha =  atan2(cur.y,cur.x)*180/M_PI;
                 
-                if(r > 0.45 || (alpha>-130 && alpha<130)){
+                if(r > 0.4 || (alpha>-135 && alpha<135)){
                     int row = cur.x/precision + height/2;
                     int col = cur.y/precision + width/2;
-                    if(row < height && col < width && row >= 0 && col>=0)output[row*width + col].here++;
+                    if(row < height && col < width && row >= 0 && col>=0) output[row*width + col].here++;
                 }
             }           
 
@@ -181,9 +181,7 @@ class map_filter_approx : public rclcpp::Node{
                 th=th + laser_scan.angle_increment;
                 if(laser_scan.ranges[i]<=laserscan_range){
                     y = laser_scan.ranges[i]*sin(th);
-                    if((y > 0.22 && y < 0.7)||(y < -0.22 && y > -0.7)){
-                        pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th), y, 0));
-                    }
+                    pcl_cloud->push_back(pcl::PointXYZ(laser_scan.ranges[i]*cos(th), y, 0));
                 }
             }
         }
@@ -194,7 +192,7 @@ class map_filter_approx : public rclcpp::Node{
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
- 	rclcpp::spin(std::make_shared<map_filter_approx>());
+ 	rclcpp::spin(std::make_shared<map_filter_approx_ransac>());
     rclcpp::shutdown();
  	return 0;
 }

@@ -53,9 +53,9 @@ class Yolotor(Node):
         self.labels = labels
         self.debug = debug
 
-        padding = 250
+        padding = 300
         start_x = int((416 - padding) / 2)
-        start_y = int((416 - padding / 2) / 2)
+        start_y = int((416 - padding * 0.8) / 2)
         x1 = start_x
         y1 = start_y
         x2 = start_x + padding
