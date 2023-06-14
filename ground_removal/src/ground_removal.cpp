@@ -27,6 +27,7 @@ class plane_filter : public rclcpp::Node{
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub;
         rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr sub2;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_filter;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_filter_ransac_save_the_day;
         rclcpp::Publisher<geometry_msgs::msg::Quaternion>::SharedPtr pub_plane;
 
         double roll, pitch, yaw, init_roll, init_pitch, init_yaw;
@@ -49,6 +50,7 @@ class plane_filter : public rclcpp::Node{
             //sub2 = this->create_subscription<sensor_msgs::msg::Imu>("/imu/data", 10, std::bind(&plane_filter::callback_imu, this, std::placeholders::_1));
             
             pub_filter = this->create_publisher<sensor_msgs::msg::PointCloud2>("/selected", 1);
+            pub_filter_ransac_save_the_day = this->create_publisher<sensor_msgs::msg::PointCloud2>("/ransac_points", 1);
 
             pub_plane = this->create_publisher<geometry_msgs::msg::Quaternion>("/plane", 1);
     }
@@ -58,17 +60,19 @@ class plane_filter : public rclcpp::Node{
             double model_threshold = this->get_parameter("model_threshold").as_double();
             double threshold = this->get_parameter("threshold").as_double(); 
             sensor_msgs::msg::PointCloud2 cloud_msg; //Message for containing the pointcloud to be published
-            pcl::PCLPointCloud2 pc2, pc2_out;
+            sensor_msgs::msg::PointCloud2 cloud_msg_ransac;
+            pcl::PCLPointCloud2 pc2, pc2_out, pc2_out_ransac;
             pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud_ransac(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::PointCloud<pcl::PointXYZ>::Ptr appo_cloud(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
 
             //Minimum and maximum values for the cropbox filter.
             //x, y, z and intensity
-            Eigen::Vector4f min_pt (-4.0f, -3.0f, -0.5f, -1.0f);
-            Eigen::Vector4f max_pt (4.0f, 3.0f,  0.5f, 1.0f);
+            Eigen::Vector4f min_pt (-4.0f, -4.0f, -0.5f, -1.0f);
+            Eigen::Vector4f max_pt (4.0f, 4.0f,  0.5f, 1.0f);
             //Define the matrix to rotate the pointcloud using pitch data from the imu
             Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
             Eigen::Matrix3f m;
@@ -94,6 +98,7 @@ class plane_filter : public rclcpp::Node{
             
 
             pcl::IndicesPtr new_inliers(new pcl::Indices);
+            pcl::IndicesPtr new_inliers_ransac(new pcl::Indices);
             pcl::SampleConsensusModelPerpendicularPlane<pcl::PointXYZ>::Ptr
                 model_p (new pcl::SampleConsensusModelPerpendicularPlane<pcl::PointXYZ> (cloud_filtered));
 
@@ -128,7 +133,8 @@ class plane_filter : public rclcpp::Node{
                 ransac.getModelCoefficients(coefficients); //store new coefficients
                 //uses the new coefficients to select the points of the pointcloud at time t
                 //belonging to the plane
-                model_p->selectWithinDistance(coefficients, 2*threshold, *new_inliers);
+                model_p->selectWithinDistance(coefficients, 3 * threshold, *new_inliers);
+                model_p->selectWithinDistance(coefficients, threshold, *new_inliers_ransac);
                 inliers = *new_inliers;
             }
             else {
@@ -155,6 +161,10 @@ class plane_filter : public rclcpp::Node{
                 extract.setIndices(new_inliers);
                 extract.setNegative(true); //true to remove the plane, false to see the plane
                 extract.filter(*output_cloud);
+                extract.setInputCloud(cloud_filtered);
+                extract.setIndices(new_inliers_ransac);
+                extract.setNegative(true); //true to remove the plane, false to see the plane
+                extract.filter(*output_cloud_ransac);
                 plane[0] = coefficients(0);
                 plane[1] = coefficients(1);
                 plane[2] = coefficients(2);
@@ -164,7 +174,11 @@ class plane_filter : public rclcpp::Node{
             //Conversion from PCLPointCloud<T> to PCLPointCloud2 and from PCLPointCloud2 to sensor_msgs::msg::PointCloud2
             pcl::toPCLPointCloud2(*output_cloud, pc2_out);
             pcl_conversions::fromPCL(pc2_out, cloud_msg);
-            pub_filter->publish(cloud_msg);
+            pub_filter->publish(cloud_msg);         
+
+            pcl::toPCLPointCloud2(*output_cloud_ransac, pc2_out_ransac);
+            pcl_conversions::fromPCL(pc2_out_ransac, cloud_msg_ransac);
+            pub_filter_ransac_save_the_day->publish(cloud_msg_ransac);
             pub_plane->publish(tf2::toMsg(plane));
         }
 

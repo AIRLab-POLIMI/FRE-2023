@@ -1,8 +1,8 @@
 {
-    "area":[2.5, 1.5],
+    "area":[1.5, 2.5],
     "line_width" : 0.75,
-    "min_num_point_EOL_quad": 5,
-    "min_num_point_extended_region": 150,
+    "min_num_point_EOL_quad": 20,
+    "min_num_point_extended_region": 70,
     "in_row_navigation": {
         "dimension_queue" : 8,
         "min_num_points_use_bis" : 80,
@@ -68,7 +68,7 @@
                 "reset_value_slope": 0  
             } 
         },
-        "min_num_ransac" : 50,
+        "min_num_ransac" : 35,
         "tolerance_intercept" : 0.2
     },
 
