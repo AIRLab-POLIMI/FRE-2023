@@ -6,7 +6,7 @@ from rclpy.duration import Duration
 from sensor_msgs.msg import LaserScan, Joy
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import Float64MultiArray,Bool, Char
+from std_msgs.msg import Float64MultiArray,Bool, String
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 from tf2_ros.transform_listener import TransformListener
 from tf2_ros.buffer import Buffer
@@ -422,8 +422,10 @@ class Prediction():
         self.south_west_line.initialize_line()
 
     def compute_bisectrice_coefficients_forward(self, nord_east_points, nord_west_points, south_east_points, south_west_points):
+        print("NORD")
         nord_west_slope, nord_west_intercept,nord_east_slope, nord_east_intercept = self.calculate_crop_coefficients(self.nord_west_line, nord_west_points, self.nord_east_line, nord_east_points) 
-        _,_,_,_ = self.calculate_crop_coefficients(self.south_west_line, south_west_points, self.south_west_line, south_east_points) 
+        # print("SOUTH")
+        # _,_,_,_ = self.calculate_crop_coefficients(self.south_west_line, south_west_points, self.south_west_line, south_east_points) 
 
         # compute bisectrice
         medium_slope = (nord_west_slope+nord_east_slope) / 2
@@ -433,7 +435,7 @@ class Prediction():
         self.navigation_line.update_line_parameters(medium_slope, medium_intercept)
     
     def compute_bisectrice_coefficients_backward(self, nord_east_points, nord_west_points, south_east_points, south_west_points):
-        _,_,_,_ = self.calculate_crop_coefficients(self.nord_west_line, nord_west_points, self.nord_east_line, nord_east_points) 
+        # _,_,_,_ = self.calculate_crop_coefficients(self.nord_west_line, nord_west_points, self.nord_east_line, nord_east_points) 
         south_west_slope,south_west_intercept, south_east_slope, south_east_intercept = self.calculate_crop_coefficients(self.south_west_line, south_west_points, self.south_east_line, south_east_points) 
 
         # compute bisectrice
@@ -444,8 +446,7 @@ class Prediction():
         self.navigation_line.update_line_parameters(medium_slope, medium_intercept)
 
     def calculate_crop_coefficients(self,line_west, point_west, line_east, point_east):
-        print("num points", len(point_west), len(point_east))
-        # print("num points", len(points))
+        print("calculate crop num points east, west", len(point_west), len(point_east))
         # add delta threshold
         if(len(point_west)> self.num_min_points_required_for_fitting) and (len(point_east)> self.num_min_points_required_for_fitting):
             # compute slope, intercept through fitting
@@ -516,7 +517,7 @@ class InRowNavigation(Node):
         self.end_of_line_pose_topic # prevent unused variable warning
         self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)   
         # topic needed for the integration with obstacle detection
-        self.change_moving_direction_sub = self.create_subscription(Char, "/obstacle_detection", self.callback_update_moving, 1)
+        self.change_moving_direction_sub = self.create_subscription(String, "/obstacle_detection", self.callback_update_moving, 1)
         self.end_of_line_pose_topic # prevent unused variable warning
         # topic to update the boolean variable to publish
         #self.sub_turning_status = self.create_subscription(Bool, '/end_of_turning', self.callback_update_bool, 1)
@@ -528,8 +529,6 @@ class InRowNavigation(Node):
         self.min_point_direction = int(self.min_num_points_use_bis/2)
 
         # define thresholds
-        self.nord_threshold = self.area[0]/2
-        self.south_threshold = -self.area[0]/2
         self.west_threshold = self.area[1]/2
         self.east_threshold = -self.area[1]/2
 
@@ -985,7 +984,8 @@ class InRowNavigation(Node):
         is_south_east_empty = True if np.size(points_south_east) < self.min_num_point_extended_region else False
         is_south_west_empty = True if np.size(points_south_west) < self.min_num_point_extended_region else False
 
-        if (is_nord_east_empty or is_nord_west_empty) and (not is_south_east_empty and not is_south_west_empty)  and (self.is_in_row_navigation):
+        print(np.size(points_nord_east), np.size(points_nord_west), np.size(points_south_east), np.size(points_south_west))
+        if (is_nord_east_empty and is_nord_west_empty) and (not is_south_east_empty and not is_south_west_empty) and (self.is_in_row_navigation):
             print("END OF LINE")
             # to do -> publish goal point
             self.publish_end_pose()
@@ -1004,7 +1004,8 @@ class InRowNavigation(Node):
             self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
             # calculate goal point
             goal_pose, x, y = self.calculate_goal_point_forward()
-            # only 
+            # it is valid and you can publish
+            # needed for task 4 
             if self.flag_publish_goal_pose and x != None and y != None:
                 # publish goal pose
                 self.publish_goal_pose(x, y)
@@ -1159,6 +1160,8 @@ class InRowNavigation(Node):
             self.get_logger().info("ERROR IN POSE CALCULATION")
             pose_error = PoseStamped()
             return (pose_error, None, None)
+
+        return PoseStamped(), x_goal_pose, y_goal_pose
 
     def display_prediction_forward_static(self, nord_east_points,nord_west_points,x_goal, y_goal):
         # clear axes

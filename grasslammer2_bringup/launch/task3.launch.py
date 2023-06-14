@@ -32,6 +32,6 @@ def generate_launch_description():
 
     return LaunchDescription([
         yolo,
-        led_link,
-        #obstacle_detector,
+        #led_link,
+        obstacle_detector,
     ])
