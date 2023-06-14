@@ -1,8 +1,9 @@
 {
-    "area":[2.5, 1.5],
+    "area":[1.5, 2.5],
     "line_width" : 0.75,
     "min_num_point_EOL_quad": 5,
     "min_num_point_extended_region": 30,
+
     "in_row_navigation": {
         "dimension_queue" : 7,
         "min_num_points_use_bis" : 40,
@@ -13,7 +14,6 @@
         "south_threshold": -1,
         "nord_threshold_fw": 1.25,
         "south_threshold_bw": -1.25
-
     },
 
     "prediction":{
@@ -68,8 +68,8 @@
                 "reset_value_slope": 0  
             } 
         },
-        "min_num_ransac" : 50,
-        "tolerance_intercept" : 0.3
+        "min_num_ransac" : 35,
+        "tolerance_intercept" : 0.2
     },
 
     "moving_avarage":{

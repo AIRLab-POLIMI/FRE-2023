@@ -734,7 +734,6 @@ class InRowNavigation(Node):
             threshold_west_above = np.full_like(y, distance_west_above)
             threshold_west_below = np.full_like(y, distance_west_below)
 
-
             y_west = np.where((y > np.add(slope*x, threshold_west_below))&(y < np.add(slope*x, threshold_west_above)),y, np.inf)
             y_east = np.where((y > np.add(slope*x, threshold_east_below))&(y < np.add(slope*x,threshold_east_above)),y, np.inf)
 
@@ -809,8 +808,6 @@ class InRowNavigation(Node):
                 points_nord_west = np.vstack((x_nord, y_west)).T
                 points_nord_east = points_nord_east[~np.isinf(points_nord_east).any(axis=1)]
                 points_nord_west = points_nord_west[~np.isinf(points_nord_west).any(axis=1)]
-
-
 
         else:
             # take slope, intercept 
@@ -984,8 +981,12 @@ class InRowNavigation(Node):
         is_south_east_empty = True if np.size(points_south_east) < self.min_num_point_extended_region else False
         is_south_west_empty = True if np.size(points_south_west) < self.min_num_point_extended_region else False
 
+<<<<<<< Updated upstream
         print(np.size(points_nord_east), np.size(points_nord_west), np.size(points_south_east), np.size(points_south_west))
         if (is_nord_east_empty and is_nord_west_empty) and (not is_south_east_empty and not is_south_west_empty) and (self.is_in_row_navigation):
+=======
+        if (is_nord_east_empty and is_nord_west_empty) and (not is_south_east_empty and not is_south_west_empty)  and (self.is_in_row_navigation):
+>>>>>>> Stashed changes
             print("END OF LINE")
             # to do -> publish goal point
             self.publish_end_pose()
@@ -1004,8 +1005,12 @@ class InRowNavigation(Node):
             self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
             # calculate goal point
             goal_pose, x, y = self.calculate_goal_point_forward()
+<<<<<<< Updated upstream
             # it is valid and you can publish
             # needed for task 4 
+=======
+            # only 
+>>>>>>> Stashed changes
             if self.flag_publish_goal_pose and x != None and y != None:
                 # publish goal pose
                 self.publish_goal_pose(x, y)

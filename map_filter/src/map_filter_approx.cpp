@@ -37,7 +37,11 @@ class map_filter_approx : public rclcpp::Node{
 
             this->declare_parameter("width", 8.0);  //width of the considered point cloud
 
+<<<<<<< Updated upstream
             this->declare_parameter("laserscan_range", 2.0); //range in which points from monoplanar lidar are added
+=======
+            this->declare_parameter("laserscan_range", 2.5); //range in which points from monoplanar lidar are added
+>>>>>>> Stashed changes
 
             this->declare_parameter("biased", true);   //if biased we sligtly favours points in having the same orientation as the robot
 
@@ -101,7 +105,7 @@ class map_filter_approx : public rclcpp::Node{
             for (long unsigned int i=0; i < input->points.size(); i++){
                 cur=input->points[i];
                 double r = pow(cur.x, 2)+pow(cur.y,2);
-                double alpha = atan2(cur.x,cur.y)*180/M_1_PI;
+                double alpha = atan2(cur.y,cur.x)*180/M_PI;
                 
                 if(r > 0.45 || (alpha>-130 && alpha<130)){
                     int row = cur.x/precision + height/2;

@@ -21,7 +21,24 @@ def generate_launch_description():
 
     remove_ground_node = Node(package='ground_removal', executable='plane_filter',)
 
+<<<<<<< Updated upstream
     density_filter = Node(package='map_filter', executable='map_filter',)
+=======
+    density_filter = Node(
+                            package='map_filter', 
+                            executable='map_filter_approx',
+                            parameters=[
+                                {'threshold': 20},
+                                {'dynamic_range' : 50.0},
+                                {'precision': 0.0375},
+                                {'height': 8.0},
+                                {'width': 8.0},
+                                {'laserscan_range': 1.5},
+                                {'biased': True},
+                                {'max_threshold': 200}
+                            ],
+                        )
+>>>>>>> Stashed changes
 
     """pointcloud_converter = Node(package='pointcloud_to_laserscan',
                                 executable='pointcloud_to_laserscan_node',
@@ -43,7 +60,7 @@ def generate_launch_description():
                 )"""
 
     return LaunchDescription([
-        start_simulation,
+        #start_simulation,
         remove_ground_node, 
         density_filter,
         pointcloud_converter,

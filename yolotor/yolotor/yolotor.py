@@ -52,19 +52,18 @@ class Yolotor(Node):
         # storing YOLO info for run-time execution
         self.labels = labels
         self.debug = debug
-        self.valid_area = (158, 108, 258, 416)
 
-    def is_valid(frame, detection):
-        """
-        Check if a bounding box stays mostly inside another bounding box.
+        padding = 250
+        start_x = int((416 - padding) / 2)
+        start_y = int((416 - padding / 2) / 2)
+        x1 = start_x
+        y1 = start_y
+        x2 = start_x + padding
+        y2 = 416
 
-        Args:
-            box1 (tuple): Coordinates of the first bounding box in the format (x1, y1, x2, y2).
-            box2 (tuple): Coordinates of the second bounding box in the format (x1, y1, x2, y2).
+        self.valid_area = (x1, y1, x2, y2)
 
-        Returns:
-            bool: True if box1 stays mostly inside box2, False otherwise.
-        """
+    def is_valid(self, frame, detection):
         # internal method used only here
         def frameNorm(frame, bbox):
             normVals = np.full(len(bbox), frame.shape[0])
@@ -139,9 +138,9 @@ class Yolotor(Node):
 
                 # find the most confident detection made by YOLO
                 for out in detections:
-                    if is_valid(frame, out) and out.confidence > highest_confidence:
-                        highest_confidence = out.confidence
-                        highest_confidence_box = out
+                    if self.is_valid(rgb_frame, out) and out.confidence > highest_confidence:
+                            highest_confidence = out.confidence
+                            highest_confidence_box = out
 
                 if highest_confidence_box is not None:
                     # if you found something then sent it on the topic
@@ -164,5 +163,9 @@ class Yolotor(Node):
                 
                 # it visualizes the annotated frame
                 if self.debug:
+                    overlay = rgb_frame.copy()
+                    alpha = 0.1
+                    cv2.rectangle(overlay, (self.valid_area[0], self.valid_area[1]), (self.valid_area[2], self.valid_area[3]), (255, 0, 0), -1) 
+                    rgb_frame = cv2.addWeighted(overlay, alpha, rgb_frame, 1 - alpha, 0)
                     cv2.imshow("Yolotor", rgb_frame)
                     cv2.waitKey(1)
