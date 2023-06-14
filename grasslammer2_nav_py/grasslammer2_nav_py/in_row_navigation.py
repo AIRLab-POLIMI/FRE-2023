@@ -981,12 +981,7 @@ class InRowNavigation(Node):
         is_south_east_empty = True if np.size(points_south_east) < self.min_num_point_extended_region else False
         is_south_west_empty = True if np.size(points_south_west) < self.min_num_point_extended_region else False
 
-<<<<<<< Updated upstream
-        print(np.size(points_nord_east), np.size(points_nord_west), np.size(points_south_east), np.size(points_south_west))
-        if (is_nord_east_empty and is_nord_west_empty) and (not is_south_east_empty and not is_south_west_empty) and (self.is_in_row_navigation):
-=======
         if (is_nord_east_empty and is_nord_west_empty) and (not is_south_east_empty and not is_south_west_empty)  and (self.is_in_row_navigation):
->>>>>>> Stashed changes
             print("END OF LINE")
             # to do -> publish goal point
             self.publish_end_pose()
@@ -1005,12 +1000,6 @@ class InRowNavigation(Node):
             self.prediction_instance.compute_bisectrice_coefficients_forward(points_nord_east,points_nord_west,points_south_east,points_south_west)
             # calculate goal point
             goal_pose, x, y = self.calculate_goal_point_forward()
-<<<<<<< Updated upstream
-            # it is valid and you can publish
-            # needed for task 4 
-=======
-            # only 
->>>>>>> Stashed changes
             if self.flag_publish_goal_pose and x != None and y != None:
                 # publish goal pose
                 self.publish_goal_pose(x, y)
