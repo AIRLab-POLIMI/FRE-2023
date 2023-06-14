@@ -1386,7 +1386,7 @@ class InRowNavigation(Node):
         # update timestamp and frame
         time_now = Time()
         end_of_line_pose.header.stamp = time_now.to_msg()
-        end_of_line_pose.header.frame_id = "velodyne2"
+        end_of_line_pose.header.frame_id = "velodyne"
 
         # get x,y
         end_of_line_pose.pose.position.x = float(x_goal_pose)
@@ -1400,7 +1400,7 @@ class InRowNavigation(Node):
         end_of_line_pose.pose.orientation.w = quaternion[3]
 
         #transform from of the received odom to the current map
-        transform = self._tf_buffer.lookup_transform('odom', 'velodyne2', end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
+        transform = self._tf_buffer.lookup_transform('odom', 'velodyne', end_of_line_pose.header.stamp, Duration(seconds=4, nanoseconds=0))
         return do_transform_pose_stamped(end_of_line_pose, transform), x_goal_pose, y_goal_pose
 
 

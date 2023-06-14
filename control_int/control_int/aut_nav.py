@@ -24,8 +24,8 @@ class Navigation(Node):
 
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_row_nav', 1)
 
-        self.a = 4.0
-        self.b = 1.0
+        self.a = 1.0
+        self.b = 0.3
 
     def goal_callback(self, goal):
 
