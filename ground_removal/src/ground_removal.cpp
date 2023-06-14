@@ -207,8 +207,8 @@ int main(int argc, char **argv)
 {
     //ros::init(argc, argv, "talker");
     rclcpp::init(argc, argv);
-    //plane_filter plane_filter;
-    rclcpp::spin(std::make_shared<plane_filter>());
+ 	//plane_filter plane_filter;
+ 	rclcpp::spin(std::make_shared<plane_filter>());
     
-    return 0;
+ 	return 0;
 }
